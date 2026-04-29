@@ -1,0 +1,9 @@
+{
+  "name": "portalParent-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/portalParent-e2e/src",
+  "implicitDependencies": ["portalParent"],
+  "// targets": "to see all targets run: nx show project portalParent-e2e --web",
+  "targets": {}
+}

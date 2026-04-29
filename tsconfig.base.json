@@ -1,0 +1,43 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "portalAdmin/Routes": [
+        "apps/portalAdmin/src/app/remote-entry/entry.routes.ts"
+      ],
+      "portalTeacher/Routes": [
+        "apps/portalTeacher/src/app/remote-entry/entry.routes.ts"
+      ],
+      "portalStudent/Routes": [
+        "apps/portalStudent/src/app/remote-entry/entry.routes.ts"
+      ],
+      "portalParent/Routes": [
+        "apps/portalParent/src/app/remote-entry/entry.routes.ts"
+      ],
+      "portalTransport/Routes": [
+        "apps/portalTransport/src/app/remote-entry/entry.routes.ts"
+      ],
+      "@sms/core/auth": ["libs/core/auth/src/index.ts"],
+      "@sms/core/http": ["libs/core/http/src/index.ts"],
+      "@sms/core/state": ["libs/core/state/src/index.ts"],
+      "@sms/core/config": ["libs/core/config/src/index.ts"],
+      "@sms/shared/models": ["libs/shared/models/src/index.ts"],
+      "@sms/shared/ui": ["libs/shared/ui/src/index.ts"],
+      "@sms/shared/utils": ["libs/shared/utils/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

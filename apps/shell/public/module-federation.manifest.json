@@ -1,0 +1,7 @@
+{
+  "portalAdmin": "http://localhost:4201/mf-manifest.json",
+  "portalTeacher": "http://localhost:4202/mf-manifest.json",
+  "portalStudent": "http://localhost:4203/mf-manifest.json",
+  "portalParent": "http://localhost:4204/mf-manifest.json",
+  "portalTransport": "http://localhost:4205/mf-manifest.json"
+}

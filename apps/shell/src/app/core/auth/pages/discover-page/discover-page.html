@@ -1,0 +1,56 @@
+<div class="login-container">
+  <mat-card class="login-card">
+    <!-- Header -->
+    <div class="login-header">
+      <div class="logo">
+        <mat-icon>school</mat-icon>
+      </div>
+      <h1 class="login-title">Welcome to Mnara</h1>
+      <p class="login-subtitle">School Management System</p>
+    </div>
+
+    <!-- Form -->
+    <div class="login-form">
+      <mat-form-field appearance="outline" class="full-width input-field">
+        <mat-label>School ID or Email</mat-label>
+        <input
+          matInput
+          [(ngModel)]="identifier"
+          placeholder="Enter your School ID or Email"
+          (keydown.enter)="onKeyPress($event)"
+          autocomplete="username"
+        />
+        <mat-icon matPrefix>person_outline</mat-icon>
+      </mat-form-field>
+
+      <button
+        mat-raised-button
+        class="next-button"
+        (click)="onSubmit()"
+        [disabled]="!identifier.trim() || isLoading"
+      >
+        @if (isLoading) {
+          <span class="button-content">
+            <mat-icon>hourglass_empty</mat-icon>
+            <span>Please wait...</span>
+          </span>
+        } @else {
+          <span class="button-content">
+            Next
+            <mat-icon style="vertical-align: middle; margin-left: 4px;">arrow_forward</mat-icon>
+          </span>
+        }
+      </button>
+
+      <div class="help-text">
+        <p>
+          Don't have an account? 
+          <a routerLink="/contact">Contact your administrator</a>
+        </p>
+        <p style="margin-top: 0.5rem;">
+          <a routerLink="/help">Need help signing in?</a>
+        </p>
+      </div>
+    </div>
+  </mat-card>
+</div>
