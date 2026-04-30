@@ -73,11 +73,34 @@ export class AuthService {
 
     console.log('Fetch user context from:', getApiUrl(environment.authEndpoints.me));
     return this.http
-      .get<UserContext>(getApiUrl(environment.authEndpoints.me), { headers })
+      .get<any>(getApiUrl(environment.authEndpoints.me), { headers })
       .pipe(
         map((response) => {
-          console.log('User context fetched successfully:', response);
-          return response;
+          console.log('Raw user context response:', response);
+
+          // Handle different backend response formats
+          const userData = response.data || response;
+
+          // Normalize portalKey field (backend might use 'portal', 'portalType', 'role', etc.)
+          const portalKey = userData.portalKey || userData.portal || userData.portal_type ||
+                           userData.portalType || userData.role || userData.user_type ||
+                           userData.type || 'unknown';
+
+          const normalizedContext: UserContext = {
+            user: {
+              firstName: userData.user?.firstName || userData.user?.first_name || userData.firstName || userData.first_name || '',
+              lastName: userData.user?.lastName || userData.user?.last_name || userData.lastName || userData.last_name || '',
+              isActive: userData.user?.isActive ?? userData.user?.is_active ?? userData.isActive ?? true,
+              email: userData.user?.email || userData.email || '',
+              schoolId: userData.user?.schoolId || userData.user?.school_id || userData.schoolId || userData.school_id || '',
+              avatarUrl: userData.user?.avatarUrl || userData.user?.avatar_url || userData.avatarUrl || userData.avatar_url,
+            },
+            portalKey: portalKey,
+            permissions: userData.permissions || userData.user?.permissions || [],
+          };
+
+          console.log('Normalized user context:', normalizedContext);
+          return normalizedContext;
         }),
         catchError((error) => {
           console.error('Fetch user context error:', error);

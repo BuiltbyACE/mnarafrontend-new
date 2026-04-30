@@ -4,10 +4,11 @@
  */
 
 import { Injectable } from '@angular/core';
-import type { Tokens } from '@sms/shared/models';
+import type { Tokens, UserContext } from '@sms/shared/models';
 
 const ACCESS_TOKEN_KEY = 'mnara_access_token';
 const REFRESH_TOKEN_KEY = 'mnara_refresh_token';
+const USER_CONTEXT_KEY = 'mnara_user_context';
 
 @Injectable({
   providedIn: 'root',
@@ -48,5 +49,40 @@ export class TokenStorageService {
    */
   hasTokens(): boolean {
     return !!this.getAccessToken() && !!this.getRefreshToken();
+  }
+
+  /**
+   * Save user context to localStorage
+   */
+  saveUserContext(userContext: UserContext): void {
+    localStorage.setItem(USER_CONTEXT_KEY, JSON.stringify(userContext));
+  }
+
+  /**
+   * Get user context from localStorage
+   */
+  getUserContext(): UserContext | null {
+    const data = localStorage.getItem(USER_CONTEXT_KEY);
+    if (!data) return null;
+    try {
+      return JSON.parse(data) as UserContext;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Clear user context (logout)
+   */
+  clearUserContext(): void {
+    localStorage.removeItem(USER_CONTEXT_KEY);
+  }
+
+  /**
+   * Clear all stored data (logout)
+   */
+  clearAll(): void {
+    this.clearTokens();
+    this.clearUserContext();
   }
 }

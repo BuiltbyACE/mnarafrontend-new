@@ -233,16 +233,20 @@ export class CredentialsPage implements OnInit {
           // Fetch user context
           this.authService.fetchUserContext().subscribe({
             next: (userContext) => {
+              console.log('Credentials: User context received:', userContext);
               this.authStore.setUserContext(userContext);
               this.authStore.setLoading(false);
               this.isLoading = false;
 
               // Navigate to portal
               const portalRoute = this.authStore.getPortalRoute();
+              console.log('Credentials: Portal route:', portalRoute, 'portalKey:', userContext.portalKey);
               if (portalRoute) {
                 this.router.navigate([portalRoute]);
               } else {
-                this.showError('Unable to determine portal access');
+                const errorMsg = `Unable to determine portal access. Unknown portalKey: ${userContext.portalKey}`;
+                console.error('Credentials:', errorMsg);
+                this.handleError(new Error(errorMsg));
               }
             },
             error: (error) => {

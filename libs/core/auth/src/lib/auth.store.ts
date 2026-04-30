@@ -97,6 +97,9 @@ export class AuthStore {
   }
 
   setUserContext(user: UserContext): void {
+    // Save to localStorage for cross-module access
+    this.tokenStorage.saveUserContext(user);
+    // Update signal state
     this.state.update((s) => ({ ...s, user }));
   }
 
@@ -121,7 +124,7 @@ export class AuthStore {
 
   logout(): void {
     // Clear from localStorage
-    this.tokenStorage.clearTokens();
+    this.tokenStorage.clearAll();
     // Reset state
     this.state.set({
       identifier: '',
@@ -133,17 +136,27 @@ export class AuthStore {
   }
 
   /**
-   * Restore tokens from localStorage on app startup
-   * Call this in app initialization
+   * Restore tokens AND user context from localStorage on app startup.
+   * Critical for microfrontend remotes which start with a blank AuthStore
+   * instance and must re-hydrate from storage before any guard can run.
    */
-  restoreTokensFromStorage(): void {
+  restoreFromStorage(): void {
     const access = this.tokenStorage.getAccessToken();
     const refresh = this.tokenStorage.getRefreshToken();
-    if (access && refresh) {
-      this.state.update((s) => ({
-        ...s,
-        tokens: { access, refresh },
-      }));
-    }
+    const userContext = this.tokenStorage.getUserContext();
+
+    this.state.update((s) => ({
+      ...s,
+      tokens: access && refresh ? { access, refresh } : s.tokens,
+      user: userContext ?? s.user,
+    }));
+  }
+
+  /**
+   * @deprecated Use restoreFromStorage() which also restores user context.
+   * Kept for backwards compatibility.
+   */
+  restoreTokensFromStorage(): void {
+    this.restoreFromStorage();
   }
 }

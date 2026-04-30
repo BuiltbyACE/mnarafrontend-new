@@ -1,24 +1,13 @@
 import { Route } from '@angular/router';
 import { loadRemote } from '@module-federation/enhanced/runtime';
-import { DiscoverPage } from './core/auth/pages/discover-page/discover-page';
-import { CredentialsPage } from './core/auth/pages/credentials-page/credentials-page';
-import { publicGuard, AuthGuard } from '@sms/core/auth';
+import { LoginPage } from './core/auth/pages/login-page/login-page';
+import { AuthGuard } from '@sms/core/auth';
 
 export const appRoutes: Route[] = [
-  // Public routes - Login flow
+  // Public routes - Login (no guard - component handles auth redirect internally)
   {
     path: 'login',
-    canActivate: [publicGuard()],
-    children: [
-      {
-        path: '',
-        component: DiscoverPage,
-      },
-      {
-        path: 'password',
-        component: CredentialsPage,
-      },
-    ],
+    component: LoginPage,
   },
 
   // Protected portal routes

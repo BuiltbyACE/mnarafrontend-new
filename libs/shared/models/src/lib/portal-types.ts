@@ -38,15 +38,32 @@ export function isValidPortalType(value: string): value is PortalType {
   return ['ADMIN', 'STAFF', 'TRANSPORT', 'STUDENT', 'PARENT'].includes(value);
 }
 
-/** Map backend portalKey to PortalType enum */
+/** Map backend portalKey to PortalType enum - handles various backend formats */
 export function portalKeyToPortalType(portalKey: string): PortalType | null {
+  if (!portalKey) return null;
+
   const mapping: Record<string, PortalType> = {
+    // Full portal keys
     'admin-portal': 'ADMIN',
     'staff-portal': 'STAFF',
-    'teacher-portal': 'STAFF', // Teachers use STAFF portal
+    'teacher-portal': 'STAFF',
     'transport-portal': 'TRANSPORT',
     'student-portal': 'STUDENT',
     'parent-portal': 'PARENT',
+    // Short form (common backend variations)
+    'admin': 'ADMIN',
+    'staff': 'STAFF',
+    'teacher': 'STAFF',
+    'transport': 'TRANSPORT',
+    'student': 'STUDENT',
+    'parent': 'PARENT',
+    // Role-based variations
+    'superadmin': 'ADMIN',
+    'school_admin': 'ADMIN',
+    'school_administrator': 'ADMIN',
+    'administrator': 'ADMIN',
+    'instructor': 'STAFF',
+    'driver': 'TRANSPORT',
   };
-  return mapping[portalKey] ?? null;
+  return mapping[portalKey.toLowerCase()] ?? null;
 }

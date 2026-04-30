@@ -1,0 +1,137 @@
+<div class="login-page">
+
+  <!-- Page-wide decorative dot grid (top-right corner) -->
+  <div class="dot-grid"></div>
+
+  <!-- ────────── LEFT SECTION ────────── -->
+  <div class="left-section">
+
+    <!-- Hero text block -->
+    <div class="hero-text">
+      <h1 class="headline">
+        Welcome <span class="blue-word">Back!</span>
+      </h1>
+      <p class="hero-sub">
+        Sign in to your account and continue<br>
+        your journey with us.
+      </p>
+      <div class="accent-line"></div>
+    </div>
+
+    <!-- School building image -->
+    <div class="school-image-wrap">
+      <img
+        class="school-img"
+        src="/images/school-building.jpg"
+        alt="School Building"
+        onerror="this.style.display='none'"
+      />
+    </div>
+
+  </div>
+
+  <!-- ────────── RIGHT SECTION ────────── -->
+  <div class="right-section">
+    <div class="login-card">
+
+      <h2 class="card-title">Sign In</h2>
+      <p class="card-sub">Access your School Management Portal</p>
+      <div class="card-accent"></div>
+
+      <form class="login-form" (submit)="$event.preventDefault()">
+
+        <!-- Email -->
+        <mat-form-field appearance="outline" class="field">
+          <mat-icon matPrefix class="field-icon">email</mat-icon>
+          <input
+            matInput
+            type="email"
+            [(ngModel)]="email"
+            placeholder="Email Address"
+            name="email"
+            autocomplete="email"
+            (keydown.enter)="onKeyPress($event)"
+          />
+        </mat-form-field>
+
+        <!-- Password -->
+        <mat-form-field appearance="outline" class="field">
+          <mat-icon matPrefix class="field-icon">lock</mat-icon>
+          <input
+            matInput
+            [type]="hidePassword ? 'password' : 'text'"
+            [(ngModel)]="password"
+            placeholder="Password"
+            name="password"
+            autocomplete="current-password"
+            (keydown.enter)="onKeyPress($event)"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="togglePassword()"
+            class="visibility-btn"
+          >
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <!-- Remember me + Forgot Password -->
+        <div class="form-options">
+          <mat-checkbox [(ngModel)]="rememberMe" name="rememberMe" color="primary">
+            Remember me
+          </mat-checkbox>
+          <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+        </div>
+
+        <!-- Sign In Button -->
+        <button
+          mat-raised-button
+          type="submit"
+          class="sign-in-btn"
+          (click)="onSubmit()"
+          [disabled]="!email || !password || isLoading"
+        >
+          @if (isLoading) {
+            <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+            <span>Signing in...</span>
+          } @else {
+            <span class="btn-content">
+              Sign In
+              <mat-icon class="btn-arrow">arrow_forward</mat-icon>
+            </span>
+          }
+        </button>
+
+        <!-- OR divider -->
+        <div class="or-divider">
+          <span class="divider-line"></span>
+          <span class="or-text">or</span>
+          <span class="divider-line"></span>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ────────── BOTTOM WAVE FOOTER ────────── -->
+  <div class="wave-footer">
+    <svg class="wave-svg" viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        fill="#1D4ED8"
+        d="M0,60 C180,0 360,120 540,60 C720,0 900,120 1080,60 C1260,0 1380,80 1440,60 L1440,120 L0,120 Z"
+      />
+    </svg>
+    <div class="footer-band">
+      <div class="footer-logo">
+        <div class="logo-box"><span>&lt;/&gt;</span></div>
+        <div class="footer-copy">
+          <span>© 2026 SafariStack Solutions.</span>
+          <span>All rights reserved.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
