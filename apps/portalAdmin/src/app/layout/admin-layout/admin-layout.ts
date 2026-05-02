@@ -41,15 +41,15 @@ import { WebSocketFleetService } from '../../core/services/websocket-fleet.servi
         <!-- Wave Footer -->
         <div class="wave-footer">
           <svg class="wave-svg" viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#1D4ED8" d="M0,60 C180,0 360,120 540,60 C720,0 900,120 1080,60 C1260,0 1380,80 1440,60 L1440,120 L0,120 Z"/>
+            <path fill="#2563EB" d="M0,60 C180,0 360,120 540,60 C720,0 900,120 1080,60 C1260,0 1380,80 1440,60 L1440,120 L0,120 Z"/>
           </svg>
           <div class="footer-band">
-            <div class="footer-logo">
-              <div class="logo-box"><span>&lt;/&gt;</span></div>
-              <div class="footer-copy">
-                <span>© 2026 SafariStack Solutions.</span>
-                <span>All rights reserved.</span>
-              </div>
+            <div class="footer-left">
+              <span>© 2024 SafariStack Solutions. All rights reserved.</span>
+            </div>
+            <div class="footer-right">
+              <span>Version 1.0.0</span>
+              <span class="code-brackets">&lt;/&gt;</span>
             </div>
           </div>
         </div>
@@ -61,7 +61,7 @@ import { WebSocketFleetService } from '../../core/services/websocket-fleet.servi
       display: flex;
       height: 100vh;
       overflow: hidden;
-      background: linear-gradient(135deg, #EBF3FD 0%, #F8FBFF 100%);
+      background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
       font-family: 'Inter', system-ui, sans-serif;
     }
 
@@ -86,13 +86,13 @@ import { WebSocketFleetService } from '../../core/services/websocket-fleet.servi
 
     .content {
       flex: 1 0 auto;
-      padding: 2rem 3rem;
+      padding: 32px 32px 0 32px;
     }
 
     /* Wave Footer */
     .wave-footer {
       position: relative;
-      height: 140px;
+      height: 100px;
       width: 100%;
       flex-shrink: 0;
       margin-top: auto;
@@ -110,43 +110,27 @@ import { WebSocketFleetService } from '../../core/services/websocket-fleet.servi
       bottom: 0;
       left: 0;
       right: 0;
-      height: 70px;
-      background: #1D4ED8;
+      height: 50px;
+      background: #2563EB;
       display: flex;
       align-items: center;
-      padding: 0 3rem;
+      justify-content: space-between;
+      padding: 0 32px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.75rem;
+      font-family: 'Inter', sans-serif;
     }
-    .footer-logo {
+    
+    .footer-right {
       display: flex;
       align-items: center;
       gap: 12px;
     }
-    .logo-box {
-      width: 36px;
-      height: 36px;
-      border: 2px solid rgba(255, 255, 255, 0.5);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .logo-box span {
-      font-size: 13px;
+
+    .code-brackets {
       font-weight: 700;
       color: white;
-      font-family: 'Courier New', monospace;
-      letter-spacing: -0.5px;
-    }
-    .footer-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
-    .footer-copy span {
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.85);
-      font-family: 'Inter', sans-serif;
-      line-height: 1.4;
+      letter-spacing: 1px;
     }
 
     // Responsive
@@ -179,11 +163,9 @@ import { WebSocketFleetService } from '../../core/services/websocket-fleet.servi
 export class AdminLayoutComponent {
   private fleetService = inject(WebSocketFleetService);
 
-  // TODO: Connect to actual pending approvals count
   readonly pendingApprovals = 0;
 
   constructor() {
-    // Connect to fleet WebSocket when admin layout loads
     this.fleetService.connect();
   }
 }
