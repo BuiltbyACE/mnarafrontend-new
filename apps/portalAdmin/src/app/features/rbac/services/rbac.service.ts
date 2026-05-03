@@ -48,7 +48,7 @@ export class RbacService {
     }
 
     return this.http
-      .get<PaginatedResponse<AdminUser>>(getApiUrl('/rbac/users/'), { params })
+      .get<PaginatedResponse<AdminUser>>(getApiUrl('/accounts/users/'), { params })
       .pipe(
         catchError((err) => {
           const message = err.error?.message || 'Failed to load users';
@@ -60,23 +60,26 @@ export class RbacService {
   }
 
   createUser(data: UserCreateRequest): Observable<AdminUser> {
-    return this.http.post<AdminUser>(getApiUrl('/rbac/users/'), data);
+    return this.http.post<AdminUser>(getApiUrl('/accounts/users/'), data);
   }
 
   updateUserRole(userId: number, data: RoleUpdateRequest): Observable<AdminUser> {
-    return this.http.patch<AdminUser>(getApiUrl(`/rbac/users/${userId}/role/`), data);
+    return this.http.patch<AdminUser>(getApiUrl(`/accounts/users/${userId}/role/`), data);
   }
 
-  revokeAccess(userId: number, reason: string): Observable<void> {
-    return this.http.post<void>(getApiUrl(`/rbac/users/${userId}/revoke/`), { reason });
+  revokeAccess(userId: number, notes: string): Observable<void> {
+    return this.http.post<void>(
+      getApiUrl(`/accounts/users/${userId}/revoke-access/`), 
+      { action: 'REVOKE_AND_BLACKLIST', notes }
+    );
   }
 
   resetPassword(userId: number): Observable<{ temp_password: string }> {
-    return this.http.post<{ temp_password: string }>(getApiUrl(`/rbac/users/${userId}/reset-password/`), {});
+    return this.http.post<{ temp_password: string }>(getApiUrl(`/accounts/users/${userId}/reset-password/`), {});
   }
 
   getRoles(): Observable<SystemRole[]> {
-    return this.http.get<SystemRole[]>(getApiUrl('/rbac/roles/'));
+    return this.http.get<SystemRole[]>(getApiUrl('/accounts/roles/'));
   }
 
   setUsers(data: AdminUser[], total: number): void {

@@ -3,25 +3,31 @@
  * Replicated exactly from reference UI
  */
 
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { ReactiveFormsModule, FormControl } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthStore } from '@sms/core/auth';
+import { getApiUrl } from '@sms/core/config';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-admin-header',
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     MatToolbarModule,
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
   ],
+  providers: [DatePipe],
   template: `
     <header class="admin-header">
       <div class="header-left">
@@ -31,7 +37,7 @@ import { AuthStore } from '@sms/core/auth';
       <div class="header-center">
         <div class="search-bar">
           <mat-icon class="search-icon">search</mat-icon>
-          <input type="text" placeholder="Search anything..." />
+          <input type="text" [formControl]="searchQuery" placeholder="Search anything..." />
           <div class="search-shortcut">Ctrl + K</div>
         </div>
       </div>
@@ -47,8 +53,8 @@ import { AuthStore } from '@sms/core/auth';
         <div class="date-block">
           <mat-icon class="date-icon">calendar_today</mat-icon>
           <div class="date-info">
-            <span class="date-main">May 28, 2024</span>
-            <span class="date-sub">Tuesday</span>
+            <span class="date-main">{{ currentDate | date:'MMM d, y' }}</span>
+            <span class="date-sub">{{ currentDate | date:'EEEE' }}</span>
           </div>
         </div>
         
@@ -59,8 +65,8 @@ import { AuthStore } from '@sms/core/auth';
             <mat-icon *ngIf="false">person</mat-icon>
           </div>
           <div class="user-info">
-            <span class="user-name">ADM-001</span>
-            <span class="user-role">Super Admin</span>
+            <span class="user-name">{{ authStore.fullName() || 'Admin User' }}</span>
+            <span class="user-role">{{ authStore.roleName() || 'Super Admin' }}</span>
           </div>
           <mat-icon class="user-chevron">expand_more</mat-icon>
         </div>
@@ -302,9 +308,46 @@ import { AuthStore } from '@sms/core/auth';
     }
   `],
 })
-export class AdminHeaderComponent {
-  private authStore = inject(AuthStore);
+export class AdminHeaderComponent implements OnInit, OnDestroy {
+  authStore = inject(AuthStore);
   private router = inject(Router);
+  private http = inject(HttpClient);
+  
+  searchQuery = new FormControl('');
+  currentDate = new Date();
+  private destroy$ = new Subject<void>();
+
+  ngOnInit() {
+    // Setup RxJS Live Search
+    this.searchQuery.valueChanges
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$),
+        switchMap((query) => {
+          if (!query || query.trim() === '') {
+            return [];
+          }
+          console.log(`Searching for: ${query}`);
+          // Send to backend polymorphic endpoint
+          return this.http.get<any[]>(getApiUrl(`/search/?q=${encodeURIComponent(query)}`));
+        })
+      )
+      .subscribe({
+        next: (results) => {
+          console.log('Search Results:', results);
+          // Future: display results in a dropdown
+        },
+        error: (err) => {
+          console.error('Search failed', err);
+        }
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   goToProfile(): void {
     // Navigate to profile page

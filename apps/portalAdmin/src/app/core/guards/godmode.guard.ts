@@ -69,7 +69,7 @@ export class GodModeGuard implements CanActivate {
  * the signal state from localStorage (where the shell stored the user context
  * and tokens after login).
  */
-export const godModeGuard = (): Observable<boolean | UrlTree> => {
+export const godModeGuard = (): boolean | UrlTree => {
   const authStore = inject(AuthStore);
   const router = inject(Router);
 
@@ -81,16 +81,16 @@ export const godModeGuard = (): Observable<boolean | UrlTree> => {
 
   if (permissions.includes('*')) {
     console.log('GodModeGuard: Allowing - has * permission');
-    return of(true);
+    return true;
   }
 
   if (authStore.isAuthenticated()) {
     // Authenticated but lacks god-mode permissions — not an admin.
     console.log('GodModeGuard: Authenticated but not GodMode - redirecting to unauthorized');
-    return of(router.createUrlTree(['/unauthorized']));
+    return router.parseUrl('/unauthorized');
   }
 
   // No tokens at all — send to login.
   console.log('GodModeGuard: Not authenticated - redirecting to login');
-  return of(router.createUrlTree(['/login']));
+  return router.parseUrl('/login');
 };

@@ -57,7 +57,7 @@ export class StaffService {
     }
 
     return this.http
-      .get<PaginatedResponse<Faculty>>(getApiUrl('/faculty/'), { params })
+      .get<PaginatedResponse<Faculty>>(getApiUrl('/staff/faculty/'), { params })
       .pipe(
         catchError((err) => {
           const message = err.error?.message || 'Failed to load faculty';
@@ -72,28 +72,28 @@ export class StaffService {
    * Get single faculty member
    */
   getFacultyById(id: number): Observable<Faculty> {
-    return this.http.get<Faculty>(getApiUrl(`/faculty/${id}/`));
+    return this.http.get<Faculty>(getApiUrl(`/staff/faculty/${id}/`));
   }
 
   /**
    * Create new faculty member
    */
   createFaculty(data: StaffFormData): Observable<Faculty> {
-    return this.http.post<Faculty>(getApiUrl('/faculty/'), data);
+    return this.http.post<Faculty>(getApiUrl('/staff/faculty/'), data);
   }
 
   /**
    * Update faculty member
    */
   updateFaculty(id: number, data: Partial<StaffFormData>): Observable<Faculty> {
-    return this.http.patch<Faculty>(getApiUrl(`/faculty/${id}/`), data);
+    return this.http.patch<Faculty>(getApiUrl(`/staff/faculty/${id}/`), data);
   }
 
   /**
    * Deactivate faculty member
    */
   deactivateFaculty(id: number): Observable<Faculty> {
-    return this.http.patch<Faculty>(getApiUrl(`/faculty/${id}/`), {
+    return this.http.patch<Faculty>(getApiUrl(`/staff/faculty/${id}/`), {
       is_active: false,
     });
   }

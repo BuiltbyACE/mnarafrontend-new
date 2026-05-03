@@ -11,7 +11,7 @@ export { TokenStorageService } from './lib/token-storage.service';
 export { AuthStore } from './lib/auth.store';
 
 // Guards
-export { AuthGuard, permissionGuard } from './lib/auth.guard';
+export { authGuard, permissionGuard } from './lib/auth.guard';
 export { PortalGuard, PublicGuard, publicGuard } from './lib/portal.guard';
 
 // Interceptors

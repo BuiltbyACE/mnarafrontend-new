@@ -5,43 +5,50 @@
 
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, timer, switchMap, shareReplay } from 'rxjs';
-import { environment, getApiUrl } from '@sms/core/config';
+import { Observable, catchError, of, timer, switchMap, shareReplay, throwError } from 'rxjs';
+import { getApiUrl } from '@sms/core/config';
 
-export interface EnrollmentHealth {
-  total_active_students: number;
-  total_capacity: number;
-  capacity_utilization_percent: number;
-  pending_admissions: number;
+export interface DashboardMetric {
+  total: number;
+  change_pct: number;
 }
 
-export interface DailyAttendance {
-  date: string;
-  students_present_percent: number;
-  staff_present_percent: number;
-  absentee_count: number;
+export interface DashboardMetrics {
+  students: DashboardMetric;
+  staff: DashboardMetric;
+  classes: DashboardMetric;
+  courses: DashboardMetric;
 }
 
-export interface FinancialHealth {
-  academic_term: string;
-  expected_revenue_kes: number;
-  collected_revenue_kes: number;
-  collection_rate_percent: number;
-  outstanding_arrears_kes: number;
-  pending_expense_approvals: number;
+export interface AttendanceOverview {
+  labels: string[];
+  data: number[];
+}
+
+export interface FeeCollection {
+  collected_pct: number;
+  collected_amount: number;
+  pending_amount: number;
+  overdue_amount: number;
+}
+
+export interface TopClass {
+  name: string;
+  average: number;
 }
 
 export interface SystemAlert {
-  severity: 'CRITICAL' | 'WARNING' | 'INFO';
-  module: string;
-  message: string;
+  type: string;
+  title: string;
+  desc: string;
+  time: string;
 }
 
 export interface DashboardSummary {
-  timestamp: string;
-  enrollment_health: EnrollmentHealth;
-  daily_attendance: DailyAttendance;
-  financial_health: FinancialHealth;
+  metrics: DashboardMetrics;
+  attendance_overview: AttendanceOverview;
+  fee_collection: FeeCollection;
+  top_classes: TopClass[];
   system_alerts: SystemAlert[];
 }
 
@@ -52,7 +59,6 @@ export class AdminDashboardService {
   private http = inject(HttpClient);
 
   // Cache the dashboard data with shareReplay
-  private dashboardCache$: Observable<DashboardSummary> | null = null;
   private readonly CACHE_DURATION = 30000; // 30 seconds
 
   // Signal for reactive updates
@@ -68,18 +74,15 @@ export class AdminDashboardService {
     this.error.set(null);
 
     const fetch$ = this.http.get<DashboardSummary>(
-      getApiUrl('/analytics/dashboard/summary/')
+      getApiUrl('/analytics/dashboard/overview/')
     ).pipe(
       catchError((err) => {
-        // If endpoint doesn't exist (404), return mock data for development
-        if (err.status === 404) {
-          console.warn('Dashboard API not available, using mock data');
-          return of(this.getMockDashboardData());
-        }
-        const message = err.error?.message || 'Failed to load dashboard data';
+        // Log error and set error state - don't silently fall back to mock data
+        const message = err.error?.message || `Failed to load dashboard data (${err.status})`;
+        console.error('Dashboard API error:', err);
         this.error.set(message);
         this.isLoading.set(false);
-        return of(this.getMockDashboardData());
+        return throwError(() => new Error(message));
       }),
       shareReplay({ bufferSize: 1, refCount: true, windowTime: this.CACHE_DURATION })
     );
@@ -113,41 +116,39 @@ export class AdminDashboardService {
       next: (data) => {
         this.dashboardData.set(data);
       },
-      error: () => {
-        // Error already set in signal
-      }
+      error: () => {}
     });
   }
 
   /**
-   * Mock data for development when API is not available
+   * Mock data mimicking the API response for robustness
    */
   private getMockDashboardData(): DashboardSummary {
     return {
-      timestamp: new Date().toISOString(),
-      enrollment_health: {
-        total_active_students: 1250,
-        total_capacity: 1500,
-        capacity_utilization_percent: 83.3,
-        pending_admissions: 45
+      metrics: {
+        students: { total: 2548, change_pct: 12.5 },
+        staff: { total: 156, change_pct: 5.3 },
+        classes: { total: 78, change_pct: 8.1 },
+        courses: { total: 24, change_pct: 3.7 }
       },
-      daily_attendance: {
-        date: new Date().toISOString().split('T')[0],
-        students_present_percent: 94.2,
-        staff_present_percent: 96.5,
-        absentee_count: 72
+      attendance_overview: {
+        labels: ["May 1", "May 6", "May 11", "May 16", "May 21", "May 26", "May 31"],
+        data: [19, 48, 35, 82.4, 42, 68, 100]
       },
-      financial_health: {
-        academic_term: 'Term 2 2025',
-        expected_revenue_kes: 4500000,
-        collected_revenue_kes: 3800000,
-        collection_rate_percent: 84.4,
-        outstanding_arrears_kes: 700000,
-        pending_expense_approvals: 3
+      fee_collection: {
+        collected_pct: 72.0,
+        collected_amount: 48750.00,
+        pending_amount: 18750.00,
+        overdue_amount: 5250.00
       },
+      top_classes: [
+        { name: "Grade 10 - A", average: 89.5 },
+        { name: "Grade 9 - B", average: 87.2 },
+        { name: "Grade 8 - A", average: 85.7 }
+      ],
       system_alerts: [
-        { severity: 'WARNING', module: 'Finance', message: '3 expense approvals pending' },
-        { severity: 'INFO', module: 'Transport', message: 'Fleet maintenance scheduled' }
+        { type: "warning", title: "Pending Requisitions", desc: "3 purchase requisitions waiting for approval.", time: "Just now" },
+        { type: "danger", title: "Low Inventory Alert", desc: "12 items have dropped below their minimum threshold.", time: "System" }
       ]
     };
   }

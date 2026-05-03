@@ -1,0 +1,340 @@
+<div class="dashboard-page" *ngIf="dashboard()">
+  <!-- Welcome Header -->
+  <header class="welcome-header">
+    <div class="welcome-bg-watermark"></div>
+    <div class="welcome-content">
+      <h1>Welcome back, {{ userName() }}! 👋</h1>
+      <p>Here's what's happening with your institution today.</p>
+    </div>
+  </header>
+
+  <!-- Top Cards Row -->
+  <div class="stats-row">
+    <!-- Card 1: Students -->
+    <div class="stat-card">
+      <div class="stat-top">
+        <div class="stat-icon bg-blue-100 text-blue-600">
+          <mat-icon>people</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Students</span>
+          <span class="stat-value">{{ dashboard()?.metrics?.students?.total | number }}</span>
+          <span class="stat-change text-blue-600"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.students?.change_pct }}% <span class="text-gray">from last month</span></span>
+        </div>
+      </div>
+      <svg class="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
+        <path d="M0,25 C20,25 30,5 50,15 C70,25 80,5 100,10" fill="none" stroke="#2563EB" stroke-width="2"/>
+        <path d="M0,25 C20,25 30,5 50,15 C70,25 80,5 100,10 L100,30 L0,30 Z" fill="url(#grad-blue)" opacity="0.2"/>
+        <defs>
+          <linearGradient id="grad-blue" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2563EB" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#2563EB" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Card 2: Staff -->
+    <div class="stat-card">
+      <div class="stat-top">
+        <div class="stat-icon bg-green-100 text-green-600">
+          <mat-icon>group</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Staff</span>
+          <span class="stat-value">{{ dashboard()?.metrics?.staff?.total | number }}</span>
+          <span class="stat-change text-green-600"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.staff?.change_pct }}% <span class="text-gray">from last month</span></span>
+        </div>
+      </div>
+      <svg class="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
+        <path d="M0,20 C20,20 30,10 50,15 C70,20 80,5 100,5" fill="none" stroke="#16A34A" stroke-width="2"/>
+        <path d="M0,20 C20,20 30,10 50,15 C70,20 80,5 100,5 L100,30 L0,30 Z" fill="url(#grad-green)" opacity="0.2"/>
+        <defs>
+          <linearGradient id="grad-green" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#16A34A" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#16A34A" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Card 3: Classes -->
+    <div class="stat-card">
+      <div class="stat-top">
+        <div class="stat-icon bg-orange-100 text-orange-600">
+          <mat-icon>school</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Classes</span>
+          <span class="stat-value">{{ dashboard()?.metrics?.classes?.total | number }}</span>
+          <span class="stat-change text-orange-600"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.classes?.change_pct }}% <span class="text-gray">from last month</span></span>
+        </div>
+      </div>
+      <svg class="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
+        <path d="M0,25 C20,25 30,10 50,20 C70,30 80,5 100,5" fill="none" stroke="#F59E0B" stroke-width="2"/>
+        <path d="M0,25 C20,25 30,10 50,20 C70,30 80,5 100,5 L100,30 L0,30 Z" fill="url(#grad-orange)" opacity="0.2"/>
+        <defs>
+          <linearGradient id="grad-orange" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F59E0B" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Card 4: Courses -->
+    <div class="stat-card">
+      <div class="stat-top">
+        <div class="stat-icon bg-purple-100 text-purple-600">
+          <mat-icon>book</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Courses</span>
+          <span class="stat-value">{{ dashboard()?.metrics?.courses?.total | number }}</span>
+          <span class="stat-change text-purple-600"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.courses?.change_pct }}% <span class="text-gray">from last month</span></span>
+        </div>
+      </div>
+      <svg class="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
+        <path d="M0,20 C20,20 30,25 50,15 C70,5 80,15 100,10" fill="none" stroke="#9333EA" stroke-width="2"/>
+        <path d="M0,20 C20,20 30,25 50,15 C70,5 80,15 100,10 L100,30 L0,30 Z" fill="url(#grad-purple)" opacity="0.2"/>
+        <defs>
+          <linearGradient id="grad-purple" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#9333EA" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#9333EA" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Upcoming Events -->
+    <div class="upcoming-events">
+      <h3>Upcoming Events</h3>
+      <div class="no-events">
+        <p>No upcoming events scheduled</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Middle Row -->
+  <div class="middle-row">
+    <!-- Attendance Overview -->
+    <div class="card col-span-2">
+      <div class="card-header">
+        <h2>Attendance Overview</h2>
+        <div class="dropdown">This Month <mat-icon>expand_more</mat-icon></div>
+      </div>
+      <div class="chart-container" style="position: relative; height: 250px; width: 100%;">
+        <canvas baseChart
+          [type]="'line'"
+          [data]="attendanceChartData()"
+          [options]="attendanceChartOptions">
+        </canvas>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Quick Actions</h2>
+        <mat-icon class="icon-btn">settings</mat-icon>
+      </div>
+      <div class="quick-actions-grid">
+        <div class="action-btn" (click)="navigateTo('/admin/students')">
+          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>person_add</mat-icon></div>
+          <span>Add Student</span>
+        </div>
+        <div class="action-btn" (click)="navigateTo('/admin/staff')">
+          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>group_add</mat-icon></div>
+          <span>Add Staff</span>
+        </div>
+        <div class="action-btn" (click)="navigateTo('/admin/academics')">
+          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>campaign</mat-icon></div>
+          <span>Create Notice</span>
+        </div>
+        <div class="action-btn" (click)="navigateTo('/admin/academics')">
+          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>assignment_ind</mat-icon></div>
+          <span>Assign Class</span>
+        </div>
+        <div class="action-btn" (click)="navigateTo('/admin/students')">
+          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>fact_check</mat-icon></div>
+          <span>Take Attendance</span>
+        </div>
+        <div class="action-btn" (click)="navigateTo('/admin/finance')">
+          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>description</mat-icon></div>
+          <span>Generate Report</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Alerts -->
+    <div class="card">
+      <div class="card-header">
+        <h2>System Alerts</h2>
+        <a href="#" class="view-all">View All</a>
+      </div>
+      <div class="alerts-list">
+        <div class="alert-item" *ngFor="let alert of dashboard()?.system_alerts">
+          <div class="alert-icon" [ngClass]="getAlertIconClass(alert.type)">
+            <mat-icon>{{ getAlertIcon(alert.type) }}</mat-icon>
+          </div>
+          <div class="alert-content">
+            <h4>{{ alert.title }}</h4>
+            <p>{{ alert.desc }}</p>
+          </div>
+          <span class="alert-time">{{ alert.time }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Row -->
+  <div class="bottom-row">
+    <!-- Fee Collection -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Fee Collection Overview</h2>
+        <div class="dropdown">This Month <mat-icon>expand_more</mat-icon></div>
+      </div>
+      <div class="fee-chart-area">
+        <div class="donut-chart" style="width: 140px; height: 140px;">
+          <canvas baseChart
+            [type]="'doughnut'"
+            [data]="feeChartData()"
+            [options]="feeChartOptions">
+          </canvas>
+          <div class="donut-center" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+            <span class="donut-percent">{{ dashboard()?.fee_collection?.collected_pct }}%</span>
+            <span class="donut-label">Collected</span>
+          </div>
+        </div>
+        <div class="fee-legend" style="width: 100%; max-width: 200px;">
+          <div class="legend-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="dot bg-blue-600" style="width: 8px; height: 8px; border-radius: 50%;"></span>
+              <span class="legend-label text-sm text-slate-600">Collected</span>
+            </div>
+            <span class="legend-val font-semibold text-slate-900">{{ dashboard()?.fee_collection?.collected_amount | currency:'USD':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="legend-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="dot bg-orange-500" style="width: 8px; height: 8px; border-radius: 50%;"></span>
+              <span class="legend-label text-sm text-slate-600">Pending</span>
+            </div>
+            <span class="legend-val font-semibold text-slate-900">{{ dashboard()?.fee_collection?.pending_amount | currency:'USD':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="legend-item" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="dot bg-red-500" style="width: 8px; height: 8px; border-radius: 50%;"></span>
+              <span class="legend-label text-sm text-slate-600">Overdue</span>
+            </div>
+            <span class="legend-val font-semibold text-slate-900">{{ dashboard()?.fee_collection?.overdue_amount | currency:'USD':'symbol':'1.0-0' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Performing Classes -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Top Performing Classes</h2>
+        <a href="#" class="view-all">View All</a>
+      </div>
+      <div class="classes-list">
+        <div class="class-item" *ngFor="let cls of dashboard()?.top_classes; let i = index">
+          <div class="class-icon" [ngClass]="i === 0 ? 'text-yellow-500 bg-yellow-50' : i === 1 ? 'text-slate-400 bg-slate-50' : 'text-orange-400 bg-orange-50'">
+            <mat-icon>{{ i === 0 ? 'emoji_events' : i === 1 ? 'military_tech' : 'workspace_premium' }}</mat-icon>
+          </div>
+          <div class="class-info">
+            <h4>{{ cls.name }}</h4>
+            <p>Average: {{ cls.average }}%</p>
+          </div>
+          <div class="class-bar-container">
+            <div class="class-bar">
+              <div class="bar-fill" [ngClass]="i === 0 ? 'bg-blue-600' : i === 1 ? 'bg-green-500' : 'bg-orange-500'" [style.width]="cls.average + '%'"></div>
+            </div>
+            <span class="class-score" [ngClass]="i === 0 ? 'text-blue-600' : i === 1 ? 'text-green-500' : 'text-orange-500'">{{ cls.average }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Activities</h2>
+        <a href="#" class="view-all" (click)="$event.preventDefault()">View All</a>
+      </div>
+      <div class="activity-timeline">
+        @if (activitiesService.isLoading()) {
+          <div class="loading-state">
+            <mat-icon>hourglass_empty</mat-icon>
+            <span>Loading activities...</span>
+          </div>
+        } @else if (activitiesService.error()) {
+          <div class="error-state">
+            <mat-icon>error_outline</mat-icon>
+            <span>Failed to load activities</span>
+          </div>
+        } @else if (activities().length === 0) {
+          <div class="empty-state">
+            <mat-icon>inbox</mat-icon>
+            <span>No recent activities</span>
+          </div>
+        } @else {
+          @for (activity of activities(); track activity.id) {
+            <div class="activity-item">
+              <div class="act-icon {{ getActivityIconClass(activity.type) }}">
+                <mat-icon>{{ getActivityIcon(activity.type) }}</mat-icon>
+              </div>
+              <div class="act-content">
+                <h4>{{ activity.title }}</h4>
+                <p>{{ activity.description }}</p>
+              </div>
+              <span class="act-time">{{ activity.timestamp | date:'shortTime' }}</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Calendar Widget -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Calendar</h2>
+        <div class="dropdown" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <mat-icon style="font-size: 16px; width: 16px; height: 16px;" (click)="calendarService.previousMonth()">chevron_left</mat-icon>
+          <span>{{ getMonthName(currentMonth()) }} {{ currentYear() }}</span>
+          <mat-icon style="font-size: 16px; width: 16px; height: 16px;" (click)="calendarService.nextMonth()">chevron_right</mat-icon>
+        </div>
+      </div>
+      <div class="calendar-widget">
+        @if (calendarService.isLoading()) {
+          <div class="loading-state">
+            <mat-icon>hourglass_empty</mat-icon>
+            <span>Loading calendar...</span>
+          </div>
+        } @else if (calendarService.error()) {
+          <div class="error-state">
+            <mat-icon>error_outline</mat-icon>
+            <span>Failed to load calendar</span>
+          </div>
+        } @else {
+          <div class="cal-grid">
+            <div class="cal-day-header">S</div>
+            <div class="cal-day-header">M</div>
+            <div class="cal-day-header">T</div>
+            <div class="cal-day-header">W</div>
+            <div class="cal-day-header">T</div>
+            <div class="cal-day-header">F</div>
+            <div class="cal-day-header">S</div>
+            @for (day of generateCalendarDays(); track day.date) {
+              <div class="cal-day" [class.active]="day.isToday" [class.has-event]="day.hasEvent" [class.text-gray]="day.class === 'text-gray'">
+                {{ day.day }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -5,7 +5,7 @@
 
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable, catchError, throwError, of } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 import { Admission, StudentDetail, AdmissionRequest } from '../../../shared/models/students.models';
 
@@ -81,7 +81,19 @@ export class StudentsService {
   }
 
   getAdmissionsSummary(): Observable<AdmissionsSummary> {
-    return this.http.get<AdmissionsSummary>(getApiUrl('/admissions/summary/'));
+    return this.http.get<AdmissionsSummary>(getApiUrl('/admissions/summary/')).pipe(
+      catchError((err) => {
+        // Safe stub - return empty data while backend implements endpoint
+        if (err.status === 404) {
+          console.warn('Admissions summary endpoint not implemented yet, returning empty data');
+          return of({
+            pending_review_count: 0,
+            waitlisted_count: 0
+          });
+        }
+        return throwError(() => new Error('Failed to load admissions summary'));
+      })
+    );
   }
 
   setAdmissions(data: Admission[], total: number): void {
