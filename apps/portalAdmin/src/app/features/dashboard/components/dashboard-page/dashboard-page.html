@@ -13,13 +13,13 @@
     <!-- Card 1: Students -->
     <div class="stat-card">
       <div class="stat-top">
-        <div class="stat-icon bg-blue-100 text-blue-600">
+        <div class="stat-icon stat-icon--blue">
           <mat-icon>people</mat-icon>
         </div>
         <div class="stat-info">
           <span class="stat-label">Total Students</span>
           <span class="stat-value">{{ dashboard()?.metrics?.students?.total | number }}</span>
-          <span class="stat-change text-blue-600"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.students?.change_pct }}% <span class="text-gray">from last month</span></span>
+          <span class="stat-change stat-change--blue"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.students?.change_pct }}% <span class="text-gray">from last month</span></span>
         </div>
       </div>
       <svg class="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
@@ -37,13 +37,13 @@
     <!-- Card 2: Staff -->
     <div class="stat-card">
       <div class="stat-top">
-        <div class="stat-icon bg-green-100 text-green-600">
+        <div class="stat-icon stat-icon--green">
           <mat-icon>group</mat-icon>
         </div>
         <div class="stat-info">
           <span class="stat-label">Total Staff</span>
           <span class="stat-value">{{ dashboard()?.metrics?.staff?.total | number }}</span>
-          <span class="stat-change text-green-600"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.staff?.change_pct }}% <span class="text-gray">from last month</span></span>
+          <span class="stat-change stat-change--green"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.staff?.change_pct }}% <span class="text-gray">from last month</span></span>
         </div>
       </div>
       <svg class="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
@@ -61,13 +61,13 @@
     <!-- Card 3: Classes -->
     <div class="stat-card">
       <div class="stat-top">
-        <div class="stat-icon bg-orange-100 text-orange-600">
+        <div class="stat-icon stat-icon--orange">
           <mat-icon>school</mat-icon>
         </div>
         <div class="stat-info">
           <span class="stat-label">Total Classes</span>
           <span class="stat-value">{{ dashboard()?.metrics?.classes?.total | number }}</span>
-          <span class="stat-change text-orange-600"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.classes?.change_pct }}% <span class="text-gray">from last month</span></span>
+          <span class="stat-change stat-change--orange"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.classes?.change_pct }}% <span class="text-gray">from last month</span></span>
         </div>
       </div>
       <svg class="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
@@ -85,13 +85,13 @@
     <!-- Card 4: Courses -->
     <div class="stat-card">
       <div class="stat-top">
-        <div class="stat-icon bg-purple-100 text-purple-600">
+        <div class="stat-icon stat-icon--purple">
           <mat-icon>book</mat-icon>
         </div>
         <div class="stat-info">
-          <span class="stat-label">Total Courses</span>
+          <span class="stat-label">Total Subjects</span>
           <span class="stat-value">{{ dashboard()?.metrics?.courses?.total | number }}</span>
-          <span class="stat-change text-purple-600"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.courses?.change_pct }}% <span class="text-gray">from last month</span></span>
+          <span class="stat-change stat-change--purple"><mat-icon>arrow_upward</mat-icon> {{ dashboard()?.metrics?.courses?.change_pct }}% <span class="text-gray">from last month</span></span>
         </div>
       </div>
       <svg class="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
@@ -123,7 +123,7 @@
   <!-- Middle Row -->
   <div class="middle-row">
     <!-- Attendance Overview -->
-    <div class="card col-span-2">
+    <div class="card card--span2">
       <div class="card-header">
         <h2>Attendance Overview</h2>
         <div class="dropdown">This Month <mat-icon>expand_more</mat-icon></div>
@@ -144,28 +144,28 @@
         <mat-icon class="icon-btn">settings</mat-icon>
       </div>
       <div class="quick-actions-grid">
-        <div class="action-btn" (click)="navigateTo('/admin/students')">
-          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>person_add</mat-icon></div>
+        <div class="action-btn" (click)="navigateTo('/portalAdmin/students')">
+          <div class="action-icon action-icon--blue"><mat-icon>person_add</mat-icon></div>
           <span>Add Student</span>
         </div>
-        <div class="action-btn" (click)="navigateTo('/admin/staff')">
-          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>group_add</mat-icon></div>
+        <div class="action-btn" (click)="navigateTo('/portalAdmin/staff')">
+          <div class="action-icon action-icon--green"><mat-icon>group_add</mat-icon></div>
           <span>Add Staff</span>
         </div>
-        <div class="action-btn" (click)="navigateTo('/admin/academics')">
-          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>campaign</mat-icon></div>
+        <div class="action-btn" (click)="navigateTo('/portalAdmin/academics')">
+          <div class="action-icon action-icon--orange"><mat-icon>campaign</mat-icon></div>
           <span>Create Notice</span>
         </div>
-        <div class="action-btn" (click)="navigateTo('/admin/academics')">
-          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>assignment_ind</mat-icon></div>
+        <div class="action-btn" (click)="navigateTo('/portalAdmin/academics')">
+          <div class="action-icon action-icon--purple"><mat-icon>assignment_ind</mat-icon></div>
           <span>Assign Class</span>
         </div>
-        <div class="action-btn" (click)="navigateTo('/admin/students')">
-          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>fact_check</mat-icon></div>
+        <div class="action-btn" (click)="navigateTo('/portalAdmin/students')">
+          <div class="action-icon action-icon--blue"><mat-icon>fact_check</mat-icon></div>
           <span>Take Attendance</span>
         </div>
-        <div class="action-btn" (click)="navigateTo('/admin/finance')">
-          <div class="action-icon bg-blue-50 text-blue-600"><mat-icon>description</mat-icon></div>
+        <div class="action-btn" (click)="navigateTo('/portalAdmin/finance')">
+          <div class="action-icon action-icon--green"><mat-icon>description</mat-icon></div>
           <span>Generate Report</span>
         </div>
       </div>
@@ -215,24 +215,24 @@
         <div class="fee-legend" style="width: 100%; max-width: 200px;">
           <div class="legend-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="dot bg-blue-600" style="width: 8px; height: 8px; border-radius: 50%;"></span>
-              <span class="legend-label text-sm text-slate-600">Collected</span>
+              <span class="dot dot--blue"></span>
+              <span class="legend-label">Collected</span>
             </div>
-            <span class="legend-val font-semibold text-slate-900">{{ dashboard()?.fee_collection?.collected_amount | currency:'USD':'symbol':'1.0-0' }}</span>
+            <span class="legend-val">{{ dashboard()?.fee_collection?.collected_amount | currency:'USD':'symbol':'1.0-0' }}</span>
           </div>
           <div class="legend-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="dot bg-orange-500" style="width: 8px; height: 8px; border-radius: 50%;"></span>
-              <span class="legend-label text-sm text-slate-600">Pending</span>
+              <span class="dot dot--orange"></span>
+              <span class="legend-label">Pending</span>
             </div>
-            <span class="legend-val font-semibold text-slate-900">{{ dashboard()?.fee_collection?.pending_amount | currency:'USD':'symbol':'1.0-0' }}</span>
+            <span class="legend-val">{{ dashboard()?.fee_collection?.pending_amount | currency:'USD':'symbol':'1.0-0' }}</span>
           </div>
           <div class="legend-item" style="display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="dot bg-red-500" style="width: 8px; height: 8px; border-radius: 50%;"></span>
-              <span class="legend-label text-sm text-slate-600">Overdue</span>
+              <span class="dot dot--red"></span>
+              <span class="legend-label">Overdue</span>
             </div>
-            <span class="legend-val font-semibold text-slate-900">{{ dashboard()?.fee_collection?.overdue_amount | currency:'USD':'symbol':'1.0-0' }}</span>
+            <span class="legend-val">{{ dashboard()?.fee_collection?.overdue_amount | currency:'USD':'symbol':'1.0-0' }}</span>
           </div>
         </div>
       </div>
@@ -246,7 +246,7 @@
       </div>
       <div class="classes-list">
         <div class="class-item" *ngFor="let cls of dashboard()?.top_classes; let i = index">
-          <div class="class-icon" [ngClass]="i === 0 ? 'text-yellow-500 bg-yellow-50' : i === 1 ? 'text-slate-400 bg-slate-50' : 'text-orange-400 bg-orange-50'">
+          <div class="class-icon" [ngClass]="i === 0 ? 'class-icon--gold' : i === 1 ? 'class-icon--silver' : 'class-icon--bronze'">
             <mat-icon>{{ i === 0 ? 'emoji_events' : i === 1 ? 'military_tech' : 'workspace_premium' }}</mat-icon>
           </div>
           <div class="class-info">
@@ -255,9 +255,9 @@
           </div>
           <div class="class-bar-container">
             <div class="class-bar">
-              <div class="bar-fill" [ngClass]="i === 0 ? 'bg-blue-600' : i === 1 ? 'bg-green-500' : 'bg-orange-500'" [style.width]="cls.average + '%'"></div>
+              <div class="bar-fill" [ngClass]="i === 0 ? 'bar-fill--blue' : i === 1 ? 'bar-fill--green' : 'bar-fill--orange'" [style.width]="cls.average + '%'"></div>
             </div>
-            <span class="class-score" [ngClass]="i === 0 ? 'text-blue-600' : i === 1 ? 'text-green-500' : 'text-orange-500'">{{ cls.average }}%</span>
+            <span class="class-score" [ngClass]="i === 0 ? 'class-score--blue' : i === 1 ? 'class-score--green' : 'class-score--orange'">{{ cls.average }}%</span>
           </div>
         </div>
       </div>

@@ -16,6 +16,15 @@ export interface Classroom {
   is_active: boolean;
 }
 
+export interface ClassroomWritePayload {
+  name?: string;
+  year_level?: number; // FK id — flat write
+  room_number?: string;
+  capacity?: number;
+  class_teacher?: number; // FK id — flat write
+  is_active?: boolean;
+}
+
 export interface BulkPromotionRequest {
   source_year_level: number;
   target_year_level: number;

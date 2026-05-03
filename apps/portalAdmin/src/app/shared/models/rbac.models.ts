@@ -4,18 +4,37 @@
 
 export type UserRole = 'ADMIN' | 'TEACHER' | 'FINANCE' | 'STAFF' | 'NURSE' | 'TRANSPORT';
 
-export interface AdminUser {
+export interface SystemRolePermission {
   id: number;
-  email: string;
-  first_name: string;
-  last_name: string;
-  full_name?: string; // Computed
-  role: UserRole;
+  codename: string;
+  name: string;
+}
+
+export interface SystemRole {
+  id: number;
+  name: string;
+  portal_type: string;
+  requires_mfa: boolean;
+  permissions: SystemRolePermission[];
+}
+
+export interface AdminUser {
+  id: string;
   school_id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string; // Computed: first_name + last_name
+  role: UserRole;
+  portal_type?: string;
+  role_name?: string; // Derived from system_role.name
+  system_role: SystemRole | null;
   is_active: boolean;
-  last_login: string | null;
+  is_staff: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  last_login?: string | null;
   created_at: string;
-  permissions?: string[];
+  updated_at: string;
 }
 
 export interface UserCreateRequest {
@@ -23,29 +42,19 @@ export interface UserCreateRequest {
   first_name: string;
   last_name: string;
   role: UserRole;
-  school_id?: string; // Auto-generated if not provided
   is_active: boolean;
 }
 
 export interface RoleUpdateRequest {
   role: UserRole;
-  reason: string;
 }
 
 export interface AccessRevocationRequest {
-  action: 'REVOKE_AND_BLACKLIST' | 'REVOKE_ONLY';
+  action: 'REVOKE_AND_BLACKLIST';
   notes: string;
 }
 
 export interface PasswordResetResponse {
-  temporary_password: string;
+  temp_password: string;
   message: string;
-}
-
-export interface SystemRole {
-  id: string;
-  name: string;
-  description: string;
-  permissions: string[];
-  user_count: number;
 }

@@ -63,18 +63,18 @@ export class RbacService {
     return this.http.post<AdminUser>(getApiUrl('/accounts/users/'), data);
   }
 
-  updateUserRole(userId: number, data: RoleUpdateRequest): Observable<AdminUser> {
+  updateUserRole(userId: string, data: RoleUpdateRequest): Observable<AdminUser> {
     return this.http.patch<AdminUser>(getApiUrl(`/accounts/users/${userId}/role/`), data);
   }
 
-  revokeAccess(userId: number, notes: string): Observable<void> {
+  revokeAccess(userId: string, notes: string): Observable<void> {
     return this.http.post<void>(
-      getApiUrl(`/accounts/users/${userId}/revoke-access/`), 
+      getApiUrl(`/accounts/users/${userId}/revoke-access/`),
       { action: 'REVOKE_AND_BLACKLIST', notes }
     );
   }
 
-  resetPassword(userId: number): Observable<{ temp_password: string }> {
+  resetPassword(userId: string): Observable<{ temp_password: string }> {
     return this.http.post<{ temp_password: string }>(getApiUrl(`/accounts/users/${userId}/reset-password/`), {});
   }
 

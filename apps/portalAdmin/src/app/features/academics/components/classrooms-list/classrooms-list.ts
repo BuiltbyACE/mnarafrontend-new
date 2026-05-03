@@ -3,7 +3,7 @@
  * Academics module - classroom management with data table
  */
 
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,6 +21,8 @@ import { AcademicsService } from '../../services/academics.service';
 import { Classroom } from '../../../../shared/models/academics.models';
 import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge';
 import { BulkPromotionDialogComponent } from '../bulk-promotion-dialog/bulk-promotion-dialog';
+import { CreateClassroomDialogComponent } from '../create-classroom-dialog/create-classroom-dialog';
+import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-classroom-dialog';
 
 @Component({
   selector: 'app-classrooms-list',
@@ -383,14 +385,7 @@ export class ClassroomsListComponent implements OnInit {
 
   loadClassrooms(): void {
     this.academicsService.getClassrooms(this.currentPage + 1, this.pageSize)
-      .subscribe({
-        next: (response) => {
-          this.academicsService.setClassrooms(response.results, response.count);
-        },
-        error: () => {
-          // Error handled in service
-        }
-      });
+      .subscribe((response) => this.academicsService.setClassrooms(response.results, response.count));
   }
 
   onPageChange(event: PageEvent): void {
@@ -406,7 +401,8 @@ export class ClassroomsListComponent implements OnInit {
   }
 
   addClassroom(): void {
-    this.snackBar.open('Add classroom feature coming soon', 'Close', { duration: 3000 });
+    const ref = this.dialog.open(CreateClassroomDialogComponent, { width: '520px', disableClose: true });
+    ref.afterClosed().subscribe((created) => { if (created) this.loadClassrooms(); });
   }
 
   viewClassroom(classroom: Classroom): void {
@@ -414,7 +410,12 @@ export class ClassroomsListComponent implements OnInit {
   }
 
   editClassroom(classroom: Classroom): void {
-    this.snackBar.open(`Editing ${classroom.name}`, 'Close', { duration: 3000 });
+    const ref = this.dialog.open(EditClassroomDialogComponent, {
+      width: '520px',
+      disableClose: true,
+      data: { classroom },
+    });
+    ref.afterClosed().subscribe((updated) => { if (updated) this.loadClassrooms(); });
   }
 
   manageStudents(classroom: Classroom): void {

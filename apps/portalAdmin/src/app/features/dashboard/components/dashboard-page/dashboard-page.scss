@@ -7,24 +7,38 @@
 }
 
 .text-gray { color: #94a3b8; }
-.bg-blue-100 { background: #dbeafe; }
-.bg-blue-50 { background: #eff6ff; }
-.text-blue-600 { color: #2563EB; }
-.bg-blue-600 { background: #2563EB; }
-.bg-green-100 { background: #dcfce7; }
-.bg-green-50 { background: #f0fdf4; }
-.text-green-600 { color: #16a34a; }
-.text-green-500 { color: #22c55e; }
-.bg-green-500 { background: #22c55e; }
-.bg-orange-100 { background: #ffedd5; }
-.bg-orange-50 { background: #fff7ed; }
-.text-orange-600 { color: #ea580c; }
-.text-orange-500 { color: #f97316; }
-.bg-orange-500 { background: #f97316; }
-.bg-red-50 { background: #fef2f2; }
-.text-red-600 { color: #dc2626; }
-.bg-purple-100 { background: #f3e8ff; }
-.text-purple-600 { color: #9333ea; }
+
+// Stat icon color variants
+.stat-icon--blue   { background: #dbeafe; color: #2563eb; }
+.stat-icon--green  { background: #dcfce7; color: #16a34a; }
+.stat-icon--orange { background: #ffedd5; color: #ea580c; }
+.stat-icon--purple { background: #f3e8ff; color: #9333ea; }
+
+// Stat change color variants
+.stat-change--blue   { color: #2563eb; }
+.stat-change--green  { color: #16a34a; }
+.stat-change--orange { color: #ea580c; }
+.stat-change--purple { color: #9333ea; }
+
+// Dot color variants (fee legend)
+.dot--blue   { background: #2563eb; }
+.dot--orange { background: #f97316; }
+.dot--red    { background: #ef4444; }
+
+// Class icon rank variants
+.class-icon--gold   { background: #fefce8; color: #eab308; }
+.class-icon--silver { background: #f8fafc; color: #94a3b8; }
+.class-icon--bronze { background: #fff7ed; color: #f97316; }
+
+// Bar fill color variants
+.bar-fill--blue   { background: #2563eb; }
+.bar-fill--green  { background: #22c55e; }
+.bar-fill--orange { background: #f97316; }
+
+// Class score color variants
+.class-score--blue   { color: #2563eb; }
+.class-score--green  { color: #22c55e; }
+.class-score--orange { color: #f97316; }
 
 .welcome-header {
   position: relative;
@@ -242,6 +256,7 @@
   gap: 16px;
   margin-bottom: 24px;
 }
+.card--span2 { grid-column: span 2; }
 
 .chart-container {
   flex: 1;
@@ -284,6 +299,10 @@
 .action-btn:hover .action-icon {
   transform: translateY(-2px);
 }
+.action-icon--blue   { background: #eff6ff; color: #2563eb; }
+.action-icon--green  { background: #f0fdf4; color: #16a34a; }
+.action-icon--orange { background: #fff7ed; color: #ea580c; }
+.action-icon--purple { background: #f5f3ff; color: #7c3aed; }
 .action-btn span {
   font-size: 0.6875rem;
   color: #475569;
@@ -575,4 +594,4 @@
   .middle-row { grid-template-columns: 1fr; }
   .bottom-row { grid-template-columns: repeat(2, 1fr); }
 }
-
+

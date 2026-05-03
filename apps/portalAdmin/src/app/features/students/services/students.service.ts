@@ -53,7 +53,7 @@ export class StudentsService {
     }
 
     return this.http
-      .get<PaginatedResponse<Admission>>(getApiUrl('/admissions/'), { params })
+      .get<PaginatedResponse<Admission>>(getApiUrl('/students/admissions/'), { params })
       .pipe(
         catchError((err) => {
           const message = err.error?.message || 'Failed to load admissions';
@@ -65,15 +65,15 @@ export class StudentsService {
   }
 
   getAdmission(id: number): Observable<Admission> {
-    return this.http.get<Admission>(getApiUrl(`/admissions/${id}/`));
+    return this.http.get<Admission>(getApiUrl(`/students/admissions/${id}/`));
   }
 
   createAdmission(data: AdmissionRequest): Observable<Admission> {
-    return this.http.post<Admission>(getApiUrl('/admissions/'), data);
+    return this.http.post<Admission>(getApiUrl('/students/admissions/'), data);
   }
 
   updateAdmissionStatus(id: number, status: string, notes?: string): Observable<Admission> {
-    return this.http.patch<Admission>(getApiUrl(`/admissions/${id}/`), { status, notes });
+    return this.http.patch<Admission>(getApiUrl(`/students/admissions/${id}/`), { status, notes });
   }
 
   getStudentDetail(studentId: number): Observable<StudentDetail> {
@@ -81,7 +81,7 @@ export class StudentsService {
   }
 
   getAdmissionsSummary(): Observable<AdmissionsSummary> {
-    return this.http.get<AdmissionsSummary>(getApiUrl('/admissions/summary/')).pipe(
+    return this.http.get<AdmissionsSummary>(getApiUrl('/students/admissions/summary/')).pipe(
       catchError((err) => {
         // Safe stub - return empty data while backend implements endpoint
         if (err.status === 404) {

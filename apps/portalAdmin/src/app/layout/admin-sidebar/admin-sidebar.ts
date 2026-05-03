@@ -52,7 +52,7 @@ interface NavItem {
             *ngFor="let item of navItems" 
             [routerLink]="item.route"
             routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: item.route === '/admin' }"
+            [routerLinkActiveOptions]="{ exact: item.route === '/portalAdmin' }"
           >
             <div class="nav-item-left">
               <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
@@ -316,18 +316,18 @@ export class AdminSidebarComponent {
   @Input() pendingApprovals = 0;
 
   readonly navItems: NavItem[] = [
-    { name: 'dashboard', label: 'Dashboard', icon: 'home', route: '/admin' },
-    { name: 'academics', label: 'Academics', icon: 'school', route: '/admin/academics' },
-    { name: 'students', label: 'Students', icon: 'group', route: '/admin/students' },
-    { name: 'staff', label: 'Staff & HR', icon: 'person_outline', route: '/admin/staff' },
-    { name: 'finance', label: 'Finance', icon: 'account_balance', route: '/admin/finance' },
-    { name: 'examinations', label: 'Examinations', icon: 'description', route: '/admin/examinations' },
-    { name: 'attendance', label: 'Attendance', icon: 'event_available', route: '/admin/attendance' },
-    { name: 'transport', label: 'Transport', icon: 'directions_bus', route: '/admin/transport' },
-    { name: 'communication', label: 'Communication', icon: 'chat', route: '/admin/communication' },
-    { name: 'library', label: 'Library', icon: 'menu_book', route: '/admin/library' },
-    { name: 'reports', label: 'Reports & Analytics', icon: 'bar_chart', route: '/admin/reports' },
-    { name: 'rbac', label: 'System Access', icon: 'security', route: '/admin/rbac' },
-    { name: 'settings', label: 'Settings', icon: 'settings', route: '/admin/settings' },
+    { name: 'dashboard', label: 'Dashboard', icon: 'home', route: '/portalAdmin' },
+    { name: 'academics', label: 'Academics', icon: 'school', route: '/portalAdmin/academics' },
+    { name: 'students', label: 'Students', icon: 'group', route: '/portalAdmin/students' },
+    { name: 'staff', label: 'Staff & HR', icon: 'person_outline', route: '/portalAdmin/staff' },
+    { name: 'finance', label: 'Finance', icon: 'account_balance', route: '/portalAdmin/finance' },
+    { name: 'examinations', label: 'Examinations', icon: 'description', route: '/portalAdmin/examinations' },
+    { name: 'attendance', label: 'Attendance', icon: 'event_available', route: '/portalAdmin/attendance' },
+    { name: 'transport', label: 'Transport', icon: 'directions_bus', route: '/portalAdmin/transport' },
+    { name: 'communication', label: 'Communication', icon: 'chat', route: '/portalAdmin/communication' },
+    { name: 'library', label: 'Library', icon: 'menu_book', route: '/portalAdmin/library' },
+    { name: 'reports', label: 'Reports & Analytics', icon: 'bar_chart', route: '/portalAdmin/reports' },
+    { name: 'rbac', label: 'System Access', icon: 'security', route: '/portalAdmin/rbac' },
+    { name: 'settings', label: 'Settings', icon: 'settings', route: '/portalAdmin/settings' },
   ];
 }

@@ -7,7 +7,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
-import { Classroom, BulkPromotionRequest, YearLevel } from '../../../shared/models/academics.models';
+import { Classroom, ClassroomWritePayload, BulkPromotionRequest, YearLevel } from '../../../shared/models/academics.models';
 
 interface PaginatedResponse<T> {
   count: number;
@@ -72,19 +72,19 @@ export class AcademicsService {
   /**
    * Create new classroom
    */
-  createClassroom(data: Partial<Classroom>): Observable<Classroom> {
+  createClassroom(data: ClassroomWritePayload): Observable<Classroom> {
     return this.http.post<Classroom>(getApiUrl('/academics/classrooms/'), data);
   }
 
   /**
    * Update classroom
    */
-  updateClassroom(id: number, data: Partial<Classroom>): Observable<Classroom> {
+  updateClassroom(id: number, data: ClassroomWritePayload): Observable<Classroom> {
     return this.http.patch<Classroom>(getApiUrl(`/academics/classrooms/${id}/`), data);
   }
 
   /**
-   * Archive classroom (soft delete)
+   * Archive classroom — PATCH {is_active: false} per immutability protocol
    */
   archiveClassroom(id: number): Observable<Classroom> {
     return this.http.patch<Classroom>(getApiUrl(`/academics/classrooms/${id}/`), {

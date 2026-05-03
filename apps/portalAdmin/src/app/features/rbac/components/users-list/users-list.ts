@@ -10,15 +10,18 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatSortModule } from '@angular/material/sort';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { RbacService } from '../../services/rbac.service';
 import { AdminUser } from '../../../../shared/models/rbac.models';
 import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge';
+import { CreateUserDialogComponent } from '../create-user-dialog/create-user-dialog';
+import { EditRoleDialogComponent } from '../edit-role-dialog/edit-role-dialog';
 
 @Component({
   selector: 'app-users-list',
@@ -36,6 +39,7 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
     MatDividerModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatDialogModule,
     StatusBadgeComponent,
   ],
   template: `
@@ -61,15 +65,15 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
       <mat-card class="content-card">
         <mat-card-content>
           <div class="table-container">
-            <table mat-table [dataSource]="users()" matSort (matSortChange)="onSort($event)">
+            <table mat-table [dataSource]="users()" matSort (matSortChange)="onSort()">
               
               <ng-container matColumnDef="user">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>User</th>
                 <td mat-cell *matCellDef="let user">
                   <div class="user-info">
-                    <div class="avatar">{{ getInitials(user.full_name) }}</div>
+                    <div class="avatar">{{ getInitials(getUserName(user)) }}</div>
                     <div class="user-details">
-                      <span class="user-name">{{ user.full_name }}</span>
+                      <span class="user-name">{{ getUserName(user) }}</span>
                       <span class="user-email">{{ user.email }}</span>
                     </div>
                   </div>
@@ -78,14 +82,14 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
 
               <ng-container matColumnDef="portal">
                 <th mat-header-cell *matHeaderCellDef>Portal</th>
-                <td mat-cell *matCellDef="let user">{{ user.portal_type }}</td>
+                <td mat-cell *matCellDef="let user">{{ getPortalType(user) }}</td>
               </ng-container>
 
               <ng-container matColumnDef="role">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Role</th>
                 <td mat-cell *matCellDef="let user">
                   <mat-chip-listbox>
-                    <mat-chip-option selected highlighted>{{ user.role_name }}</mat-chip-option>
+                    <mat-chip-option selected highlighted>{{ getRoleName(user) }}</mat-chip-option>
                   </mat-chip-listbox>
                 </td>
               </ng-container>
@@ -192,6 +196,7 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
 export class UsersListComponent implements OnInit {
   readonly rbacService = inject(RbacService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   readonly users = this.rbacService.users;
   readonly displayedColumns = ['user', 'portal', 'role', 'status', 'last_login', 'actions'];
@@ -206,10 +211,7 @@ export class UsersListComponent implements OnInit {
 
   loadUsers(): void {
     this.rbacService.getUsers(this.currentPage + 1, this.pageSize)
-      .subscribe({
-        next: (response) => this.rbacService.setUsers(response.results, response.count),
-        error: () => {}
-      });
+      .subscribe((response) => this.rbacService.setUsers(response.results, response.count));
   }
 
   onPageChange(event: PageEvent): void {
@@ -218,26 +220,56 @@ export class UsersListComponent implements OnInit {
     this.loadUsers();
   }
 
-  onSort(sort: Sort): void { this.loadUsers(); }
+  onSort(): void { this.loadUsers(); }
 
   getInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
 
-  createUser(): void { this.snackBar.open('Create user feature coming soon', 'Close', { duration: 3000 }); }
-  viewUser(user: AdminUser): void { this.snackBar.open(`Viewing ${user.full_name}`, 'Close', { duration: 3000 }); }
-  editRole(user: AdminUser): void { this.snackBar.open(`Editing role for ${user.full_name}`, 'Close', { duration: 3000 }); }
-  resetPassword(user: AdminUser): void { this.snackBar.open(`Password reset for ${user.full_name}`, 'Close', { duration: 3000 }); }
+  getUserName(user: AdminUser): string {
+    return user.full_name || `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || user.email;
+  }
+
+  getPortalType(user: AdminUser): string {
+    return user.portal_type ?? user.system_role?.portal_type ?? user.role;
+  }
+
+  getRoleName(user: AdminUser): string {
+    return user.role_name ?? user.system_role?.name ?? user.role;
+  }
+
+  createUser(): void {
+    const ref = this.dialog.open(CreateUserDialogComponent, { width: '560px', disableClose: true });
+    ref.afterClosed().subscribe((created) => { if (created) this.loadUsers(); });
+  }
+
+  viewUser(user: AdminUser): void {
+    this.snackBar.open(`Viewing ${this.getUserName(user)}`, 'Close', { duration: 3000 });
+  }
+
+  editRole(user: AdminUser): void {
+    const ref = this.dialog.open(EditRoleDialogComponent, {
+      width: '480px',
+      disableClose: true,
+      data: { user },
+    });
+    ref.afterClosed().subscribe((updated) => { if (updated) this.loadUsers(); });
+  }
+
+  resetPassword(user: AdminUser): void {
+    this.snackBar.open(`Password reset for ${this.getUserName(user)}`, 'Close', { duration: 3000 });
+  }
+
   revokeAccess(user: AdminUser): void {
-    if (confirm(`Are you sure you want to revoke access for ${user.full_name}?`)) {
+    if (confirm(`Are you sure you want to revoke access for ${this.getUserName(user)}?`)) {
       this.rbacService.revokeAccess(user.id, 'Access revoked by admin').subscribe({
         next: () => {
-          this.snackBar.open(`Access revoked for ${user.full_name}`, 'Close', { duration: 3000 });
+          this.snackBar.open(`Access revoked for ${this.getUserName(user)}`, 'Close', { duration: 3000 });
           this.loadUsers();
         },
         error: (err) => {
           this.snackBar.open(`Failed to revoke: ${err.message}`, 'Close', { duration: 5000 });
-        }
+        },
       });
     }
   }
