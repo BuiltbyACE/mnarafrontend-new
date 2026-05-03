@@ -18,7 +18,8 @@ import { AuthStore } from '@sms/core/auth';
   selector: 'app-dashboard-page',
   standalone: true,
   imports: [CommonModule, MatIconModule, BaseChartDirective],
-  templateUrl: './dashboard-page.html'
+  templateUrl: './dashboard-page.html',
+  styleUrls: ['./dashboard-page.scss']
 })
 export class DashboardPageComponent implements OnInit {
   // Services
