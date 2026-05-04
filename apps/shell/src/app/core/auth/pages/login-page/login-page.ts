@@ -64,9 +64,11 @@ export class LoginPage {
       return;
     }
 
-    this.isLoading = true;
-    this.authStore.setLoading(true);
-    this.authStore.clearError();
+    setTimeout(() => {
+      this.isLoading = true;
+      this.authStore.setLoading(true);
+      this.authStore.clearError();
+    });
 
     // Call login API
     this.authService
@@ -126,14 +128,13 @@ export class LoginPage {
     }
   }
 
-  /**
-   * Handle errors from API calls
-   */
   private handleError(error: Error): void {
-    this.isLoading = false;
-    this.authStore.setLoading(false);
-    this.authStore.setError(error.message);
-    this.showError(error.message);
+    setTimeout(() => {
+      this.isLoading = false;
+      this.authStore.setLoading(false);
+      this.authStore.setError(error.message);
+      this.showError(error.message);
+    });
   }
 
   /**
