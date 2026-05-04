@@ -57,6 +57,47 @@ export interface AdmissionRequest {
   year_level_id: number;
 }
 
+export interface StudentAdmissionRecord {
+  id: number;
+  gender: string;
+  nationality: string | null;
+  date_of_admission: string;
+  current_class: number | null;
+  class_sought: number | null;
+  photo_url: string | null;
+  carers: string[];
+  medical_record: { status: string; last_updated?: string } | null;
+  regular_details: {
+    school_name: string;
+    curriculum: string;
+  } | null;
+}
+
+export interface StudentEnrollment {
+  id: number;
+  student_name: string;
+  academic_year_name: string;
+  classroom_name: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'TRANSFERRED' | 'PROMOTED';
+  promotion_notes: string | null;
+  student: number;
+  academic_year: number;
+  classroom: number;
+}
+
+export interface StudentProfile {
+  id: number;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string | null;
+  enrollment_date: string;
+  user_school_id: string;
+  user_role: string;
+  admission_record: StudentAdmissionRecord | null;
+  medical_record: Record<string, unknown> | null;
+  enrollments: StudentEnrollment[];
+}
+
 export interface MedicalRecord {
   student_id: string;
   blood_group: string;

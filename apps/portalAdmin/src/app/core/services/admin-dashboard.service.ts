@@ -74,7 +74,7 @@ export class AdminDashboardService {
     this.error.set(null);
 
     const fetch$ = this.http.get<DashboardSummary>(
-      getApiUrl('/analytics/dashboard/overview/')
+      getApiUrl('/analytics/dashboard/summary/')
     ).pipe(
       catchError((err) => {
         // Log error and set error state - don't silently fall back to mock data

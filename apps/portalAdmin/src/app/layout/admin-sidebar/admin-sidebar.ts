@@ -3,9 +3,9 @@
  * Replicated exactly from reference UI
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -13,6 +13,12 @@ interface NavItem {
   name: string;
   label: string;
   icon: string;
+  route: string;
+  children?: NavChild[];
+}
+
+interface NavChild {
+  label: string;
   route: string;
 }
 
@@ -47,19 +53,60 @@ interface NavItem {
       <!-- Navigation -->
       <nav class="nav-section">
         <div class="nav-list">
-          <a 
-            class="nav-item"
-            *ngFor="let item of navItems" 
-            [routerLink]="item.route"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: item.route === '/portalAdmin' }"
-          >
-            <div class="nav-item-left">
-              <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
-              <span class="nav-label">{{ item.label }}</span>
-            </div>
-            <mat-icon *ngIf="item.name !== 'dashboard'" class="nav-chevron">chevron_right</mat-icon>
-          </a>
+          @for (item of navItems; track item.name) {
+            @if (item.children) {
+              <!-- Dropdown parent -->
+              <div
+                class="nav-item"
+                role="button"
+                tabindex="0"
+                [class.expanded]="expandedItem() === item.name"
+                [class.active]="isParentActive(item)"
+                (click)="toggleExpand(item.name)"
+                (keydown.enter)="toggleExpand(item.name)"
+                (keydown.space)="toggleExpand(item.name)"
+              >
+                <div class="nav-item-left">
+                  <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+                  <span class="nav-label">{{ item.label }}</span>
+                </div>
+                <mat-icon class="nav-chevron dropdown-arrow">
+                  {{ expandedItem() === item.name ? 'expand_more' : 'chevron_right' }}
+                </mat-icon>
+              </div>
+              @if (expandedItem() === item.name) {
+                <div class="children-list">
+                  @for (child of item.children; track child.route) {
+                    <a
+                      class="child-item"
+                      [routerLink]="child.route"
+                      routerLinkActive="active"
+                      [routerLinkActiveOptions]="{ exact: child.route === '/portalAdmin/students' }"
+                    >
+                      <span class="child-dot"></span>
+                      <span>{{ child.label }}</span>
+                    </a>
+                  }
+                </div>
+              }
+            } @else {
+              <!-- Plain link -->
+              <a
+                class="nav-item"
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: item.route === '/portalAdmin' }"
+              >
+                <div class="nav-item-left">
+                  <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+                  <span class="nav-label">{{ item.label }}</span>
+                </div>
+                @if (item.name !== 'dashboard') {
+                  <mat-icon class="nav-chevron">chevron_right</mat-icon>
+                }
+              </a>
+            }
+          }
         </div>
       </nav>
 
@@ -273,6 +320,57 @@ interface NavItem {
       }
     }
 
+    /* Dropdown children */
+    .children-list {
+      padding: 4px 0 4px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .child-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 0.8125rem;
+      font-weight: 400;
+      transition: all 0.15s ease;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+
+      &.active {
+        background: white;
+        color: #2563EB;
+        font-weight: 500;
+
+        .child-dot { background: #2563EB; }
+      }
+    }
+
+    .child-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      flex-shrink: 0;
+    }
+
+    .dropdown-arrow {
+      transition: transform 0.2s ease;
+    }
+
+    .nav-item.expanded .dropdown-arrow {
+      transform: rotate(90deg);
+    }
+
     /* Dark Mode Toggle */
     .dark-mode-toggle {
       display: flex;
@@ -315,10 +413,30 @@ interface NavItem {
 export class AdminSidebarComponent {
   @Input() pendingApprovals = 0;
 
+  readonly expandedItem = signal<string | null>(null);
+
+  toggleExpand(name: string): void {
+    this.expandedItem.update(current => current === name ? null : name);
+  }
+
+  isParentActive(item: NavItem): boolean {
+    if (!item.children) return false;
+    return item.children.some(c => location.pathname.startsWith(c.route));
+  }
+
   readonly navItems: NavItem[] = [
     { name: 'dashboard', label: 'Dashboard', icon: 'home', route: '/portalAdmin' },
     { name: 'academics', label: 'Academics', icon: 'school', route: '/portalAdmin/academics' },
-    { name: 'students', label: 'Students', icon: 'group', route: '/portalAdmin/students' },
+    {
+      name: 'students', label: 'Students', icon: 'group', route: '/portalAdmin/students',
+      children: [
+        { label: 'All Students', route: '/portalAdmin/students' },
+        { label: 'Student Admission', route: '/portalAdmin/students/admissions' },
+        { label: 'Promote Students', route: '/portalAdmin/students/promote' },
+        { label: 'Student Categories', route: '/portalAdmin/students/categories' },
+        { label: 'Student Houses', route: '/portalAdmin/students/houses' },
+      ],
+    },
     { name: 'staff', label: 'Staff & HR', icon: 'person_outline', route: '/portalAdmin/staff' },
     { name: 'finance', label: 'Finance', icon: 'account_balance', route: '/portalAdmin/finance' },
     { name: 'examinations', label: 'Examinations', icon: 'description', route: '/portalAdmin/examinations' },

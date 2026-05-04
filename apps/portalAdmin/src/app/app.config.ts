@@ -3,13 +3,18 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { appRoutes } from './app.routes';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
+import { authInterceptorFn } from '@sms/core/auth';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideBrowserGlobalErrorListeners(), 
+    provideBrowserGlobalErrorListeners(),
     provideRouter(appRoutes),
-    provideCharts(withDefaultRegisterables())
+    provideHttpClient(withInterceptors([authInterceptorFn])),
+    provideAnimationsAsync(),
+    provideCharts(withDefaultRegisterables()),
   ],
 };

@@ -7,7 +7,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError, of } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
-import { Admission, StudentDetail, AdmissionRequest } from '../../../shared/models/students.models';
+import { Admission, StudentDetail, AdmissionRequest, StudentProfile } from '../../../shared/models/students.models';
 
 interface PaginatedResponse<T> {
   count: number;
@@ -34,8 +34,8 @@ export class StudentsService {
   readonly admissionsSummary = signal<AdmissionsSummary | null>(null);
 
   getAdmissions(
-    page: number = 1,
-    pageSize: number = 25,
+    page = 1,
+    pageSize = 25,
     filters?: { status?: string; year_level?: number }
   ): Observable<PaginatedResponse<Admission>> {
     this.isLoading.set(true);
@@ -94,6 +94,34 @@ export class StudentsService {
         return throwError(() => new Error('Failed to load admissions summary'));
       })
     );
+  }
+
+  getProfiles(
+    page = 1,
+    pageSize = 25,
+    filters?: { status?: string; year_level?: number; search?: string }
+  ): Observable<PaginatedResponse<StudentProfile>> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('page_size', pageSize.toString());
+
+    if (filters?.status) params = params.set('status', filters.status);
+    if (filters?.year_level) params = params.set('year_level', filters.year_level.toString());
+    if (filters?.search) params = params.set('search', filters.search);
+
+    return this.http
+      .get<PaginatedResponse<StudentProfile>>(getApiUrl('/students/profiles/'), { params })
+      .pipe(
+        catchError((err) => {
+          const message = err.error?.message || 'Failed to load student profiles';
+          this.error.set(message);
+          this.isLoading.set(false);
+          return throwError(() => new Error(message));
+        })
+      );
   }
 
   setAdmissions(data: Admission[], total: number): void {
