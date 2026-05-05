@@ -16,3 +16,4 @@ export { PortalGuard, PublicGuard, publicGuard } from './lib/portal.guard';
 
 // Interceptors
 export { authInterceptorFn, AuthInterceptor } from './lib/auth.interceptor';
+export { adminErrorInterceptorFn, AdminErrorInterceptor } from './lib/admin-error.interceptor';

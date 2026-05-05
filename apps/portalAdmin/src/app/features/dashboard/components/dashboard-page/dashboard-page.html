@@ -1,4 +1,15 @@
-<div class="dashboard-page" *ngIf="dashboard()">
+<div class="dashboard-page">
+  @if (dashboardService.isLoading()) {
+    <div class="loading-overlay">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Loading dashboard...</span>
+    </div>
+  } @else if (dashboardService.error()) {
+    <div class="error-state">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ dashboardService.error() }}</span>
+    </div>
+  } @else {
   <!-- Welcome Header -->
   <header class="welcome-header">
     <div class="welcome-bg-watermark"></div>
@@ -106,18 +117,30 @@
       </svg>
     </div>
 
-    <!-- Card 5: School Assembly -->
-    <div class="assembly-card">
-      <div class="assembly-content">
-        <h3>School Assembly</h3>
-        <p class="assembly-date">May 30, 2024 at 8:00 AM</p>
-        <p class="assembly-desc">Don't forget about the upcoming school assembly.</p>
-        <button class="btn-white">View Details</button>
+    <!-- Card 5: Upcoming Events -->
+    @if (calendarEvents().length > 0) {
+      <div class="assembly-card">
+        <div class="assembly-content">
+          <h3>{{ calendarEvents()[0].title }}</h3>
+          <p class="assembly-date">{{ calendarEvents()[0].date | date:'MMM d, y, h:mm a' }}</p>
+          <p class="assembly-desc">{{ calendarEvents()[0].description || 'Upcoming event' }}</p>
+          <button class="btn-white">View Details</button>
+        </div>
+        <div class="assembly-icon-bg">
+          <mat-icon>{{ calendarEvents()[0].type === 'assembly' ? 'campaign' : 'event' }}</mat-icon>
+        </div>
       </div>
-      <div class="assembly-icon-bg">
-        <mat-icon>campaign</mat-icon>
+    } @else {
+      <div class="assembly-card">
+        <div class="assembly-content">
+          <h3>No Upcoming Events</h3>
+          <p class="assembly-desc">Check back later for upcoming events.</p>
+        </div>
+        <div class="assembly-icon-bg">
+          <mat-icon>event_busy</mat-icon>
+        </div>
       </div>
-    </div>
+    }
   </div>
 
   <!-- Middle Row -->
@@ -178,16 +201,23 @@
         <a href="#" class="view-all">View All</a>
       </div>
       <div class="alerts-list">
-        <div class="alert-item" *ngFor="let alert of dashboard()?.system_alerts">
-          <div class="alert-icon" [ngClass]="getAlertIconClass(alert.type)">
-            <mat-icon>{{ getAlertIcon(alert.type) }}</mat-icon>
+        @for (alert of dashboard()?.system_alerts; track alert.title) {
+          <div class="alert-item">
+            <div class="alert-icon" [ngClass]="getAlertIconClass(alert.type)">
+              <mat-icon>{{ getAlertIcon(alert.type) }}</mat-icon>
+            </div>
+            <div class="alert-content">
+              <h4>{{ alert.title }}</h4>
+              <p>{{ alert.desc }}</p>
+            </div>
+            <span class="alert-time">{{ alert.time }}</span>
           </div>
-          <div class="alert-content">
-            <h4>{{ alert.title }}</h4>
-            <p>{{ alert.desc }}</p>
+        } @empty {
+          <div class="empty-state">
+            <mat-icon>check_circle</mat-icon>
+            <span>No alerts</span>
           </div>
-          <span class="alert-time">{{ alert.time }}</span>
-        </div>
+        }
       </div>
     </div>
   </div>
@@ -245,21 +275,28 @@
         <a href="#" class="view-all">View All</a>
       </div>
       <div class="classes-list">
-        <div class="class-item" *ngFor="let cls of dashboard()?.top_classes; let i = index">
-          <div class="class-icon" [ngClass]="i === 0 ? 'class-icon--gold' : i === 1 ? 'class-icon--silver' : 'class-icon--bronze'">
-            <mat-icon>{{ i === 0 ? 'emoji_events' : i === 1 ? 'military_tech' : 'workspace_premium' }}</mat-icon>
-          </div>
-          <div class="class-info">
-            <h4>{{ cls.name }}</h4>
-            <p>Average: {{ cls.average }}%</p>
-          </div>
-          <div class="class-bar-container">
-            <div class="class-bar">
-              <div class="bar-fill" [ngClass]="i === 0 ? 'bar-fill--blue' : i === 1 ? 'bar-fill--green' : 'bar-fill--orange'" [style.width]="cls.average + '%'"></div>
+        @for (cls of dashboard()?.top_classes; track cls.name; let i = $index) {
+          <div class="class-item">
+            <div class="class-icon" [ngClass]="i === 0 ? 'class-icon--gold' : i === 1 ? 'class-icon--silver' : 'class-icon--bronze'">
+              <mat-icon>{{ i === 0 ? 'emoji_events' : i === 1 ? 'military_tech' : 'workspace_premium' }}</mat-icon>
             </div>
-            <span class="class-score" [ngClass]="i === 0 ? 'class-score--blue' : i === 1 ? 'class-score--green' : 'class-score--orange'">{{ cls.average }}%</span>
+            <div class="class-info">
+              <h4>{{ cls.name }}</h4>
+              <p>Average: {{ cls.average }}%</p>
+            </div>
+            <div class="class-bar-container">
+              <div class="class-bar">
+                <div class="bar-fill" [ngClass]="i === 0 ? 'bar-fill--blue' : i === 1 ? 'bar-fill--green' : 'bar-fill--orange'" [style.width]="cls.average + '%'"></div>
+              </div>
+              <span class="class-score" [ngClass]="i === 0 ? 'class-score--blue' : i === 1 ? 'class-score--green' : 'class-score--orange'">{{ cls.average }}%</span>
+            </div>
           </div>
-        </div>
+        } @empty {
+          <div class="empty-state">
+            <mat-icon>bar_chart</mat-icon>
+            <span>No class data</span>
+          </div>
+        }
       </div>
     </div>
 
@@ -342,4 +379,5 @@
       </div>
     </div>
   </div>
+  }
 </div>

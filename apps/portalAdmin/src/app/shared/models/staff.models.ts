@@ -13,7 +13,9 @@ export interface Faculty {
   kra_pin: string;
   nssf_number: string;
   role_display?: string;
+  designation?: string; // Job title/role
   department?: string;
+  department_name?: string; // Readable department name from API
   employment_type?: 'FULLTIME' | 'PARTTIME' | 'CONTRACT';
   employment_type_display?: string;
   qualification_level?: string;
@@ -21,6 +23,7 @@ export interface Faculty {
   teacher_data?: TeacherData;
   is_teacher: boolean;
   is_active?: boolean;
+  base_salary?: number; // For payroll calculation
 }
 
 export interface StaffProfile {

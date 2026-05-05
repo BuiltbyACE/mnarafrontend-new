@@ -6,6 +6,7 @@
 import { Injectable, inject } from '@angular/core';
 import {
   HttpInterceptor,
+  HttpInterceptorFn,
   HttpRequest,
   HttpHandler,
   HttpEvent,
@@ -36,7 +37,6 @@ export class AdminErrorInterceptor implements HttpInterceptor {
 
     switch (error.status) {
       case 400:
-        // Validation errors - parse field errors
         if (error.error && typeof error.error === 'object') {
           const fieldErrors = Object.entries(error.error)
             .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
@@ -91,4 +91,66 @@ export class AdminErrorInterceptor implements HttpInterceptor {
       panelClass: error.status >= 500 ? 'error-snackbar' : 'warning-snackbar',
     });
   }
+}
+
+export const adminErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
+  const router = inject(Router);
+  const snackBar = inject(MatSnackBar);
+  return next(req).pipe(
+    catchError((error: HttpErrorResponse) => {
+      handleAdminError(error, router, snackBar);
+      return throwError(() => error);
+    })
+  );
+};
+
+function handleAdminError(error: HttpErrorResponse, router: Router, snackBar: MatSnackBar): void {
+  let message = 'An unexpected error occurred';
+  let duration = 5000;
+  switch (error.status) {
+    case 400:
+      if (error.error && typeof error.error === 'object') {
+        const fieldErrors = Object.entries(error.error)
+          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('; ');
+        message = fieldErrors || 'Invalid data provided';
+      } else {
+        message = error.error?.message || 'Invalid request';
+      }
+      break;
+    case 401:
+      message = 'Session expired. Please log in again.';
+      duration = 3000;
+      router.navigate(['/login']);
+      break;
+    case 403:
+      message = 'Insufficient permissions for this operation';
+      break;
+    case 405:
+      message = 'Operation not allowed. This record cannot be modified or deleted.';
+      break;
+    case 404:
+      message = 'Resource not found';
+      break;
+    case 409:
+      message = error.error?.message || 'Conflict with existing data';
+      break;
+    case 422:
+      message = error.error?.message || 'Validation failed';
+      break;
+    case 500:
+    case 502:
+    case 503:
+      message = 'Server error. Please try again later.';
+      console.error('Server error:', error);
+      break;
+    default:
+      message = error.error?.message || error.message || 'An unexpected error occurred';
+  }
+  snackBar.open(message, 'Close', {
+    duration,
+    horizontalPosition: 'center',
+    verticalPosition: 'bottom',
+    panelClass: error.status >= 500 ? 'error-snackbar' : 'warning-snackbar',
+  });
 }

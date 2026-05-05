@@ -5,13 +5,17 @@
 export interface Admission {
   id: number;
   admission_number: string;
-  student: StudentSummary;
+  student: number; // API returns student ID only
+  student_first_name: string;
+  student_last_name: string;
+  student_school_id: string;
   student_name: string; // Computed from student.first_name + student.last_name
   year_level_name: string;
   year_level: number;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'WAITLISTED';
   application_date: string;
   current_class: string;
+  class_sought: number;
   date_of_admission: string;
   is_active: boolean;
 }

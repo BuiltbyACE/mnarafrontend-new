@@ -88,53 +88,49 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
         <mat-card-content>
           <div class="table-container">
             <table mat-table [dataSource]="admissions()" matSort (matSortChange)="onSort($event)">
-              
+
+              <!-- Student Column -->
               <ng-container matColumnDef="student">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Student</th>
-                <td mat-cell *matCellDef="let admission">
-                  <div class="student-info">
-                    <div class="avatar">{{ getInitials(admission.first_name + ' ' + admission.surname) }}</div>
-                    <div class="student-details">
-                      <span class="student-name">{{ admission.first_name }} {{ admission.surname }}</span>
-                      <span class="student-id">{{ admission.admission_number }}</span>
+                <th mat-header-cell *matHeaderCellDef> Student </th>
+                <td mat-cell *matCellDef="let element">
+                  <div class="student-cell" style="display: flex; align-items: center; gap: 12px;">
+                    <div class="avatar sm">{{ getInitials(element.student_first_name, element.student_last_name) }}</div>
+                    <div style="display: flex; flex-direction: column;">
+                      <span style="font-weight: 500;">{{ element.student_first_name || 'Unknown' }} {{ element.student_last_name || 'Applicant' }}</span>
+                      <span style="font-size: 0.75rem; color: #64748b;">{{ element.student_school_id || 'Pending ID' }}</span>
                     </div>
                   </div>
                 </td>
               </ng-container>
 
+              <!-- Year Level Column -->
               <ng-container matColumnDef="year_level">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Year Level</th>
-                <td mat-cell *matCellDef="let admission">{{ admission.year_level_name }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>Status</th>
-                <td mat-cell *matCellDef="let admission">
-                  <app-status-badge [type]="getStatusType(admission.status)"></app-status-badge>
+                <th mat-header-cell *matHeaderCellDef> Year & Class </th>
+                <td mat-cell *matCellDef="let element"> 
+                  <span style="font-weight: 500; color: #334155;">{{ element.class_sought_name || 'Not Specified' }}</span>
                 </td>
               </ng-container>
 
-              <ng-container matColumnDef="date">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Applied</th>
-                <td mat-cell *matCellDef="let admission">{{ admission.application_date | date:'mediumDate' }}</td>
+              <!-- Status Column -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef> Status </th>
+                <td mat-cell *matCellDef="let element">
+                  <app-status-badge [type]="getStatusType(element.status)"></app-status-badge>
+                </td>
               </ng-container>
 
+              <!-- Applied Column -->
+              <ng-container matColumnDef="applied">
+                <th mat-header-cell *matHeaderCellDef> Applied </th>
+                <td mat-cell *matCellDef="let element"> {{ element.date_of_admission | date:'mediumDate' }} </td>
+              </ng-container>
+
+              <!-- Actions Column -->
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="actions-header"></th>
-                <td mat-cell *matCellDef="let admission" class="actions-cell">
-                  <button mat-icon-button [matMenuTriggerFor]="menu">
-                    <mat-icon>more_vert</mat-icon>
-                  </button>
-                  <mat-menu #menu="matMenu">
-                    <button mat-menu-item (click)="viewAdmission(admission)">
-                      <mat-icon>visibility</mat-icon>
-                      <span>View Details</span>
-                    </button>
-                    <button mat-menu-item (click)="updateStatus(admission)">
-                      <mat-icon>edit</mat-icon>
-                      <span>Update Status</span>
-                    </button>
-                  </mat-menu>
+                <th mat-header-cell *matHeaderCellDef> Actions </th>
+                <td mat-cell *matCellDef="let element">
+                  <button mat-icon-button color="primary" (click)="viewAdmission(element)"><mat-icon>visibility</mat-icon></button>
+                  <button mat-icon-button color="accent" (click)="approveAdmission(element)"><mat-icon>check_circle</mat-icon></button>
                 </td>
               </ng-container>
 
@@ -213,7 +209,7 @@ export class AdmissionsListComponent implements OnInit {
 
   readonly admissions = this.studentsService.admissions;
   readonly summary = this.studentsService.admissionsSummary;
-  readonly displayedColumns = ['student', 'year_level', 'status', 'date', 'actions'];
+  readonly displayedColumns = ['student', 'year_level', 'status', 'applied', 'actions'];
 
   currentPage = 0;
   pageSize = 25;
@@ -239,8 +235,10 @@ export class AdmissionsListComponent implements OnInit {
 
   onSort(sort: Sort): void { this.loadAdmissions(); }
 
-  getInitials(name: string): string {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  getInitials(firstName?: string, lastName?: string): string {
+    const first = (firstName ?? '')[0] ?? '';
+    const last = (lastName ?? '')[0] ?? '';
+    return (first + last).toUpperCase() || '??';
   }
 
   getStatusType(status: string): 'pending' | 'approved' | 'rejected' {
@@ -251,4 +249,5 @@ export class AdmissionsListComponent implements OnInit {
   newAdmission(): void { this.snackBar.open('New admission feature coming soon', 'Close', { duration: 3000 }); }
   viewAdmission(admission: Admission): void { this.snackBar.open(`Viewing ${admission.student_name}`, 'Close', { duration: 3000 }); }
   updateStatus(admission: Admission): void { this.snackBar.open(`Updating status for ${admission.admission_number}`, 'Close', { duration: 3000 }); }
+  approveAdmission(admission: Admission): void { this.snackBar.open(`Approving admission for ${admission.student_name}`, 'Close', { duration: 3000 }); }
 }

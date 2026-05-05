@@ -6,7 +6,8 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -21,6 +22,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { StudentsService } from '../../services/students.service';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { StudentDetailComponent } from '../student-detail/student-detail';
 import { StudentProfile } from '../../../../shared/models/students.models';
 import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge';
 
@@ -31,6 +34,7 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
     CommonModule,
     RouterLink,
     FormsModule,
+    ReactiveFormsModule,
     MatButtonModule,
     MatIconModule,
     MatCardModule,
@@ -45,6 +49,8 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
     MatChipsModule,
     MatTooltipModule,
     StatusBadgeComponent,
+    StudentDetailComponent,
+    MatDialogModule,
   ],
   template: `
     <div class="overview-container">
@@ -140,7 +146,7 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
           <div class="filter-bar">
             <mat-form-field appearance="outline" class="search-field">
               <mat-icon matPrefix>search</mat-icon>
-              <input matInput placeholder="Search students..." [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" />
+              <input matInput placeholder="Search students..." [formControl]="searchControl" />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="filter-select">
@@ -196,11 +202,6 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                 <td mat-cell *matCellDef="let s">{{ getClassName(s) }}</td>
               </ng-container>
 
-              <ng-container matColumnDef="dob">
-                <th mat-header-cell *matHeaderCellDef>Date of Birth</th>
-                <td mat-cell *matCellDef="let s">{{ s.date_of_birth | date:'mediumDate' }}</td>
-              </ng-container>
-
               <ng-container matColumnDef="gender">
                 <th mat-header-cell *matHeaderCellDef>Gender</th>
                 <td mat-cell *matCellDef="let s">
@@ -218,25 +219,17 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
               </ng-container>
 
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef></th>
+                <th mat-header-cell *matHeaderCellDef>Actions</th>
                 <td mat-cell *matCellDef="let s">
-                  <button mat-icon-button matTooltip="View">
+                  <button mat-icon-button color="primary" matTooltip="View" (click)="viewStudent(s.id)">
                     <mat-icon>visibility</mat-icon>
                   </button>
-                  <button mat-icon-button matTooltip="Edit">
+                  <button mat-icon-button color="accent" matTooltip="Edit">
                     <mat-icon>edit</mat-icon>
                   </button>
-                  <button mat-icon-button [matMenuTriggerFor]="rowMenu">
-                    <mat-icon>more_vert</mat-icon>
+                  <button mat-icon-button color="warn" matTooltip="Archive" (click)="archiveStudent(s)">
+                    <mat-icon>delete</mat-icon>
                   </button>
-                  <mat-menu #rowMenu="matMenu">
-                    <button mat-menu-item><mat-icon>visibility</mat-icon> View Profile</button>
-                    <button mat-menu-item><mat-icon>edit</mat-icon> Edit Details</button>
-                    <button mat-menu-item><mat-icon>account_balance_wallet</mat-icon> View Fees</button>
-                    <button mat-menu-item (click)="archiveStudent(s)">
-                      <mat-icon>archive</mat-icon> Archive
-                    </button>
-                  </mat-menu>
                 </td>
               </ng-container>
 
@@ -306,19 +299,19 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
               <a class="view-all">View All</a>
             </div>
             <div class="birthday-list">
-              @if (profiles().length === 0) {
-                <p class="empty-text">No birthdays this month</p>
-              }
-              @for (s of birthdayStudents(); track s.id) {
-                <div class="birthday-item">
-                  <div class="avatar sm" [class]="getAvatarClass(s.admission_record?.gender)">{{ getInitials(s.first_name + ' ' + s.last_name) }}</div>
-                  <div class="birthday-info">
-                    <span class="bday-name">{{ s.first_name }} {{ s.last_name }}</span>
-                    <span class="bday-class">{{ getClassName(s) }}</span>
-                  </div>
-                  <span class="bday-date">{{ s.date_of_birth | date:'MMM d' }}</span>
-                </div>
-              }
+               @if (profiles().length === 0) {
+                <p class="empty-text">No students found</p>
+               }
+               @for (s of profiles().slice(0, 5); track s.id) {
+                 <div class="birthday-item">
+                   <div class="avatar sm" [class]="getAvatarClass(s.admission_record?.gender)">{{ getInitials(s.first_name + ' ' + s.last_name) }}</div>
+                   <div class="birthday-info">
+                     <span class="bday-name">{{ s.first_name }} {{ s.last_name }}</span>
+                     <span class="bday-class">{{ getClassName(s) }}</span>
+                   </div>
+                   <span class="bday-date">{{ s.enrollment_date | date:'MMM d' }}</span>
+                 </div>
+               }
             </div>
           </div>
 
@@ -547,19 +540,21 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
 export class StudentsOverviewComponent implements OnInit {
   readonly studentsService = inject(StudentsService);
   private router = inject(Router);
+  private destroy$ = new Subject<void>();
 
   readonly profiles = signal<StudentProfile[]>([]);
   readonly totalCount = signal<number>(0);
 
+  searchControl = new FormControl('');
+  searchQuery: string = '';
   currentPage = 0;
   pageSize = 25;
   activeTab = 0;
-  searchQuery = '';
   filterClass = '';
   filterStatus = '';
   heroImageSrc = 'images/students-hero.png';
 
-  readonly displayedColumns = ['school_id', 'name', 'class', 'dob', 'gender', 'status', 'actions'];
+  readonly displayedColumns = ['school_id', 'name', 'gender', 'class', 'status', 'actions'];
 
   readonly maleCount = computed(() => this.profiles().filter(s => s.admission_record?.gender === 'MALE').length);
   readonly femaleCount = computed(() => this.profiles().filter(s => s.admission_record?.gender === 'FEMALE').length);
@@ -575,15 +570,27 @@ export class StudentsOverviewComponent implements OnInit {
   });
 
   readonly birthdayStudents = computed(() => {
-    const thisMonth = new Date().getMonth();
-    return this.profiles().filter(s => {
-      if (!s.date_of_birth) return false;
-      return new Date(s.date_of_birth).getMonth() === thisMonth;
-    }).slice(0, 5);
+    return this.profiles().slice(0, 5);
   });
 
   ngOnInit(): void {
     this.loadProfiles();
+
+    // Setup reactive search with debounce
+    this.searchControl.valueChanges.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(term => {
+      this.searchQuery = term || '';
+      this.currentPage = 0;
+      this.loadProfiles();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadProfiles(): void {
@@ -616,6 +623,10 @@ export class StudentsOverviewComponent implements OnInit {
   onSearch(): void {
     this.currentPage = 0;
     this.loadProfiles();
+  }
+
+  clearSearch(): void {
+    this.searchControl.setValue('');
   }
 
   applyFilters(): void {
@@ -652,5 +663,9 @@ export class StudentsOverviewComponent implements OnInit {
 
   onHeroImageError(): void {
     this.heroImageSrc = '';
+  }
+
+  viewStudent(studentId: number): void {
+    this.router.navigate(['/portalAdmin/students', studentId]);
   }
 }

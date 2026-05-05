@@ -2,8 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+// ─── Leaflet CSS for Live Fleet Map ────────────────────────────────────────
+@import 'leaflet/dist/leaflet.css';
+
 /**
-* Mnara SMS — Admin Portal Global Styles
+ * Mnara SMS — Admin Portal Global Styles
 * Angular Material prebuilt theme is loaded via project.json:
 *   node_modules/@angular/material/prebuilt-themes/indigo-pink.css
 */

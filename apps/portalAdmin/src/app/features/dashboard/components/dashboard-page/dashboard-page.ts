@@ -6,6 +6,7 @@
 import { Component, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartOptions } from 'chart.js';
@@ -17,7 +18,7 @@ import { AuthStore } from '@sms/core/auth';
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule, MatIconModule, BaseChartDirective],
+  imports: [CommonModule, MatIconModule, MatProgressSpinnerModule, BaseChartDirective],
   templateUrl: './dashboard-page.html',
   styleUrls: ['./dashboard-page.scss']
 })

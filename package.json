@@ -17,6 +17,7 @@
     "@angular/router": "~21.2.0",
     "@nx/angular": "^22.6.5",
     "chart.js": "^4.5.1",
+    "leaflet": "^1.9.4",
     "ng2-charts": "^10.0.0",
     "rxjs": "~7.8.0"
   },
@@ -51,6 +52,7 @@
     "@swc/core": "~1.15.5",
     "@swc/helpers": "~0.5.18",
     "@types/jest": "^30.0.0",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "20.19.9",
     "@typescript-eslint/utils": "^8.40.0",
     "@vitest/coverage-v8": "~4.1.0",

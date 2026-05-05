@@ -318,6 +318,11 @@ export class AdminHeaderComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   ngOnInit() {
+    // Update current date every minute
+    setInterval(() => {
+      this.currentDate = new Date();
+    }, 60000);
+
     // Setup RxJS Live Search
     this.searchQuery.valueChanges
       .pipe(

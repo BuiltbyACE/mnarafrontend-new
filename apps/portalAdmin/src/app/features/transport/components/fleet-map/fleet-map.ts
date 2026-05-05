@@ -3,7 +3,9 @@
  * Transport module - real-time fleet tracking with data table
  */
 
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild, PLATFORM_ID, NgZone } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import * as L from 'leaflet';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -38,213 +40,155 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
     StatusBadgeComponent,
   ],
   template: `
-    <div class="page-container">
-      <header class="page-header">
-        <div class="title-section">
-          <h1>Transport</h1>
-          <p class="subtitle">Fleet Tracking & Live Map</p>
-        </div>
-        <div class="connection-status" [class.connected]="isConnected()">
-          <span class="status-dot"></span>
-          {{ isConnected() ? 'Live' : 'Disconnected' }}
-        </div>
-      </header>
-
-      @if (fleetSummary(); as s) {
-        <div class="summary-cards">
-          <mat-card class="summary-card">
-            <mat-card-content>
-              <div class="summary-icon vehicles">
-                <mat-icon>directions_bus</mat-icon>
-              </div>
-              <div class="summary-info">
-                <span class="summary-value">{{ s.total_vehicles }}</span>
-                <span class="summary-label">Total Vehicles</span>
-              </div>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="summary-card">
-            <mat-card-content>
-              <div class="summary-icon routes">
-                <mat-icon>route</mat-icon>
-              </div>
-              <div class="summary-info">
-                <span class="summary-value">{{ s.active_routes }}</span>
-                <span class="summary-label">Active Routes</span>
-              </div>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="summary-card" [class.connected]="s.online_count > 0">
-            <mat-card-content>
-              <div class="summary-icon online">
-                <mat-icon>wifi</mat-icon>
-              </div>
-              <div class="summary-info">
-                <span class="summary-value">{{ s.online_count }}</span>
-                <span class="summary-label">Online Now</span>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
-      }
-
-      @if (transportService.error()) {
-        <div class="error-alert">
-          <mat-icon>error</mat-icon>
-          <span>{{ transportService.error() }}</span>
-        </div>
-      }
-
-      <mat-card class="content-card">
-        <mat-card-content>
-          <div class="table-container">
-            <table mat-table [dataSource]="vehicles()" matSort (matSortChange)="onSort($event)">
-              
-              <ng-container matColumnDef="vehicle">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Vehicle</th>
-                <td mat-cell *matCellDef="let vehicle">
-                  <div class="vehicle-info">
-                    <span class="vehicle-name">{{ vehicle.name }}</span>
-                    <span class="vehicle-reg">{{ vehicle.registration_number }}</span>
-                  </div>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="route">
-                <th mat-header-cell *matHeaderCellDef>Route</th>
-                <td mat-cell *matCellDef="let vehicle">{{ vehicle.route?.name || 'Unassigned' }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="driver">
-                <th mat-header-cell *matHeaderCellDef>Driver</th>
-                <td mat-cell *matCellDef="let vehicle">{{ vehicle.assigned_driver?.full_name || 'Unassigned' }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>Status</th>
-                <td mat-cell *matCellDef="let vehicle">
-                  <app-status-badge [type]="vehicle.is_active ? 'active' : 'inactive'"></app-status-badge>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="telemetry">
-                <th mat-header-cell *matHeaderCellDef>Live Data</th>
-                <td mat-cell *matCellDef="let vehicle">
-                  @if (getTelemetry(vehicle.id); as telemetry) {
-                    <div class="telemetry-info">
-                      <span class="speed">{{ telemetry.speed_kmh }} km/h</span>
-                      <span class="occupancy">Live tracking active</span>
-                    </div>
-                  } @else {
-                    <span class="no-data">No live data</span>
-                  }
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="actions-header"></th>
-                <td mat-cell *matCellDef="let vehicle" class="actions-cell">
-                  <button mat-icon-button [matMenuTriggerFor]="menu">
-                    <mat-icon>more_vert</mat-icon>
-                  </button>
-                  <mat-menu #menu="matMenu">
-                    <button mat-menu-item (click)="viewVehicle(vehicle)">
-                      <mat-icon>visibility</mat-icon>
-                      <span>View Details</span>
-                    </button>
-                    <button mat-menu-item (click)="viewRoute(vehicle)">
-                      <mat-icon>map</mat-icon>
-                      <span>View Route</span>
-                    </button>
-                    <button mat-menu-item (click)="trackLive(vehicle)">
-                      <mat-icon>my_location</mat-icon>
-                      <span>Track Live</span>
-                    </button>
-                  </mat-menu>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-
-              <tr class="mat-row no-data-row" *matNoDataRow>
-                <td class="mat-cell" [attr.colspan]="displayedColumns.length">
-                  <div class="no-data-message">
-                    @if (transportService.isLoading()) {
-                      <mat-spinner diameter="40"></mat-spinner>
-                    } @else {
-                      <mat-icon>directions_bus</mat-icon>
-                      <p>No vehicles found</p>
-                    }
-                  </div>
-                </td>
-              </tr>
-            </table>
+    <div class="map-command-center">
+      <!-- Floating Header Overlay -->
+      <div class="map-overlay-header">
+        <div class="header-left">
+          <mat-icon class="radar-icon">radar</mat-icon>
+          <div>
+            <h3 class="overlay-title">Live Fleet Tracking</h3>
+            <span class="overlay-subtitle">Nairobi Metro Area</span>
           </div>
+        </div>
+        <div class="header-right">
+          <div class="live-badge">
+            <div class="pulse-dot"></div>
+            Live Sync
+          </div>
+        </div>
+      </div>
+      
+      <!-- The Map -->
+      <div #map id="map"></div>
 
-          <mat-paginator
-            [length]="transportService.totalCount()"
-            [pageSize]="pageSize"
-            [pageSizeOptions]="[10, 25, 50, 100]"
-            [pageIndex]="currentPage"
-            (page)="onPageChange($event)">
-          </mat-paginator>
-        </mat-card-content>
-      </mat-card>
+      <!-- Floating Stats Overlay (Bottom) -->
+      <div class="map-overlay-footer">
+        <div class="stat-pill">
+          <mat-icon>directions_bus</mat-icon>
+          <span>Active Routes: <strong>4</strong></span>
+        </div>
+        <div class="stat-pill warning">
+          <mat-icon>speed</mat-icon>
+          <span>Speed Alerts: <strong>0</strong></span>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
-    .page-container { padding: 24px; }
-    .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
-    .page-header .title-section h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px 0; }
-    .page-header .title-section .subtitle { color: #6b7280; margin: 0; }
+    .map-command-center {
+      position: relative;
+      width: 100%;
+      height: 600px; /* Taller for better visibility */
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+    }
 
-    .connection-status { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #fee2e2; color: #dc2626; border-radius: 20px; font-size: 14px; font-weight: 500; }
-    .connection-status.connected { background: #dcfce7; color: #166534; }
-    .connection-status .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    #map {
+      width: 100%;
+      height: 100%;
+      z-index: 1; /* Keep map below overlays */
+      background: #f8fafc; /* Color while tiles load */
+    }
 
-    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .summary-card { border-radius: 12px; }
-    .summary-card mat-card-content { display: flex; align-items: center; gap: 16px; padding: 20px; }
-    .summary-card.connected { background: #dcfce7; border: 1px solid #22c55e; }
+    /* Glassmorphism Top Overlay */
+    .map-overlay-header {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 1000; /* Leaflet UI is usually z-index 400 */
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 12px 20px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      border: 1px solid rgba(255,255,255,0.5);
+    }
 
-    .summary-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-    .summary-icon.vehicles { background: #dbeafe; color: #3b82f6; }
-    .summary-icon.routes { background: #f3e8ff; color: #9333ea; }
-    .summary-icon.online { background: #dcfce7; color: #16a34a; }
-    .summary-icon mat-icon { font-size: 24px; width: 24px; height: 24px; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .radar-icon { color: #2563eb; }
+    .overlay-title { margin: 0; font-size: 1rem; font-weight: 600; color: #0f172a; line-height: 1.2; }
+    .overlay-subtitle { font-size: 0.75rem; color: #64748b; }
 
-    .summary-info { display: flex; flex-direction: column; }
-    .summary-value { font-size: 24px; font-weight: 700; color: #1f2937; }
-    .summary-label { font-size: 14px; color: #6b7280; }
+    .live-badge {
+      background: #ecfdf5;
+      color: #059669;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #a7f3d0;
+    }
 
-    .error-alert { display: flex; align-items: center; gap: 8px; padding: 16px; background: #fee2e2; border-radius: 8px; color: #dc2626; margin-bottom: 24px; }
-    .content-card { border-radius: 12px; }
-    .table-container { overflow-x: auto; }
-    table { width: 100%; }
-    .mat-mdc-header-cell { font-weight: 600; color: #374151; background-color: #f9fafb; }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      animation: pulse-ring 1.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+    }
 
-    .vehicle-info { display: flex; flex-direction: column; }
-    .vehicle-info .vehicle-name { font-weight: 500; color: #1f2937; }
-    .vehicle-info .vehicle-reg { font-size: 12px; color: #6b7280; }
+    /* Glassmorphism Bottom Overlay */
+    .map-overlay-footer {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      gap: 12px;
+    }
 
-    .telemetry-info { display: flex; flex-direction: column; }
-    .telemetry-info .speed { font-weight: 600; color: #3b82f6; }
-    .telemetry-info .occupancy { font-size: 12px; color: #6b7280; }
-    .no-data { font-size: 12px; color: #9ca3af; font-style: italic; }
+    .stat-pill {
+      background: white;
+      padding: 8px 16px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8125rem;
+      color: #334155;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #e2e8f0;
+    }
 
-    .actions-header { width: 50px; }
-    .actions-cell { text-align: right; }
-    .no-data-row .mat-cell { padding: 48px 24px; text-align: center; }
-    .no-data-message { display: flex; flex-direction: column; align-items: center; gap: 16px; color: #9ca3af; }
-    .no-data-message mat-icon { font-size: 48px; width: 48px; height: 48px; }
-    mat-paginator { border-top: 1px solid #e5e7eb; }
+    .stat-pill mat-icon { font-size: 18px; width: 18px; height: 18px; color: #64748b; }
+    .stat-pill.warning strong { color: #e11d48; }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Clean up Leaflet defaults */
+    ::ng-deep .leaflet-control-attribution { display: none; } /* Optional: Hides OSM text for cleaner UI */
+
+    /* Force hardware-accelerated smooth sliding for all map markers */
+    ::ng-deep .leaflet-marker-icon {
+      transition: transform 0.4s linear !important;
+      will-change: transform;
+    }
   `],
 })
-export class FleetMapComponent implements OnInit, OnDestroy {
+export class FleetMapComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('map', { static: true }) mapElement!: ElementRef;
+  private map!: L.Map;
+  private markers: { [id: string]: L.Marker } = {};
+  private platformId = inject(PLATFORM_ID);
+  private ngZone = inject(NgZone);
+
   private fleetService = inject(WebSocketFleetService);
   readonly transportService = inject(TransportService);
   private snackBar = inject(MatSnackBar);
@@ -261,10 +205,32 @@ export class FleetMapComponent implements OnInit, OnDestroy {
     this.loadVehicles();
     this.transportService.loadFleetSummary();
     this.fleetService.connect();
+
+    if (isPlatformBrowser(this.platformId)) {
+      // Run OUTSIDE Angular to prevent WebSocket updates from freezing the UI
+      this.ngZone.runOutsideAngular(() => {
+        this.initMap();
+        this.listenToFleet();
+      });
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      // Force Leaflet to recalculate bounds after Angular finishes painting the UI
+      setTimeout(() => {
+        if (this.map) {
+          this.map.invalidateSize();
+        }
+      }, 250);
+    }
   }
 
   ngOnDestroy(): void {
     this.fleetService.disconnect();
+    if (this.map) {
+      this.map.remove();
+    }
   }
 
   loadVehicles(): void {
@@ -285,6 +251,56 @@ export class FleetMapComponent implements OnInit, OnDestroy {
 
   getTelemetry(vehicleId: number) {
     return this.fleetService.getVehicleTelemetry(vehicleId);
+  }
+
+  private initMap(): void {
+    // Default center: Nairobi, Kenya
+    this.map = L.map(this.mapElement.nativeElement).setView([-1.2921, 36.8219], 13);
+
+    // Add CartoDB Voyager tiles (sleek, professional aesthetic - no API key required)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      maxZoom: 19
+    }).addTo(this.map);
+  }
+
+  private listenToFleet(): void {
+    // Connect to the WebSocket stream
+    this.fleetService.telemetry$.subscribe({
+      next: (data: any) => {
+        if (data && data.fleet_id && data.latitude && data.longitude) {
+          this.updateBusLocation(data);
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  private updateBusLocation(data: any): void {
+    const id = data.fleet_id;
+    const lat = data.latitude;
+    const lng = data.longitude;
+    const status = data.status;
+
+    if (this.markers[id]) {
+      // Move existing bus - CSS transition will make this glide smoothly
+      this.markers[id].setLatLng([lat, lng]);
+      this.markers[id].setPopupContent(`<b>${data.license_plate || 'Bus #' + id}</b><br>Speed: ${data.speed_kmh || 0} km/h<br>Status: ${status || 'Active'}`);
+    } else {
+      // Create new bus marker with custom HTML DivIcon for pulsing bus dot
+      const customIcon = L.divIcon({
+        className: 'custom-bus-marker',
+        html: '<div style="background:#2563eb; width:16px; height:16px; border-radius:50%; border:3px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+
+      const marker = L.marker([lat, lng], { icon: customIcon })
+        .bindPopup(`<b>${data.license_plate || 'Bus #' + id}</b><br>Speed: ${data.speed_kmh || 0} km/h<br>Status: ${status || 'Active'}`)
+        .addTo(this.map);
+
+      this.markers[id] = marker;
+    }
   }
 
   viewVehicle(vehicle: FleetVehicle): void { this.snackBar.open(`Viewing ${vehicle.registration_number}`, 'Close', { duration: 3000 }); }

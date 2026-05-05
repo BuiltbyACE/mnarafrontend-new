@@ -12,6 +12,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -36,6 +37,7 @@ import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-clas
     MatPaginatorModule,
     MatSortModule,
     MatChipsModule,
+    MatTooltipModule,
     MatMenuModule,
     MatDividerModule,
     MatProgressSpinnerModule,
@@ -93,16 +95,21 @@ import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-clas
                 </td>
               </ng-container>
 
-              <!-- Capacity Column -->
-              <ng-container matColumnDef="capacity">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Capacity</th>
+              <!-- Enrollment Column -->
+              <ng-container matColumnDef="enrollment">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Enrollment</th>
                 <td mat-cell *matCellDef="let classroom">
-                  <div class="capacity-info">
-                    <span class="enrollment">{{ classroom.current_enrollment }} / {{ classroom.capacity }}</span>
+                  <div class="enrollment-info">
+                    <span class="enrollment-count"
+                          [class.full]="classroom.enrollment_status?.is_full"
+                          [class.available]="!classroom.enrollment_status?.is_full">
+                      {{ classroom.enrollment_status?.current || 0 }} / {{ classroom.capacity }}
+                    </span>
                     <div class="capacity-bar">
-                      <div class="capacity-fill" [style.width.%]="(classroom.current_enrollment / classroom.capacity) * 100"
-                           [class.high]="(classroom.current_enrollment / classroom.capacity) > 0.9"
-                           [class.medium]="(classroom.current_enrollment / classroom.capacity) > 0.75 && (classroom.current_enrollment / classroom.capacity) <= 0.9">
+                      <div class="capacity-fill"
+                           [style.width.%]="(classroom.enrollment_status?.current || 0 / classroom.capacity) * 100"
+                           [class.high]="classroom.enrollment_status?.is_full"
+                           [class.medium]="!classroom.enrollment_status?.is_full && (classroom.enrollment_status?.current || 0) / classroom.capacity > 0.75">
                       </div>
                     </div>
                   </div>
@@ -113,53 +120,38 @@ import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-clas
               <ng-container matColumnDef="teacher">
                 <th mat-header-cell *matHeaderCellDef>Class Teacher</th>
                 <td mat-cell *matCellDef="let classroom">
-                  @if (classroom.class_teacher) {
-                    <div class="teacher-info">
-                      <mat-icon>person</mat-icon>
-                      <span>{{ classroom.class_teacher.full_name }}</span>
-                    </div>
-                  } @else {
-                    <span class="unassigned">Unassigned</span>
-                  }
+                  <div class="teacher-info">
+                    <mat-icon>person</mat-icon>
+                    <span>{{ classroom.teacher_name || 'Not Assigned' }}</span>
+                  </div>
                 </td>
               </ng-container>
 
               <!-- Status Column -->
               <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef>Status</th>
-                <td mat-cell *matCellDef="let classroom">
-                  <app-status-badge [type]="classroom.is_active ? 'active' : 'archived'"></app-status-badge>
+                <td mat-cell *matCellDef="let classroom" class="status-cell">
+                  <span class="status-pill"
+                        [class.active]="classroom.is_active"
+                        [class.archived]="!classroom.is_active">
+                    {{ classroom.is_active ? 'Active' : 'Archived' }}
+                  </span>
                 </td>
               </ng-container>
 
               <!-- Actions Column -->
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="actions-header"></th>
+                <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
                 <td mat-cell *matCellDef="let classroom" class="actions-cell">
-                  <button mat-icon-button [matMenuTriggerFor]="menu">
-                    <mat-icon>more_vert</mat-icon>
+                  <button mat-icon-button color="primary" (click)="viewClassroom(classroom)" matTooltip="View">
+                    <mat-icon>visibility</mat-icon>
                   </button>
-                  <mat-menu #menu="matMenu">
-                    <button mat-menu-item (click)="viewClassroom(classroom)">
-                      <mat-icon>visibility</mat-icon>
-                      <span>View Details</span>
-                    </button>
-                    <button mat-menu-item (click)="editClassroom(classroom)">
-                      <mat-icon>edit</mat-icon>
-                      <span>Edit</span>
-                    </button>
-                    <button mat-menu-item (click)="manageStudents(classroom)">
-                      <mat-icon>people</mat-icon>
-                      <span>Manage Students</span>
-                    </button>
-                    <mat-divider></mat-divider>
-                    @if (classroom.is_active) {
-                      <button mat-menu-item (click)="archiveClassroom(classroom)" class="archive-action">
-                        <mat-icon>archive</mat-icon>
-                        <span>Archive</span>
-                      </button>
-                    }
-                  </mat-menu>
+                  <button mat-icon-button color="accent" (click)="editClassroom(classroom)" matTooltip="Edit">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="archiveClassroom(classroom)" matTooltip="Archive" *ngIf="classroom.is_active">
+                    <mat-icon>delete</mat-icon>
+                  </button>
                 </td>
               </ng-container>
 
@@ -275,9 +267,19 @@ import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-clas
       gap: 4px;
       min-width: 100px;
 
-      .enrollment {
+      .enrollment-count {
         font-size: 13px;
+        font-weight: 500;
         color: #4b5563;
+
+        &.full {
+          color: #ef4444;
+          font-weight: 600;
+        }
+
+        &.available {
+          color: #10b981;
+        }
       }
 
       .capacity-bar {
@@ -322,6 +324,30 @@ import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-clas
       font-style: italic;
     }
 
+    .status-pill {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin: 0 8px;
+
+      &.active {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      &.archived {
+        background: #f3f4f6;
+        color: #6b7280;
+      }
+    }
+
+    .status-cell {
+      padding: 8px 16px;
+    }
+
     .actions-header {
       width: 50px;
     }
@@ -330,7 +356,7 @@ import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-clas
       text-align: right;
     }
 
-    .archive-action {
+    .no-data-row .mat-cell {
       color: #dc2626;
 
       mat-icon {
@@ -372,7 +398,7 @@ export class ClassroomsListComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
 
   readonly classrooms = this.academicsService.classrooms;
-  readonly displayedColumns = ['name', 'year_level', 'capacity', 'teacher', 'status', 'actions'];
+  readonly displayedColumns = ['name', 'year_level', 'enrollment', 'teacher', 'status', 'actions'];
 
   currentPage = 0;
   pageSize = 25;

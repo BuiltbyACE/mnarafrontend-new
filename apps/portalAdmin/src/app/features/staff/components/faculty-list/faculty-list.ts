@@ -3,7 +3,7 @@
  * Staff & HR module - faculty management with data table
  */
 
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -52,20 +52,20 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
       </header>
 
       <!-- Payroll Summary Cards -->
-      @if (payrollSummary(); as summary) {
-        <div class="summary-cards">
-          <mat-card class="summary-card">
-            <mat-card-content>
-              <div class="summary-icon payroll">
-              <mat-icon>payments</mat-icon>
-            </div>
-            <div class="summary-info">
-              <span class="summary-value">{{ formatCurrency(summary.current_month_total_kes) }}</span>
-              <span class="summary-label">Monthly Payroll</span>
-            </div>
-          </mat-card-content>
-        </mat-card>
+      <div class="summary-cards">
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="summary-icon payroll">
+            <mat-icon>payments</mat-icon>
+          </div>
+          <div class="summary-info">
+            <span class="summary-value">{{ formatCurrency(monthlyPayroll()) }}</span>
+            <span class="summary-label">Monthly Payroll</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
 
+        @if (payrollSummary(); as summary) {
           <mat-card class="summary-card" [class.alert]="summary.payrolls_pending_approval > 0">
             <mat-card-content>
               <div class="summary-icon pending">
@@ -77,8 +77,8 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
               </div>
             </mat-card-content>
           </mat-card>
-        </div>
-      }
+        }
+      </div>
 
       @if (staffService.error()) {
         <div class="error-alert">
@@ -91,86 +91,52 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
         <mat-card-content>
           <div class="table-container">
             <table mat-table [dataSource]="staff()" matSort (matSortChange)="onSort($event)">
-              
-              <!-- Name Column -->
-              <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Staff Member</th>
-                <td mat-cell *matCellDef="let faculty">
-                  <div class="staff-info">
-                    <div class="avatar">{{ getInitials(faculty.full_name) }}</div>
-                    <div class="staff-details">
-                      <span class="staff-name">{{ faculty.full_name }}</span>
-                      <span class="staff-id">{{ faculty.employee_id }}</span>
+               
+              <!-- Staff Column -->
+              <ng-container matColumnDef="staff">
+                <th mat-header-cell *matHeaderCellDef> Staff Member </th>
+                <td mat-cell *matCellDef="let element">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="avatar sm">{{ getInitials(element.other_names + ' ' + element.surname) }}</div>
+                    <div style="display: flex; flex-direction: column;">
+                      <span style="font-weight: 500;">{{ element.other_names }} {{ element.surname }}</span>
+                      <span style="font-size: 0.75rem; color: #64748b;">{{ element.employee_id || 'ID Pending' }}</span>
                     </div>
                   </div>
                 </td>
               </ng-container>
 
-              <!-- Role Column -->
+              <!-- Role & Department Column -->
               <ng-container matColumnDef="role">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Role</th>
-                <td mat-cell *matCellDef="let faculty">
-                  {{ faculty.role_display }}
+                <th mat-header-cell *matHeaderCellDef> Role & Department </th>
+                <td mat-cell *matCellDef="let element"> 
+                  <div style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 500;">{{ element.role_display || 'Staff' }}</span>
+                    <span style="font-size: 0.75rem; color: #64748b;">{{ element.department_name }}</span>
+                  </div>
                 </td>
               </ng-container>
 
-              <!-- Department Column -->
-              <ng-container matColumnDef="department">
-                <th mat-header-cell *matHeaderCellDef>Department</th>
-                <td mat-cell *matCellDef="let faculty">
-                  {{ faculty.department || 'N/A' }}
-                </td>
-              </ng-container>
-
-              <!-- Employment Type Column -->
-              <ng-container matColumnDef="employment_type">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
-                <td mat-cell *matCellDef="let faculty">
-                  <mat-chip-listbox>
-                    <mat-chip-option [selected]="faculty.employment_type === 'FULLTIME'" 
-                                     [highlighted]="faculty.employment_type === 'FULLTIME'">
-                      {{ faculty.employment_type_display }}
-                    </mat-chip-option>
-                  </mat-chip-listbox>
-                </td>
+              <!-- Type Column -->
+              <ng-container matColumnDef="type">
+                <th mat-header-cell *matHeaderCellDef> Type </th>
+                <td mat-cell *matCellDef="let element"> {{ element.employment_type_display || 'Full-Time' }} </td>
               </ng-container>
 
               <!-- Status Column -->
               <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>Status</th>
-                <td mat-cell *matCellDef="let faculty">
-                  <app-status-badge [type]="faculty.is_active ? 'active' : 'inactive'"></app-status-badge>
+                <th mat-header-cell *matHeaderCellDef> Status </th>
+                <td mat-cell *matCellDef="let element"> 
+                  <app-status-badge [type]="element.is_active ? 'active' : 'inactive'"></app-status-badge> 
                 </td>
               </ng-container>
 
               <!-- Actions Column -->
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="actions-header"></th>
-                <td mat-cell *matCellDef="let faculty" class="actions-cell">
-                  <button mat-icon-button [matMenuTriggerFor]="menu">
-                    <mat-icon>more_vert</mat-icon>
-                  </button>
-                  <mat-menu #menu="matMenu">
-                    <button mat-menu-item (click)="viewStaff(faculty)">
-                      <mat-icon>visibility</mat-icon>
-                      <span>View Profile</span>
-                    </button>
-                    <button mat-menu-item (click)="editStaff(faculty)">
-                      <mat-icon>edit</mat-icon>
-                      <span>Edit</span>
-                    </button>
-                    <button mat-menu-item (click)="viewPayroll(faculty)">
-                      <mat-icon>payments</mat-icon>
-                      <span>View Payroll</span>
-                    </button>
-                    <mat-divider></mat-divider>
-                    @if (faculty.is_active) {
-                      <button mat-menu-item (click)="deactivateStaff(faculty)" class="deactivate-action">
-                        <mat-icon>block</mat-icon>
-                        <span>Deactivate</span>
-                      </button>
-                    }
-                  </mat-menu>
+                <th mat-header-cell *matHeaderCellDef> Actions </th>
+                <td mat-cell *matCellDef="let element">
+                  <button mat-icon-button color="primary"><mat-icon>visibility</mat-icon></button>
+                  <button mat-icon-button color="accent"><mat-icon>edit</mat-icon></button>
                 </td>
               </ng-container>
 
@@ -407,7 +373,11 @@ export class FacultyListComponent implements OnInit {
 
   readonly staff = this.staffService.staff;
   readonly payrollSummary = this.staffService.payrollSummary;
-  readonly displayedColumns = ['name', 'role', 'department', 'employment_type', 'status', 'actions'];
+  readonly displayedColumns = ['staff', 'role', 'type', 'status', 'actions'];
+
+  readonly monthlyPayroll = computed(() => {
+    return this.staff().reduce((sum, staff) => sum + (Number((staff as any).base_salary) || 0), 0);
+  });
 
   currentPage = 0;
   pageSize = 25;
@@ -441,12 +411,13 @@ export class FacultyListComponent implements OnInit {
   }
 
   getInitials(name: string): string {
+    if (!name) return '??';
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2) || '??';
   }
 
   formatCurrency(amount: number): string {

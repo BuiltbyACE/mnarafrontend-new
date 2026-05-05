@@ -48,6 +48,7 @@ export class LoginPage {
   rememberMe = false;
   hidePassword = true;
   isLoading = false;
+  currentYear = new Date().getFullYear();
 
   /**
    * Toggle password visibility
