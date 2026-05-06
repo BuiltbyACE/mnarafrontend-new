@@ -75,7 +75,7 @@ import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-clas
         <mat-card-content>
           <div class="table-container">
             <table mat-table [dataSource]="classrooms()" matSort (matSortChange)="onSort($event)">
-              
+
               <!-- Name Column -->
               <ng-container matColumnDef="name">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Classroom</th>
@@ -261,7 +261,7 @@ import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-clas
       }
     }
 
-    .capacity-info {
+    .enrollment-info {
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -411,7 +411,7 @@ export class ClassroomsListComponent implements OnInit {
 
   loadClassrooms(): void {
     this.academicsService.getClassrooms(this.currentPage + 1, this.pageSize)
-      .subscribe((response) => this.academicsService.setClassrooms(response.results, response.count));
+      .subscribe((response: any) => this.academicsService.setClassrooms(response.results, response.count));
   }
 
   onPageChange(event: PageEvent): void {
@@ -428,7 +428,7 @@ export class ClassroomsListComponent implements OnInit {
 
   addClassroom(): void {
     const ref = this.dialog.open(CreateClassroomDialogComponent, { width: '520px', disableClose: true });
-    ref.afterClosed().subscribe((created) => { if (created) this.loadClassrooms(); });
+    ref.afterClosed().subscribe((created: any) => { if (created) this.loadClassrooms(); });
   }
 
   viewClassroom(classroom: Classroom): void {
@@ -441,7 +441,7 @@ export class ClassroomsListComponent implements OnInit {
       disableClose: true,
       data: { classroom },
     });
-    ref.afterClosed().subscribe((updated) => { if (updated) this.loadClassrooms(); });
+    ref.afterClosed().subscribe((updated: any) => { if (updated) this.loadClassrooms(); });
   }
 
   manageStudents(classroom: Classroom): void {
@@ -455,7 +455,7 @@ export class ClassroomsListComponent implements OnInit {
           this.snackBar.open(`${classroom.name} archived successfully`, 'Close', { duration: 3000 });
           this.loadClassrooms();
         },
-        error: (err) => {
+        error: (err: any) => {
           this.snackBar.open(`Failed to archive: ${err.message}`, 'Close', { duration: 5000 });
         }
       });
@@ -468,7 +468,7 @@ export class ClassroomsListComponent implements OnInit {
       disableClose: true,
     });
 
-    dialogRef.afterClosed().subscribe((result) => {
+    dialogRef.afterClosed().subscribe((result: any) => {
       if (result?.success) {
         this.snackBar.open(result.message, 'Close', { duration: 5000 });
         this.loadClassrooms();

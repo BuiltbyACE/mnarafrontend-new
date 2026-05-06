@@ -116,9 +116,10 @@ export class CreateClassroomDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadingYearLevels = true;
-    this.academicsService.getYearLevels().subscribe({
-      next: (levels) => {
-        this.yearLevels = levels.filter(l => l.is_active);
+    this.academicsService.getAcademicYears().subscribe({
+      next: (res) => {
+        const levels = res.results || [];
+        this.yearLevels = levels.filter((l: YearLevel) => l.is_active);
         this.loadingYearLevels = false;
       },
       error: () => {

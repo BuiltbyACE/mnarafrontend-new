@@ -1,0 +1,124 @@
+<div class="page-header">
+  <h2>Student Houses</h2>
+</div>
+
+@if (error()) {
+  <div class="error-message">{{ error() }}</div>
+}
+
+<mat-tab-group>
+  <!-- Tab 1: House Dashboards -->
+  <mat-tab label="House Dashboards">
+    @if (isLoading()) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+    
+    <div class="houses-grid">
+      @for (house of houses(); track house.id) {
+        <mat-card class="house-card">
+          <mat-card-header>
+            <mat-card-title>
+              <span [style.color]="house.color_hex">{{ house.name }}</span>
+            </mat-card-title>
+            <mat-card-subtitle>{{ house.student_count || 0 }} Students | {{ house.current_points || 0 }} Points</mat-card-subtitle>
+          </mat-card-header>
+          @if (house.head_of_house_name) {
+            <mat-card-content>
+              <p>Head of House: {{ house.head_of_house_name }}</p>
+            </mat-card-content>
+          }
+          <mat-card-actions>
+            <button mat-raised-button color="primary" (click)="openHouseDialog(house)">
+              <mat-icon>groups</mat-icon> View Roster
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      } @empty {
+        <div class="empty-state">
+          <mat-icon>home_work</mat-icon>
+          <p>No houses found. Please configure houses in the system.</p>
+        </div>
+      }
+    </div>
+  </mat-tab>
+
+  <!-- Tab 2: Unassigned Students -->
+  <mat-tab label="Unassigned Students">
+    <div class="unassigned-section">
+      <table mat-table [dataSource]="unassignedStudents()" class="mat-elevation-z8">
+        
+        <ng-container matColumnDef="admission_number">
+          <th mat-header-cell *matHeaderCellDef>Adm No.</th>
+          <td mat-cell *matCellDef="let element">
+            <strong>{{ element.admission_number || 'N/A' }}</strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="student">
+          <th mat-header-cell *matHeaderCellDef>Student Name</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.first_name }} <strong>{{ element.last_name }}</strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="class">
+          <th mat-header-cell *matHeaderCellDef>Class</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.current_class || 'N/A' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="recommendation">
+          <th mat-header-cell *matHeaderCellDef>Recommendation</th>
+          <td mat-cell *matCellDef="let element">
+            @if (element.recommended_house_name) {
+              <span class="badge smart-recommendation">
+                <mat-icon>family_restroom</mat-icon> Sibling in {{ element.recommended_house_name }}
+              </span>
+            } @else {
+              <span class="text-muted">No recommendation</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Assign to House</th>
+          <td mat-cell *matCellDef="let element">
+            <mat-form-field appearance="outline" class="assign-select">
+              <mat-select placeholder="Select House" (selectionChange)="assignHouse(element.id, $event.value)">
+                @for (house of houses(); track house.id) {
+                  <mat-option [value]="house.id">{{ house.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </td>
+        </ng-container> -->
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Assign to House</th>
+          <td mat-cell *matCellDef="let element">
+            <select 
+              class="native-assign-select" 
+              (change)="assignHouse(element.id, $any($event.target).value)"
+              style="padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; width: 100%; background: #f8fafc; font-family: inherit; font-size: 14px; cursor: pointer;">
+              <option value="" disabled selected>Select House</option>
+              @for (house of houses(); track house.id) {
+                <option [value]="house.id">{{ house.name }}</option>
+              }
+            </select>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="unassignedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: unassignedColumns;"></tr>
+      </table>
+
+      @if (unassignedStudents().length === 0) {
+        <div class="empty-state">
+          <mat-icon>check_circle</mat-icon>
+          <p>All students are assigned to houses!</p>
+        </div>
+      }
+    </div>
+  </mat-tab>
+</mat-tab-group>

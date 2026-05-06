@@ -196,11 +196,12 @@ export class BulkPromotionDialogComponent implements OnInit {
   }
 
   loadYearLevels(): void {
-    this.academicsService.getYearLevels().subscribe({
-      next: (levels) => {
-        this.yearLevels.set(levels.filter(l => l.is_active));
+    this.academicsService.getAcademicYears().subscribe({
+      next: (res: any) => {
+        const levels = res.results || [];
+        this.yearLevels.set(levels.filter((l: any) => l.is_active));
       },
-      error: () => {
+      error: (err: any) => {
         this.error.set('Failed to load year levels');
       }
     });
@@ -229,11 +230,11 @@ export class BulkPromotionDialogComponent implements OnInit {
     };
 
     this.academicsService.bulkPromote(request).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isLoading.set(false);
         this.dialogRef.close({ success: true, message: response.message });
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isLoading.set(false);
         this.error.set(err.message || 'Failed to promote students');
       }

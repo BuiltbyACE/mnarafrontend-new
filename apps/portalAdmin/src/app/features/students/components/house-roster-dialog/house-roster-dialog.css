@@ -1,0 +1,14 @@
+.student-cell { display: flex; align-items: center; gap: 8px; }
+.tiny-avatar { width: 28px; height: 28px; border-radius: 50%; }
+.name-text strong { color: #0f172a; }
+.sibling-link-icon { color: #94a3b8; font-size: 18px; width: 18px; height: 18px; margin-left: 8px; }
+.sibling-row { background-color: #f8fafc; } /* Subtle background for family clusters */
+
+.roster-table {
+  width: 100%;
+}
+
+mat-dialog-content {
+  min-width: 500px;
+  max-height: 70vh;
+}

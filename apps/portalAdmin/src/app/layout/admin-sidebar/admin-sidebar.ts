@@ -426,9 +426,37 @@ export class AdminSidebarComponent {
 
   readonly navItems: NavItem[] = [
     { name: 'dashboard', label: 'Dashboard', icon: 'home', route: '/portalAdmin' },
-    { name: 'academics', label: 'Academics', icon: 'school', route: '/portalAdmin/academics' },
     {
-      name: 'students', label: 'Students', icon: 'group', route: '/portalAdmin/students',
+      name: 'academics', label: 'Academics', icon: 'school', route: '/portalAdmin/academics',
+      children: [
+        { label: 'Class Rooms', route: '/portalAdmin/academics/classrooms' },
+        { label: 'Departments', route: '/portalAdmin/academics/departments' },
+        { label: 'Key Stages', route: '/portalAdmin/academics/key-stages' },
+        { label: 'Subject Offerings', route: '/portalAdmin/academics/subject-offerings' },
+        { label: 'Subjects', route: '/portalAdmin/academics/subjects' },
+        { label: 'Year levels', route: '/portalAdmin/academics/year-levels' },
+      ],
+    },
+    {
+      name: 'lms', label: 'LMS', icon: 'menu_book', route: '/portalAdmin/lms',
+      children: [
+        { label: 'Academic Terms', route: '/portalAdmin/lms/academic-terms' },
+        { label: 'Academic Years', route: '/portalAdmin/lms/academic-years' },
+        { label: 'Assignments', route: '/portalAdmin/lms/assignments' },
+        { label: 'Calendar Events', route: '/portalAdmin/lms/calendar-events' },
+        { label: 'Class Periods', route: '/portalAdmin/lms/class-periods' },
+        { label: 'Course Workspaces', route: '/portalAdmin/lms/course-workspaces' },
+        { label: 'Event Categories', route: '/portalAdmin/lms/event-categories' },
+        { label: 'Exam Series', route: '/portalAdmin/lms/exam-series' },
+        { label: 'Exam components', route: '/portalAdmin/lms/exam-components' },
+        { label: 'Quiz questions', route: '/portalAdmin/lms/quiz-questions' },
+        { label: 'Student exam results', route: '/portalAdmin/lms/exam-results' },
+        { label: 'Student submissions', route: '/portalAdmin/lms/submissions' },
+        { label: 'Term report cards', route: '/portalAdmin/lms/report-cards' },
+        { label: 'Timetable Slots', route: '/portalAdmin/lms/timetable-slots' },
+      ],
+    },
+    { name: 'students', label: 'Students', icon: 'group', route: '/portalAdmin/students',
       children: [
         { label: 'All Students', route: '/portalAdmin/students' },
         { label: 'Student Admission', route: '/portalAdmin/students/admissions' },
@@ -437,15 +465,11 @@ export class AdminSidebarComponent {
         { label: 'Student Houses', route: '/portalAdmin/students/houses' },
       ],
     },
-    { name: 'staff', label: 'Staff & HR', icon: 'person_outline', route: '/portalAdmin/staff' },
+    { name: 'staff', label: 'HR', icon: 'person_outline', route: '/portalAdmin/staff' },
     { name: 'finance', label: 'Finance', icon: 'account_balance', route: '/portalAdmin/finance' },
-    { name: 'examinations', label: 'Examinations', icon: 'description', route: '/portalAdmin/examinations' },
-    { name: 'attendance', label: 'Attendance', icon: 'event_available', route: '/portalAdmin/attendance' },
     { name: 'transport', label: 'Transport', icon: 'directions_bus', route: '/portalAdmin/transport' },
     { name: 'communication', label: 'Communication', icon: 'chat', route: '/portalAdmin/communication' },
-    { name: 'library', label: 'Library', icon: 'menu_book', route: '/portalAdmin/library' },
-    { name: 'reports', label: 'Reports & Analytics', icon: 'bar_chart', route: '/portalAdmin/reports' },
-    { name: 'rbac', label: 'System Access', icon: 'security', route: '/portalAdmin/rbac' },
+    { name: 'reports', label: 'Reports', icon: 'bar_chart', route: '/portalAdmin/reports' },
     { name: 'settings', label: 'Settings', icon: 'settings', route: '/portalAdmin/settings' },
   ];
 }

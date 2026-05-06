@@ -1,0 +1,86 @@
+.filter-card {
+  margin: 16px;
+  padding: 16px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 24px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-group h3 {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+mat-form-field {
+  width: 200px;
+}
+
+.action-bar {
+  margin: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.student-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.student-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.student-id {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge.pass, .badge.eligible {
+  background-color: #e6f4ea;
+  color: #1e8e3e;
+}
+
+.badge.fail, .badge.retained {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+.badge.average {
+  background-color: #fef7e0;
+  color: #f9a825;
+}
+
+.error-message {
+  color: #d93025;
+  margin: 16px;
+  padding: 8px;
+  background-color: #fce8e6;
+  border-radius: 4px;
+}
+
+table {
+  width: calc(100% - 32px);
+  margin: 16px;
+}

@@ -17,17 +17,17 @@ export const remoteRoutes: Route[] = [
         path: '',
         pathMatch: 'full',
         loadComponent: () =>
-          import('../features/dashboard/components/dashboard-page/dashboard-page').then(
-            (m) => m.DashboardPageComponent
-          ),
+import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
+             (m) => m.AdminDashboardComponent
+           ),
       },
       // Dashboard explicit path
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('../features/dashboard/components/dashboard-page/dashboard-page').then(
-            (m) => m.DashboardPageComponent
-          ),
+import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
+             (m) => m.AdminDashboardComponent
+           ),
       },
       // Academics Module
       {

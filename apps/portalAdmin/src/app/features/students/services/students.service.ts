@@ -5,11 +5,11 @@
 
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError, of } from 'rxjs';
+import { Observable, catchError, throwError, of, map } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
-import { Admission, StudentDetail, AdmissionRequest, StudentProfile } from '../../../shared/models/students.models';
+import { Admission, StudentDetail, AdmissionRequest, StudentProfile, StudentCategory, StudentHouse } from '../../../shared/models/students.models';
 
-interface PaginatedResponse<T> {
+export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
   previous: string | null;
@@ -135,5 +135,103 @@ export class StudentsService {
       next: (summary) => this.admissionsSummary.set(summary),
       error: () => this.admissionsSummary.set(null),
     });
+  }
+
+  getStudentsForPromotion(filters: { academicYearId: string; classId: string }): Observable<PaginatedResponse<StudentProfile>> {
+    let params = new HttpParams()
+      .set('academic_year', filters.academicYearId)
+      .set('classroom', filters.classId);
+    return this.http
+      .get<PaginatedResponse<StudentProfile>>(getApiUrl('/students/profiles/'), { params })
+      .pipe(
+        catchError((err) => {
+          const message = err.error?.message || 'Failed to load students for promotion';
+          this.error.set(message);
+          return throwError(() => new Error(message));
+        })
+      );
+  }
+
+  promoteStudents(payload: { student_id: number; next_class_id: string; course_stream_id: string }[], academicYearId: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(
+      getApiUrl('/academics/students/bulk-promote/'),
+      { students: payload, academic_year: academicYearId }
+    ).pipe(
+      catchError((err) => {
+        return throwError(() => new Error(err.error?.message || 'Failed to promote students'));
+      })
+    );
+  }
+
+  getCategories(): Observable<PaginatedResponse<StudentCategory>> {
+    return this.http.get<PaginatedResponse<StudentCategory>>(getApiUrl('/students/categories/')).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to load categories')))
+    );
+  }
+
+  createCategory(data: Omit<StudentCategory, 'id' | 'student_count'>): Observable<StudentCategory> {
+    return this.http.post<StudentCategory>(getApiUrl('/students/categories/'), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to create category')))
+    );
+  }
+
+  updateCategory(id: string, data: Partial<Omit<StudentCategory, 'id' | 'student_count'>>): Observable<StudentCategory> {
+    return this.http.patch<StudentCategory>(getApiUrl(`/students/categories/${id}/`), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to update category')))
+    );
+  }
+
+  deleteCategory(id: string): Observable<void> {
+    return this.http.delete<void>(getApiUrl(`/students/categories/${id}/`)).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to delete category')))
+    );
+  }
+
+  getStudentsByHouse(houseId: string): Observable<PaginatedResponse<StudentProfile>> {
+    return this.http.get<PaginatedResponse<StudentProfile>>(getApiUrl(`/students/houses/${houseId}/students/`)).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to load students')))
+    );
+  }
+
+  removeStudentFromHouse(studentId: string): Observable<StudentProfile> {
+    return this.http.patch<StudentProfile>(getApiUrl(`/students/profiles/${studentId}/`), { house_id: null }).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to remove student from house')))
+    );
+  }
+
+  getHouses(): Observable<PaginatedResponse<StudentHouse>> {
+    return this.http.get<PaginatedResponse<StudentHouse>>(getApiUrl('/students/houses/')).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to load houses')))
+    );
+  }
+
+  createHouse(data: Omit<StudentHouse, 'id' | 'student_count'>): Observable<StudentHouse> {
+    return this.http.post<StudentHouse>(getApiUrl('/students/houses/'), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to create house')))
+    );
+  }
+
+  updateHouse(id: string, data: Partial<Omit<StudentHouse, 'id' | 'student_count'>>): Observable<StudentHouse> {
+    return this.http.patch<StudentHouse>(getApiUrl(`/students/houses/${id}/`), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to update house')))
+    );
+  }
+
+  deleteHouse(id: string): Observable<void> {
+    return this.http.delete<void>(getApiUrl(`/students/houses/${id}/`)).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to delete house')))
+    );
+  }
+
+  getUnassignedStudents(): Observable<PaginatedResponse<StudentProfile>> {
+    return this.http.get<PaginatedResponse<StudentProfile>>(getApiUrl('/students/profiles/unassigned_house/')).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to load unassigned students')))
+    );
+  }
+
+  assignHouse(studentId: string, houseId: string): Observable<StudentProfile> {
+    return this.http.patch<StudentProfile>(getApiUrl(`/students/profiles/${studentId}/`), { house_id: houseId }).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to assign student to house')))
+    );
   }
 }

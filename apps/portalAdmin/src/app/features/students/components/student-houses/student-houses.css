@@ -1,0 +1,69 @@
+.page-header {
+  margin-bottom: 24px;
+}
+
+.houses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 24px;
+}
+
+.house-card {
+  padding: 16px;
+}
+
+.house-card mat-card-header {
+  margin-bottom: 16px;
+}
+
+.house-card mat-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.unassigned-section {
+  padding: 16px;
+}
+
+.assign-select {
+  width: 150px;
+}
+
+badge.smart-recommendation {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.text-muted {
+  color: #64748b;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px;
+  gap: 16px;
+  color: #64748b;
+}
+
+.empty-state mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #cbd5e1;
+}
+
+.error-message {
+  color: #dc2626;
+  padding: 16px;
+  background: #fee2e2;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}

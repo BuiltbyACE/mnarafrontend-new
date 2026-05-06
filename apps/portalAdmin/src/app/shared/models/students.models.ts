@@ -100,6 +100,7 @@ export interface StudentProfile {
   admission_record: StudentAdmissionRecord | null;
   medical_record: Record<string, unknown> | null;
   enrollments: StudentEnrollment[];
+  assigned_course_id?: string;
 }
 
 export interface MedicalRecord {
@@ -110,4 +111,23 @@ export interface MedicalRecord {
   emergency_contact: string;
   doctor_name: string;
   hospital_preference: string;
+}
+
+export interface StudentCategory {
+  id: string;
+  name: string;
+  description: string;
+  student_count?: number;
+  is_active: boolean;
+}
+
+export interface StudentHouse {
+  id: string;
+  name: string;
+  color_hex: string;
+  head_of_house_name?: string;
+  head_of_house_id?: string;
+  current_points: number;
+  student_count: number;
+  is_active: boolean;
 }

@@ -129,11 +129,12 @@ export class EditClassroomDialogComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.academicsService.getYearLevels().subscribe({
-      next: (levels) => {
+    this.academicsService.getAcademicYears().subscribe({
+      next: (res) => {
+        const levels = res.results || [];
         this.yearLevels = levels;
         // Match year level by name since classroom returns name not id
-        const matched = levels.find(l => l.name === this.data.classroom.year_level_name);
+        const matched = levels.find((l: YearLevel) => l.name === this.data.classroom.year_level_name);
         if (matched) {
           this.form.patchValue({ year_level: matched.id });
         }

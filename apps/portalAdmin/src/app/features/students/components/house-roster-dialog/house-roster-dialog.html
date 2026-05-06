@@ -1,0 +1,71 @@
+<h2 mat-dialog-title>{{ houseName() }} - Student Roster</h2>
+<mat-dialog-content>
+  
+  @if (errorMessage()) {
+    <div style="padding: 16px; background: #fee2e2; color: #dc2626; border-radius: 8px; margin-bottom: 16px; font-weight: 500;">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="query"></mat-progress-bar>
+  } @else if (!errorMessage()) {
+    <table mat-table [dataSource]="groupedStudents()" class="roster-table" style="width: 100%;">
+      
+      <!-- Admission Number Column -->
+      <ng-container matColumnDef="admission_number">
+        <th mat-header-cell *matHeaderCellDef> Adm No. </th>
+        <td mat-cell *matCellDef="let element"> 
+          <strong>{{ element.admission_number || 'N/A' }}</strong> 
+        </td>
+      </ng-container>
+
+      <!-- Student Name Column -->
+      <ng-container matColumnDef="student">
+        <th mat-header-cell *matHeaderCellDef> Student Name </th>
+        <td mat-cell *matCellDef="let element" [class.sibling-row]="element.isSiblingStart || element.isSiblingEnd"> 
+          <div style="display: flex; align-items: center; gap: 8px;">
+            @if (element.isSiblingEnd) {
+              <mat-icon style="color: #94a3b8; font-size: 18px; width: 18px; height: 18px;" matTooltip="Sibling">subdirectory_arrow_right</mat-icon>
+            }
+            <span>{{ element.first_name }} <strong>{{ element.last_name }}</strong></span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Gender Column -->
+      <ng-container matColumnDef="gender">
+        <th mat-header-cell *matHeaderCellDef> Gender </th>
+        <td mat-cell *matCellDef="let element"> {{ element.gender || 'N/A' }} </td>
+      </ng-container>
+
+      <!-- Grade Column -->
+      <ng-container matColumnDef="grade">
+        <th mat-header-cell *matHeaderCellDef> Class/Year </th>
+        <td mat-cell *matCellDef="let element"> {{ element.current_class_name || 'N/A' }} </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef> Actions </th>
+        <td mat-cell *matCellDef="let element">
+          <button mat-icon-button color="warn" matTooltip="Remove from House" (click)="removeFromHouse(element.id)">
+            <mat-icon>person_remove</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+    
+    @if (groupedStudents().length === 0) {
+      <div style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 16px;">
+        No students have been assigned to this house yet.
+      </div>
+    }
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onClose()">Close</button>
+</mat-dialog-actions>

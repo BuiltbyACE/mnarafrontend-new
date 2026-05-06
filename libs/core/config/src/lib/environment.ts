@@ -4,16 +4,28 @@
  */
 
 /** API Configuration with ngrok backend */
+// export const environment = {
+//   production: false,
+//   // apiBaseUrl: 'https://subcerebellar-colette-undichotomously.ngrok-free.dev/api/v1',
+//   apiBaseUrl: 'http://127.0.0.1:8000/api/v1',
+//   authEndpoints: {
+//     login: '/accounts/auth/login/',
+//     me: '/accounts/auth/me/',
+//     refresh: '/accounts/auth/refresh/',
+//   },
+//   appName: 'Mnara ERP',
+//   version: '1.0.0',
+// };
+
+
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://subcerebellar-colette-undichotomously.ngrok-free.dev/api/v1',
+  apiBaseUrl: 'http://127.0.0.1:8000/api/v1',
   authEndpoints: {
     login: '/accounts/auth/login/',
     me: '/accounts/auth/me/',
     refresh: '/accounts/auth/refresh/',
   },
-  appName: 'Mnara ERP',
-  version: '1.0.0',
 };
 
 /** Production environment override */

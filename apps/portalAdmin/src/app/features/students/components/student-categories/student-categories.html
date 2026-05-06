@@ -1,0 +1,80 @@
+<div class="page-header">
+  <h2>Student Categories</h2>
+  <button mat-raised-button color="primary" (click)="openCategoryDialog()">
+    <mat-icon>add</mat-icon> Add Category
+  </button>
+</div>
+
+<div class="search-bar">
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Search categories</mat-label>
+    <input matInput [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Search by name or description">
+  </mat-form-field>
+</div>
+
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+}
+
+@if (error()) {
+  <div class="error-message">{{ error() }}</div>
+}
+
+<mat-card class="table-card">
+  <table mat-table [dataSource]="filteredCategories()" class="mat-elevation-z8">
+    <!-- Name Column -->
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Category Name</th>
+      <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+    </ng-container>
+
+    <!-- Description Column -->
+    <ng-container matColumnDef="description">
+      <th mat-header-cell *matHeaderCellDef>Description</th>
+      <td mat-cell *matCellDef="let element">{{ element.description || 'No description provided' }}</td>
+    </ng-container>
+
+    <!-- Student Count Column -->
+    <ng-container matColumnDef="student_count">
+      <th mat-header-cell *matHeaderCellDef>Students</th>
+      <td mat-cell *matCellDef="let element">
+        <span class="count-badge">{{ element.student_count || 0 }}</span>
+      </td>
+    </ng-container>
+
+    <!-- Status Column -->
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let element">
+        @if (element.is_active) {
+          <span class="status-badge active">Active</span>
+        } @else {
+          <span class="status-badge inactive">Inactive</span>
+        }
+      </td>
+    </ng-container>
+
+    <!-- Actions Column -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>Actions</th>
+      <td mat-cell *matCellDef="let element">
+        <button mat-icon-button color="primary" (click)="openCategoryDialog(element)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="deleteCategory(element.id)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  @if (filteredCategories().length === 0 && !isLoading()) {
+    <div class="empty-state">
+      <mat-icon>category</mat-icon>
+      <p>No categories found. Click "Add Category" to create one.</p>
+    </div>
+  }
+</mat-card>
