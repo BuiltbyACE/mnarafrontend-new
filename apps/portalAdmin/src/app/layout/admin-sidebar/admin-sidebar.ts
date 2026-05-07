@@ -20,6 +20,7 @@ interface NavItem {
 interface NavChild {
   label: string;
   route: string;
+  icon?: string;
 }
 
 @Component({
@@ -440,20 +441,9 @@ export class AdminSidebarComponent {
     {
       name: 'lms', label: 'LMS', icon: 'menu_book', route: '/portalAdmin/lms',
       children: [
-        { label: 'Academic Terms', route: '/portalAdmin/lms/academic-terms' },
-        { label: 'Academic Years', route: '/portalAdmin/lms/academic-years' },
-        { label: 'Assignments', route: '/portalAdmin/lms/assignments' },
-        { label: 'Calendar Events', route: '/portalAdmin/lms/calendar-events' },
-        { label: 'Class Periods', route: '/portalAdmin/lms/class-periods' },
-        { label: 'Course Workspaces', route: '/portalAdmin/lms/course-workspaces' },
-        { label: 'Event Categories', route: '/portalAdmin/lms/event-categories' },
-        { label: 'Exam Series', route: '/portalAdmin/lms/exam-series' },
-        { label: 'Exam components', route: '/portalAdmin/lms/exam-components' },
-        { label: 'Quiz questions', route: '/portalAdmin/lms/quiz-questions' },
-        { label: 'Student exam results', route: '/portalAdmin/lms/exam-results' },
-        { label: 'Student submissions', route: '/portalAdmin/lms/submissions' },
-        { label: 'Term report cards', route: '/portalAdmin/lms/report-cards' },
-        { label: 'Timetable Slots', route: '/portalAdmin/lms/timetable-slots' },
+        { label: 'Scheduling Hub', route: '/portalAdmin/lms/scheduling', icon: 'calendar_month' },
+        { label: 'Examinations Hub', route: '/portalAdmin/lms/examinations', icon: 'school' },
+        { label: 'Operations Hub', route: '/portalAdmin/lms/operations', icon: 'event_note' },
       ],
     },
     { name: 'students', label: 'Students', icon: 'group', route: '/portalAdmin/students',

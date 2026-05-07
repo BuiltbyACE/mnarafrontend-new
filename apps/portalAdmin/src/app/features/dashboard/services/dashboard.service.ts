@@ -31,6 +31,15 @@ export interface AdminDashboardData {
     id: number;
     title: string;
     date: string;
+    type: string;
+  }[];
+  staffAbsences: {
+    name: string;
+    department: string;
+  }[];
+  recentActivities: {
+    message: string;
+    time: string;
   }[];
   quickActions?: {
     label: string;
@@ -42,7 +51,7 @@ export interface AdminDashboardData {
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private http = inject(HttpClient);
-  private readonly apiUrl = getApiUrl('/api/v1/dashboard/admin/');
+  private readonly apiUrl = getApiUrl('/dashboard/admin/');
 
   getAdminDashboardData(): Observable<AdminDashboardData> {
     return this.http.get<AdminDashboardData>(this.apiUrl);

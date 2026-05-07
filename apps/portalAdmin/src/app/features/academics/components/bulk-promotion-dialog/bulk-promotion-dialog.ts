@@ -174,9 +174,9 @@ import { AcademicsService } from '../../services/academics.service';
   `],
 })
 export class BulkPromotionDialogComponent implements OnInit {
-  private dialogRef = inject(MatDialogRef<BulkPromotionDialogComponent>);
-  private academicsService = inject(AcademicsService);
-  private snackBar = inject(MatSnackBar);
+  readonly dialogRef = inject(MatDialogRef<BulkPromotionDialogComponent>);
+  readonly academicsService = inject(AcademicsService);
+  readonly snackBar = inject(MatSnackBar);
 
   // Form state
   sourceYearLevel = signal<number | null>(null);

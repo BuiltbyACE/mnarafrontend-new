@@ -99,8 +99,8 @@ import { ClassroomWritePayload, YearLevel } from '../../../../shared/models/acad
 })
 export class CreateClassroomDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private academicsService = inject(AcademicsService);
-  private dialogRef = inject(MatDialogRef<CreateClassroomDialogComponent>);
+  readonly academicsService = inject(AcademicsService);
+  readonly dialogRef = inject(MatDialogRef<CreateClassroomDialogComponent>);
 
   saving = false;
   loadingYearLevels = false;
@@ -117,12 +117,12 @@ export class CreateClassroomDialogComponent implements OnInit {
   ngOnInit(): void {
     this.loadingYearLevels = true;
     this.academicsService.getAcademicYears().subscribe({
-      next: (res) => {
+      next: (res: any) => {
         const levels = res.results || [];
         this.yearLevels = levels.filter((l: YearLevel) => l.is_active);
         this.loadingYearLevels = false;
       },
-      error: () => {
+      error: (err: any) => {
         this.loadingYearLevels = false;
         this.errorMessage = 'Could not load year levels.';
       },
@@ -142,8 +142,8 @@ export class CreateClassroomDialogComponent implements OnInit {
       capacity: v.capacity ?? 30,
     };
     this.academicsService.createClassroom(payload).subscribe({
-      next: () => this.dialogRef.close(true),
-      error: (err) => {
+      next: (res: any) => this.dialogRef.close(true),
+      error: (err: any) => {
         this.errorMessage = err.error?.detail || err.error?.name?.[0] || 'Failed to create classroom.';
         this.saving = false;
       },

@@ -5,9 +5,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration } from 'chart.js';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { DashboardService, AdminDashboardData } from '../../services/dashboard.service';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -19,6 +23,8 @@ import { DashboardService, AdminDashboardData } from '../../services/dashboard.s
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     BaseChartDirective,
   ],
   template: `
@@ -105,62 +111,116 @@ import { DashboardService, AdminDashboardData } from '../../services/dashboard.s
         </div>
 
         <div class="grid-12 bottom-row">
-          <mat-card class="grid-col-4">
+          <!-- Column 1: Calendar -->
+          <mat-card class="grid-col-4 calendar-card">
             <mat-card-header>
-              <mat-card-title>Quick Actions</mat-card-title>
+              <mat-card-title>Calendar</mat-card-title>
             </mat-card-header>
             <mat-card-content>
-              <div class="quick-actions-grid">
-                @for (action of quickActions(); track action.label) {
-                  <button mat-stroked-button [routerLink]="action.route">
-                    <mat-icon>{{ action.icon }}</mat-icon>
-                    {{ action.label }}
-                  </button>
-                }
-              </div>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="grid-col-4">
-            <mat-card-header>
-              <mat-card-title>Upcoming Events</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="events-list">
-                @for (event of upcomingEvents(); track event.id) {
+              <mat-calendar [selected]="selectedDate()" [dateClass]="dateClass()"
+                (selectedChange)="onDateSelected($event)"></mat-calendar>
+              <div class="selected-date-events">
+                <h4>Events on {{ selectedDate().toLocaleDateString() }}</h4>
+                @for (event of selectedDateEvents(); track event.id) {
                   <div class="event-item">
-                    <div class="event-dot"></div>
+                    <div class="event-dot" [class]="event.type"></div>
                     <div class="event-info">
                       <span class="event-title">{{ event.title }}</span>
-                      <span class="event-date">{{ event.date }}</span>
+                      <span class="event-type">{{ event.type }}</span>
                     </div>
                   </div>
                 } @empty {
-                  <p class="no-data-text">No upcoming events</p>
+                  <p class="no-data-text">No events on this date</p>
                 }
               </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card class="grid-col-4">
-            <mat-card-header>
-              <mat-card-title>System Alerts</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="alerts-list">
-                @for (alert of alerts(); track alert.id) {
-                  <div class="alert-item" [class.warning]="alert.type === 'warning'" [class.error]="alert.type === 'error'">
-                    <mat-icon [class.orange]="alert.type === 'warning'" [class.red]="alert.type === 'error'">
-                      {{ alert.type === 'warning' ? 'warning' : alert.type === 'error' ? 'error' : 'info' }}
-                    </mat-icon>
-                    <span>{{ alert.message }}</span>
-                  </div>
-                } @empty {
-                  <p class="no-data-text">No active alerts</p>
-                }
-              </div>
-            </mat-card-content>
-          </mat-card>
+          <!-- Column 2: Operations -->
+          <div class="grid-col-4 operations-column">
+            <mat-card class="staff-absences-card">
+              <mat-card-header>
+                <mat-card-title>Staff Absences Today</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="staff-list">
+                  @for (staff of staffAbsences(); track staff.name) {
+                    <div class="staff-item">
+                      <div class="staff-avatar">
+                        <mat-icon>person</mat-icon>
+                      </div>
+                      <div class="staff-info">
+                        <span class="staff-name">{{ staff.name }}</span>
+                        <span class="staff-department">{{ staff.department }}</span>
+                      </div>
+                    </div>
+                  } @empty {
+                    <p class="no-data-text">No staff absences today</p>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="alerts-card">
+              <mat-card-header>
+                <mat-card-title>System Alerts</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="alerts-list">
+                  @for (alert of alerts(); track alert.id) {
+                    <div class="alert-item" [class.warning]="alert.type === 'warning'" [class.error]="alert.type === 'error'">
+                      <mat-icon [class.orange]="alert.type === 'warning'" [class.red]="alert.type === 'error'">
+                        {{ alert.type === 'warning' ? 'warning' : alert.type === 'error' ? 'error' : 'info' }}
+                      </mat-icon>
+                      <span>{{ alert.message }}</span>
+                    </div>
+                  } @empty {
+                    <p class="no-data-text">No active alerts</p>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- Column 3: Activity & Actions -->
+          <div class="grid-col-4 activity-column">
+            <mat-card class="quick-actions-card">
+              <mat-card-header>
+                <mat-card-title>Quick Actions</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="quick-actions-grid">
+                  @for (action of quickActions(); track action.label) {
+                    <button mat-stroked-button [routerLink]="action.route">
+                      <mat-icon>{{ action.icon }}</mat-icon>
+                      {{ action.label }}
+                    </button>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="recent-activities-card">
+              <mat-card-header>
+                <mat-card-title>Recent Activities</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="activities-list">
+                  @for (activity of recentActivities(); track activity.time) {
+                    <div class="activity-item">
+                      <div class="activity-dot"></div>
+                      <div class="activity-info">
+                        <span class="activity-message">{{ activity.message }}</span>
+                        <span class="activity-time">{{ activity.time }}</span>
+                      </div>
+                    </div>
+                  } @empty {
+                    <p class="no-data-text">No recent activities</p>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
         </div>
       }
     </div>
@@ -443,6 +503,149 @@ import { DashboardService, AdminDashboardData } from '../../services/dashboard.s
       margin: 0;
     }
 
+    .event-day {
+      position: relative;
+    }
+
+    .event-day::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #2563eb;
+    }
+
+    .calendar-card {
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+
+    .calendar-card mat-calendar {
+      margin-bottom: 16px;
+    }
+
+    .selected-date-events {
+      padding: 0 8px;
+    }
+
+    .selected-date-events h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0 0 12px;
+    }
+
+    .event-type {
+      font-size: 0.7rem;
+      color: #64748b;
+      text-transform: capitalize;
+    }
+
+    .operations-column,
+    .activity-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .staff-absences-card,
+    .alerts-card,
+    .quick-actions-card,
+    .recent-activities-card {
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      flex: 1;
+    }
+
+    .staff-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .staff-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+    }
+
+    .staff-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .staff-avatar mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #64748b;
+    }
+
+    .staff-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .staff-name {
+      font-size: 0.875rem;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .staff-department {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .activities-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 0;
+    }
+
+    .activity-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .activity-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .activity-message {
+      font-size: 0.875rem;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .activity-time {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
     @media (max-width: 1200px) {
       .grid-col-3 {
         grid-column: span 6;
@@ -478,6 +681,11 @@ import { DashboardService, AdminDashboardData } from '../../services/dashboard.s
       .quick-actions-grid {
         grid-template-columns: 1fr;
       }
+
+      .operations-column,
+      .activity-column {
+        grid-column: span 12;
+      }
     }
   `],
 })
@@ -485,6 +693,7 @@ export class AdminDashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
   dashboardData = signal<AdminDashboardData | null>(null);
   isLoading = signal(false);
+  selectedDate = signal<Date>(new Date());
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -580,6 +789,24 @@ export class AdminDashboardComponent implements OnInit {
     { label: 'Create Notice', route: '/portalAdmin/communication', icon: 'campaign' },
     { label: 'Assign Class', route: '/portalAdmin/academics', icon: 'assignment_ind' },
   ]);
+  readonly staffAbsences = computed(() => this.dashboardData()?.staffAbsences || []);
+  readonly recentActivities = computed(() => this.dashboardData()?.recentActivities || []);
+
+  readonly selectedDateEvents = computed(() => {
+    const events = this.upcomingEvents();
+    const selected = this.selectedDate();
+    const selectedStr = selected.toISOString().split('T')[0];
+    return events.filter(e => e.date === selectedStr);
+  });
+
+  readonly dateClass = computed(() => {
+    const events = this.upcomingEvents();
+    const eventDates = new Set(events.map(e => e.date));
+    return (date: Date): string => {
+      const dateStr = date.toISOString().split('T')[0];
+      return eventDates.has(dateStr) ? 'event-day' : '';
+    };
+  });
 
   readonly currentDate = computed(() =>
     new Date().toLocaleDateString('en-US', {
@@ -589,4 +816,10 @@ export class AdminDashboardComponent implements OnInit {
       day: 'numeric',
     })
   );
+
+  onDateSelected(date: Date | null): void {
+    if (date) {
+      this.selectedDate.set(date);
+    }
+  }
 }

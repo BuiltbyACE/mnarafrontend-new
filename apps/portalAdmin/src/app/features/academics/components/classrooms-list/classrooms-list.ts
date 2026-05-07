@@ -3,7 +3,7 @@
  * Academics module - classroom management with data table
  */
 
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -175,7 +175,7 @@ import { EditClassroomDialogComponent } from '../edit-classroom-dialog/edit-clas
           </div>
 
           <mat-paginator
-            [length]="academicsService.totalCount()"
+            [length]="totalCount()"
             [pageSize]="pageSize"
             [pageSizeOptions]="[10, 25, 50, 100]"
             [pageIndex]="currentPage"
@@ -399,6 +399,7 @@ export class ClassroomsListComponent implements OnInit {
 
   readonly classrooms = this.academicsService.classrooms;
   readonly displayedColumns = ['name', 'year_level', 'enrollment', 'teacher', 'status', 'actions'];
+  readonly totalCount = signal(0);
 
   currentPage = 0;
   pageSize = 25;
@@ -411,7 +412,10 @@ export class ClassroomsListComponent implements OnInit {
 
   loadClassrooms(): void {
     this.academicsService.getClassrooms(this.currentPage + 1, this.pageSize)
-      .subscribe((response: any) => this.academicsService.setClassrooms(response.results, response.count));
+      .subscribe((response: any) => {
+        this.academicsService.setClassrooms(response.results || response, response.count || 0);
+        this.totalCount.set(response.count || 0);
+      });
   }
 
   onPageChange(event: PageEvent): void {

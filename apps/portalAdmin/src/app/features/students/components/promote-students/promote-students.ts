@@ -61,8 +61,8 @@ export class PromoteStudentsComponent implements OnInit {
   selectedToYear = signal<string | null>(null);
   selectedToClass = signal<string | null>(null);
 
-  private academicsService = inject(AcademicsService);
-  private studentsService = inject(StudentsService);
+  readonly academicsService = inject(AcademicsService);
+  readonly studentsService = inject(StudentsService);
 
   ngOnInit(): void {
     this.loadAcademicYears();
@@ -70,7 +70,7 @@ export class PromoteStudentsComponent implements OnInit {
 
   loadAcademicYears(): void {
     this.academicsService.getAcademicYears().subscribe({
-      next: (res) => this.academicYears.set(extractResults<YearLevel>(res)),
+      next: (res: any) => this.academicYears.set(extractResults<YearLevel>(res)),
       error: () => this.error.set('Failed to load academic years')
     });
   }
@@ -81,7 +81,7 @@ export class PromoteStudentsComponent implements OnInit {
     this.fromClasses.set([]);
     if (yearId) {
       this.academicsService.getClassesByYear(yearId).subscribe({
-        next: (res) => this.fromClasses.set(extractResults<Classroom>(res)),
+        next: (res: any) => this.fromClasses.set(extractResults<Classroom>(res)),
         error: () => this.error.set('Failed to load classes for selected year')
       });
     }
@@ -94,10 +94,10 @@ export class PromoteStudentsComponent implements OnInit {
     this.coursesList.set([]);
     if (yearId) {
       this.academicsService.getClassesByYear(yearId).subscribe({
-        next: (res) => {
-          this.toClasses.set(extractResults<Classroom>(res));
-          this.academicsService.getCourseStreamsByYear(yearId).subscribe({
-            next: (courseRes) => this.coursesList.set(extractResults<Classroom>(courseRes)),
+          next: (res: any) => {
+            this.toClasses.set(extractResults<Classroom>(res));
+            this.academicsService.getCourseStreamsByYear(yearId).subscribe({
+              next: (courseRes: any) => this.coursesList.set(extractResults<Classroom>(courseRes)),
             error: () => this.error.set('Failed to load course streams')
           });
         },
@@ -124,7 +124,7 @@ export class PromoteStudentsComponent implements OnInit {
       academicYearId: this.selectedFromYear()!,
       classId: this.selectedFromClass()!
     }).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         const rawStudents = extractResults<StudentProfile>(res);
         const initialized = rawStudents.map((s: StudentProfile) => ({
           ...s,
@@ -154,7 +154,7 @@ export class PromoteStudentsComponent implements OnInit {
       course_stream_id: student.assigned_course_id || this.selectedToClass() || ''
     }));
     this.studentsService.promoteStudents(payload, this.selectedToYear()!).subscribe({
-      next: () => {
+      next: (res: any) => {
         alert('Students promoted successfully');
         this.fetchStudents();
         this.isLoading.set(false);

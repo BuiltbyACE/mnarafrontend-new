@@ -65,6 +65,12 @@ import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
         loadChildren: () =>
           import('../features/rbac/rbac.routes').then((m) => m.rbacRoutes),
       },
+      // LMS Module
+      {
+        path: 'lms',
+        loadChildren: () =>
+          import('../features/lms/lms.routes').then((m) => m.lmsRoutes),
+      },
     ],
   },
 ];

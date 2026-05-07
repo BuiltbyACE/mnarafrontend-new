@@ -1,209 +1,325 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, catchError, tap, throwError } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 
-// Entity Interfaces
+// Interfaces matching backend serializers
 export interface Department {
   id: number;
   name: string;
-  description?: string;
-  subject_count: number;
+  head_of_department: { id: number; name: string } | null;
   is_active: boolean;
 }
 
 export interface KeyStage {
   id: number;
   name: string;
-  description?: string;
-  order: number;
+  level: string;
   is_active: boolean;
 }
 
 export interface YearLevel {
   id: number;
   name: string;
-  key_stage_id: number;
-  key_stage_name?: string;
+  key_stage: { id: number; name: string };
   is_active: boolean;
 }
 
 export interface Subject {
   id: number;
   name: string;
-  code: string;
-  department_id: number;
-  department_name?: string;
+  department: { id: number; name: string };
   is_active: boolean;
 }
 
 export interface Classroom {
   id: number;
-  name: string;
+  room_number: string;
   capacity: number;
-  current_students: number;
   building?: string;
   is_active: boolean;
 }
 
+export interface ClassroomWritePayload {
+  room_number: string;
+  capacity: number;
+  building?: string;
+  is_active?: boolean;
+}
+
 export interface SubjectOffering {
   id: number;
-  subject_id: number;
-  subject_name?: string;
-  year_level_id: number;
-  year_level_name?: string;
-  key_stage_id: number;
-  key_stage_name?: string;
+  subject: { id: number; name: string };
+  year_level: { id: number; name: string };
   is_active: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AcademicsService {
   private http = inject(HttpClient);
-  private basePath = '/api/v1/academics';
+  private baseUrl = getApiUrl('/academics/');
 
-  // Legacy signals for backwards compatibility
-  departments = signal<any[]>([]);
-  keyStages = signal<any[]>([]);
-  yearLevels = signal<any[]>([]);
-  subjects = signal<any[]>([]);
-  classrooms = signal<any[]>([]);
-  subjectOfferings = signal<any[]>([]);
-
-  // Global state signals
-  isLoading = signal<boolean>(false);
+  // State signals
+  isLoading = signal(false);
   error = signal<string | null>(null);
-  totalCount = signal<number>(0);
 
-  // CRUD Methods for Departments
+  // Entity collections
+  departments = signal<Department[]>([]);
+  keyStages = signal<KeyStage[]>([]);
+  yearLevels = signal<YearLevel[]>([]);
+  subjects = signal<Subject[]>([]);
+  classrooms = signal<Classroom[]>([]);
+  subjectOfferings = signal<SubjectOffering[]>([]);
+
+  // Department CRUD
   getDepartments(): Observable<Department[]> {
-    return this.http.get<Department[]>(getApiUrl(`${this.basePath}/departments/`));
+    this.isLoading.set(true);
+    return this.http.get<Department[]>(`${this.baseUrl}departments/`).pipe(
+      tap(data => {
+        this.departments.set(data);
+        this.isLoading.set(false);
+        this.error.set(null);
+      }),
+      catchError(err => this.handleError('Failed to load departments', err))
+    );
   }
 
-  createDepartment(data: Partial<Department>): Observable<Department> {
-    return this.http.post<Department>(getApiUrl(`${this.basePath}/departments/`), data);
+  createDepartment(data: Omit<Department, 'id'>): Observable<Department> {
+    return this.http.post<Department>(`${this.baseUrl}departments/`, data).pipe(
+      tap(newItem => this.departments.update(items => [...items, newItem])),
+      catchError(err => this.handleError('Failed to create department', err))
+    );
   }
 
   updateDepartment(id: number, data: Partial<Department>): Observable<Department> {
-    return this.http.put<Department>(getApiUrl(`${this.basePath}/departments/${id}/`), data);
+    return this.http.put<Department>(`${this.baseUrl}departments/${id}/`, data).pipe(
+      tap(updated => this.departments.update(items => 
+        items.map(item => item.id === id ? updated : item)
+      )),
+      catchError(err => this.handleError('Failed to update department', err))
+    );
   }
 
   deleteDepartment(id: number): Observable<void> {
-    return this.http.delete<void>(getApiUrl(`${this.basePath}/departments/${id}/`));
+    return this.http.delete<void>(`${this.baseUrl}departments/${id}/`).pipe(
+      tap(() => this.departments.update(items => items.filter(item => item.id !== id))),
+      catchError(err => this.handleError('Failed to delete department', err))
+    );
   }
 
-  // CRUD Methods for Key Stages
-  getKeyStages(): Observable<KeyStage[]> {
-    return this.http.get<KeyStage[]>(getApiUrl(`${this.basePath}/key-stages/`));
-  }
-
-  createKeyStage(data: Partial<KeyStage>): Observable<KeyStage> {
-    return this.http.post<KeyStage>(getApiUrl(`${this.basePath}/key-stages/`), data);
-  }
-
-  updateKeyStage(id: number, data: Partial<KeyStage>): Observable<KeyStage> {
-    return this.http.put<KeyStage>(getApiUrl(`${this.basePath}/key-stages/${id}/`), data);
-  }
-
-  deleteKeyStage(id: number): Observable<void> {
-    return this.http.delete<void>(getApiUrl(`${this.basePath}/key-stages/${id}/`));
-  }
-
-  // CRUD Methods for Year Levels
-  getYearLevels(): Observable<YearLevel[]> {
-    return this.http.get<YearLevel[]>(getApiUrl(`${this.basePath}/year-levels/`));
-  }
-
-  createYearLevel(data: Partial<YearLevel>): Observable<YearLevel> {
-    return this.http.post<YearLevel>(getApiUrl(`${this.basePath}/year-levels/`), data);
-  }
-
-  updateYearLevel(id: number, data: Partial<YearLevel>): Observable<YearLevel> {
-    return this.http.put<YearLevel>(getApiUrl(`${this.basePath}/year-levels/${id}/`), data);
-  }
-
-  deleteYearLevel(id: number): Observable<void> {
-    return this.http.delete<void>(getApiUrl(`${this.basePath}/year-levels/${id}/`));
-  }
-
-  // CRUD Methods for Subjects
-  getSubjects(): Observable<Subject[]> {
-    return this.http.get<Subject[]>(getApiUrl(`${this.basePath}/subjects/`));
-  }
-
-  createSubject(data: Partial<Subject>): Observable<Subject> {
-    return this.http.post<Subject>(getApiUrl(`${this.basePath}/subjects/`), data);
-  }
-
-  updateSubject(id: number, data: Partial<Subject>): Observable<Subject> {
-    return this.http.put<Subject>(getApiUrl(`${this.basePath}/subjects/${id}/`), data);
-  }
-
-  deleteSubject(id: number): Observable<void> {
-    return this.http.delete<void>(getApiUrl(`${this.basePath}/subjects/${id}/`));
-  }
-
-  // CRUD Methods for Classrooms
+  // Classroom CRUD
   getClassrooms(page?: number, pageSize?: number): Observable<any> {
-    let url = `${this.basePath}/classrooms/`;
+    this.isLoading.set(true);
+    let url = `${this.baseUrl}classrooms/`;
     if (page && pageSize) {
       url += `?page=${page}&page_size=${pageSize}`;
     }
-    return this.http.get(getApiUrl(url));
+    return this.http.get<any>(url).pipe(
+      tap(data => {
+        this.classrooms.set(data.results || data);
+        this.isLoading.set(false);
+        this.error.set(null);
+      }),
+      catchError(err => this.handleError('Failed to load classrooms', err))
+    );
+  }
+
+  createClassroom(classroom: Partial<Classroom> | any): Observable<Classroom> {
+    return this.http.post<Classroom>(`${this.baseUrl}classrooms/`, classroom).pipe(
+      tap(newItem => this.classrooms.update(items => [...items, newItem])),
+      catchError(err => this.handleError('Failed to create classroom', err))
+    );
+  }
+
+  updateClassroom(id: number | string, classroom: Partial<Classroom> | any): Observable<Classroom> {
+    return this.http.put<Classroom>(`${this.baseUrl}classrooms/${id}/`, classroom).pipe(
+      tap(updated => this.classrooms.update(items => 
+        items.map(item => item.id === id ? updated : item)
+      )),
+      catchError(err => this.handleError('Failed to update classroom', err))
+    );
+  }
+
+  deleteClassroom(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}classrooms/${id}/`).pipe(
+      tap(() => this.classrooms.update(items => items.filter(item => item.id !== id))),
+      catchError(err => this.handleError('Failed to delete classroom', err))
+    );
+  }
+
+  // Key Stage CRUD
+  getKeyStages(): Observable<KeyStage[]> {
+    this.isLoading.set(true);
+    return this.http.get<KeyStage[]>(`${this.baseUrl}key-stages/`).pipe(
+      tap(data => {
+        this.keyStages.set(data);
+        this.isLoading.set(false);
+        this.error.set(null);
+      }),
+      catchError(err => this.handleError('Failed to load key stages', err))
+    );
+  }
+
+  createKeyStage(data: Omit<KeyStage, 'id'>): Observable<KeyStage> {
+    return this.http.post<KeyStage>(`${this.baseUrl}key-stages/`, data).pipe(
+      tap(newItem => this.keyStages.update(items => [...items, newItem])),
+      catchError(err => this.handleError('Failed to create key stage', err))
+    );
+  }
+
+  updateKeyStage(id: number, data: Partial<KeyStage>): Observable<KeyStage> {
+    return this.http.put<KeyStage>(`${this.baseUrl}key-stages/${id}/`, data).pipe(
+      tap(updated => this.keyStages.update(items => 
+        items.map(item => item.id === id ? updated : item)
+      )),
+      catchError(err => this.handleError('Failed to update key stage', err))
+    );
+  }
+
+  deleteKeyStage(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}key-stages/${id}/`).pipe(
+      tap(() => this.keyStages.update(items => items.filter(item => item.id !== id))),
+      catchError(err => this.handleError('Failed to delete key stage', err))
+    );
+  }
+
+  // Year Level CRUD
+  getYearLevels(): Observable<YearLevel[]> {
+    this.isLoading.set(true);
+    return this.http.get<YearLevel[]>(`${this.baseUrl}year-levels/`).pipe(
+      tap(data => {
+        this.yearLevels.set(data);
+        this.isLoading.set(false);
+        this.error.set(null);
+      }),
+      catchError(err => this.handleError('Failed to load year levels', err))
+    );
+  }
+
+  createYearLevel(data: Omit<YearLevel, 'id'>): Observable<YearLevel> {
+    return this.http.post<YearLevel>(`${this.baseUrl}year-levels/`, data).pipe(
+      tap(newItem => this.yearLevels.update(items => [...items, newItem])),
+      catchError(err => this.handleError('Failed to create year level', err))
+    );
+  }
+
+  updateYearLevel(id: number, data: Partial<YearLevel>): Observable<YearLevel> {
+    return this.http.put<YearLevel>(`${this.baseUrl}year-levels/${id}/`, data).pipe(
+      tap(updated => this.yearLevels.update(items => 
+        items.map(item => item.id === id ? updated : item)
+      )),
+      catchError(err => this.handleError('Failed to update year level', err))
+    );
+  }
+
+  deleteYearLevel(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}year-levels/${id}/`).pipe(
+      tap(() => this.yearLevels.update(items => items.filter(item => item.id !== id))),
+      catchError(err => this.handleError('Failed to delete year level', err))
+    );
+  }
+
+  // Subject CRUD
+  getSubjects(): Observable<Subject[]> {
+    this.isLoading.set(true);
+    return this.http.get<Subject[]>(`${this.baseUrl}subjects/`).pipe(
+      tap(data => {
+        this.subjects.set(data);
+        this.isLoading.set(false);
+        this.error.set(null);
+      }),
+      catchError(err => this.handleError('Failed to load subjects', err))
+    );
+  }
+
+  createSubject(data: Omit<Subject, 'id'>): Observable<Subject> {
+    return this.http.post<Subject>(`${this.baseUrl}subjects/`, data).pipe(
+      tap(newItem => this.subjects.update(items => [...items, newItem])),
+      catchError(err => this.handleError('Failed to create subject', err))
+    );
+  }
+
+  updateSubject(id: number, data: Partial<Subject>): Observable<Subject> {
+    return this.http.put<Subject>(`${this.baseUrl}subjects/${id}/`, data).pipe(
+      tap(updated => this.subjects.update(items => 
+        items.map(item => item.id === id ? updated : item)
+      )),
+      catchError(err => this.handleError('Failed to update subject', err))
+    );
+  }
+
+  deleteSubject(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}subjects/${id}/`).pipe(
+      tap(() => this.subjects.update(items => items.filter(item => item.id !== id))),
+      catchError(err => this.handleError('Failed to delete subject', err))
+    );
+  }
+
+  // Subject Offering CRUD
+  getSubjectOfferings(): Observable<SubjectOffering[]> {
+    this.isLoading.set(true);
+    return this.http.get<SubjectOffering[]>(`${this.baseUrl}subject-offerings/`).pipe(
+      tap(data => {
+        this.subjectOfferings.set(data);
+        this.isLoading.set(false);
+        this.error.set(null);
+      }),
+      catchError(err => this.handleError('Failed to load subject offerings', err))
+    );
+  }
+
+  createSubjectOffering(data: Omit<SubjectOffering, 'id'>): Observable<SubjectOffering> {
+    return this.http.post<SubjectOffering>(`${this.baseUrl}subject-offerings/`, data).pipe(
+      tap(newItem => this.subjectOfferings.update(items => [...items, newItem])),
+      catchError(err => this.handleError('Failed to create subject offering', err))
+    );
+  }
+
+  updateSubjectOffering(id: number, data: Partial<SubjectOffering>): Observable<SubjectOffering> {
+    return this.http.put<SubjectOffering>(`${this.baseUrl}subject-offerings/${id}/`, data).pipe(
+      tap(updated => this.subjectOfferings.update(items => 
+        items.map(item => item.id === id ? updated : item)
+      )),
+      catchError(err => this.handleError('Failed to update subject offering', err))
+    );
+  }
+
+  deleteSubjectOffering(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}subject-offerings/${id}/`).pipe(
+      tap(() => this.subjectOfferings.update(items => items.filter(item => item.id !== id))),
+      catchError(err => this.handleError('Failed to delete subject offering', err))
+    );
+  }
+
+  // Legacy methods required by other components
+  getAcademicYears(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}academic-years/`);
+  }
+
+  getClassesByYear(yearId: any): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}classes/?year=${yearId}`);
+  }
+
+  getCourseStreamsByYear(yearId: any): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}course-streams/?year=${yearId}`);
+  }
+
+  bulkPromote(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}bulk-promote/`, payload);
+  }
+
+  archiveClassroom(id: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}classrooms/${id}/archive/`, {});
   }
 
   setClassrooms(results: any[], count: number): void {
     this.classrooms.set(results);
-    this.totalCount.set(count);
   }
 
-  createClassroom(data: Partial<Classroom>): Observable<Classroom> {
-    return this.http.post<Classroom>(getApiUrl(`${this.basePath}/classrooms/`), data);
-  }
-
-  updateClassroom(id: number, data: Partial<Classroom>): Observable<Classroom> {
-    return this.http.put<Classroom>(getApiUrl(`${this.basePath}/classrooms/${id}/`), data);
-  }
-
-  deleteClassroom(id: number): Observable<void> {
-    return this.http.delete<void>(getApiUrl(`${this.basePath}/classrooms/${id}/`));
-  }
-
-  // CRUD Methods for Subject Offerings
-  getSubjectOfferings(): Observable<SubjectOffering[]> {
-    return this.http.get<SubjectOffering[]>(getApiUrl(`${this.basePath}/subject-offerings/`));
-  }
-
-  createSubjectOffering(data: Partial<SubjectOffering>): Observable<SubjectOffering> {
-    return this.http.post<SubjectOffering>(getApiUrl(`${this.basePath}/subject-offerings/`), data);
-  }
-
-  updateSubjectOffering(id: number, data: Partial<SubjectOffering>): Observable<SubjectOffering> {
-    return this.http.put<SubjectOffering>(getApiUrl(`${this.basePath}/subject-offerings/${id}/`), data);
-  }
-
-  deleteSubjectOffering(id: number): Observable<void> {
-    return this.http.delete<void>(getApiUrl(`${this.basePath}/subject-offerings/${id}/`));
-  }
-
-  // Legacy methods for backwards compatibility
-  getAcademicYears(): Observable<any> {
-    return this.http.get(getApiUrl(`${this.basePath}/academic-years/`));
-  }
-
-  getClassesByYear(yearId: string | number): Observable<any> {
-    return this.http.get(getApiUrl(`${this.basePath}/classrooms/?year_level=${yearId}`));
-  }
-
-  getCourseStreamsByYear(yearId: string | number): Observable<any> {
-    return this.http.get(getApiUrl(`${this.basePath}/subject-offerings/?year_level=${yearId}`));
-  }
-
-  bulkPromote(payload: any): Observable<any> {
-    return this.http.post(getApiUrl(`${this.basePath}/students/bulk-promote/`), payload);
-  }
-
-  archiveClassroom(id: string | number): Observable<any> {
-    return this.http.patch(getApiUrl(`${this.basePath}/classrooms/${id}/`), { is_active: false });
+  // Common error handler
+  private handleError(message: string, err: any): Observable<never> {
+    this.isLoading.set(false);
+    this.error.set(message);
+    return throwError(() => err);
   }
 }

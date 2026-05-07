@@ -112,8 +112,8 @@ import { Classroom, ClassroomWritePayload, YearLevel } from '../../../../shared/
 })
 export class EditClassroomDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private academicsService = inject(AcademicsService);
-  private dialogRef = inject(MatDialogRef<EditClassroomDialogComponent>);
+  readonly academicsService = inject(AcademicsService);
+  readonly dialogRef = inject(MatDialogRef<EditClassroomDialogComponent>);
   readonly data = inject<{ classroom: Classroom }>(MAT_DIALOG_DATA);
 
   saving = false;
@@ -130,7 +130,7 @@ export class EditClassroomDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.academicsService.getAcademicYears().subscribe({
-      next: (res) => {
+      next: (res: any) => {
         const levels = res.results || [];
         this.yearLevels = levels;
         // Match year level by name since classroom returns name not id
@@ -159,8 +159,8 @@ export class EditClassroomDialogComponent implements OnInit {
       is_active: v.is_active ?? true,
     };
     this.academicsService.updateClassroom(this.data.classroom.id, payload).subscribe({
-      next: () => this.dialogRef.close(true),
-      error: (err) => {
+      next: (res: any) => this.dialogRef.close(true),
+      error: (err: any) => {
         this.errorMessage = err.error?.detail || 'Failed to update classroom.';
         this.saving = false;
       },
