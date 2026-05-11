@@ -76,7 +76,8 @@ export class AcademicsService {
     this.isLoading.set(true);
     return this.http.get<Department[]>(`${this.baseUrl}departments/`).pipe(
       tap(data => {
-        this.departments.set(data);
+        // this.departments.set(data);
+        this.departments.set((data as any).results || data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -152,7 +153,7 @@ export class AcademicsService {
     this.isLoading.set(true);
     return this.http.get<KeyStage[]>(`${this.baseUrl}key-stages/`).pipe(
       tap(data => {
-        this.keyStages.set(data);
+        this.keyStages.set((data as any).results || data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -188,7 +189,7 @@ export class AcademicsService {
     this.isLoading.set(true);
     return this.http.get<YearLevel[]>(`${this.baseUrl}year-levels/`).pipe(
       tap(data => {
-        this.yearLevels.set(data);
+        this.yearLevels.set((data as any).results || data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -224,7 +225,7 @@ export class AcademicsService {
     this.isLoading.set(true);
     return this.http.get<Subject[]>(`${this.baseUrl}subjects/`).pipe(
       tap(data => {
-        this.subjects.set(data);
+        this.subjects.set((data as any).results || data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -260,7 +261,7 @@ export class AcademicsService {
     this.isLoading.set(true);
     return this.http.get<SubjectOffering[]>(`${this.baseUrl}subject-offerings/`).pipe(
       tap(data => {
-        this.subjectOfferings.set(data);
+        this.subjectOfferings.set((data as any).results || data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -297,7 +298,7 @@ export class AcademicsService {
   }
 
   getClassesByYear(yearId: any): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}classes/?year=${yearId}`);
+    return this.http.get<any>(`${this.baseUrl}classrooms/?year=${yearId}`);
   }
 
   getCourseStreamsByYear(yearId: any): Observable<any> {

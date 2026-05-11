@@ -1,309 +1,157 @@
-/**
- * Fleet Map Component
- * Transport module - real-time fleet tracking with data table
- */
-
-import { Component, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild, PLATFORM_ID, NgZone } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild, PLATFORM_ID, input, output } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import * as L from 'leaflet';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatSortModule, Sort } from '@angular/material/sort';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { WebSocketFleetService } from '../../../../core/services/websocket-fleet.service';
-import { TransportService } from '../../services/transport.service';
-import { FleetVehicle } from '../../../../shared/models/transport.models';
-import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge';
+import { FleetTelemetry } from '../../../../shared/models/transport.models';
 
 @Component({
   selector: 'app-fleet-map',
   standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatIconModule,
-    MatButtonModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatChipsModule,
-    MatMenuModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
-    StatusBadgeComponent,
-  ],
+  imports: [CommonModule],
   template: `
-    <div class="map-command-center">
-      <!-- Floating Header Overlay -->
-      <div class="map-overlay-header">
-        <div class="header-left">
-          <mat-icon class="radar-icon">radar</mat-icon>
-          <div>
-            <h3 class="overlay-title">Live Fleet Tracking</h3>
-            <span class="overlay-subtitle">Nairobi Metro Area</span>
-          </div>
+    <div class="map-wrapper">
+      @if (showReconnecting()) {
+        <div class="reconnect-bar">
+          <div class="reconnect-dot"></div>
+          <span>Reconnecting to live fleet...</span>
         </div>
-        <div class="header-right">
-          <div class="live-badge">
-            <div class="pulse-dot"></div>
-            Live Sync
-          </div>
-        </div>
-      </div>
-      
-      <!-- The Map -->
-      <div #map id="map"></div>
-
-      <!-- Floating Stats Overlay (Bottom) -->
-      <div class="map-overlay-footer">
-        <div class="stat-pill">
-          <mat-icon>directions_bus</mat-icon>
-          <span>Active Routes: <strong>4</strong></span>
-        </div>
-        <div class="stat-pill warning">
-          <mat-icon>speed</mat-icon>
-          <span>Speed Alerts: <strong>0</strong></span>
-        </div>
-      </div>
+      }
+      <div #mapContainer class="map-container"></div>
     </div>
   `,
   styles: [`
-    .map-command-center {
-      position: relative;
-      width: 100%;
-      height: 600px; /* Taller for better visibility */
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      border: 1px solid #e2e8f0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-      z-index: 1; /* Keep map below overlays */
-      background: #f8fafc; /* Color while tiles load */
-    }
-
-    /* Glassmorphism Top Overlay */
-    .map-overlay-header {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
-      z-index: 1000; /* Leaflet UI is usually z-index 400 */
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      padding: 12px 20px;
-      border-radius: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      border: 1px solid rgba(255,255,255,0.5);
-    }
-
-    .header-left { display: flex; align-items: center; gap: 12px; }
-    .radar-icon { color: #2563eb; }
-    .overlay-title { margin: 0; font-size: 1rem; font-weight: 600; color: #0f172a; line-height: 1.2; }
-    .overlay-subtitle { font-size: 0.75rem; color: #64748b; }
-
-    .live-badge {
-      background: #ecfdf5;
-      color: #059669;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border: 1px solid #a7f3d0;
-    }
-
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background: #10b981;
-      border-radius: 50%;
-      animation: pulse-ring 1.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
-    }
-
-    /* Glassmorphism Bottom Overlay */
-    .map-overlay-footer {
-      position: absolute;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      display: flex;
-      gap: 12px;
-    }
-
-    .stat-pill {
-      background: white;
-      padding: 8px 16px;
-      border-radius: 30px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.8125rem;
-      color: #334155;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      border: 1px solid #e2e8f0;
-    }
-
-    .stat-pill mat-icon { font-size: 18px; width: 18px; height: 18px; color: #64748b; }
-    .stat-pill.warning strong { color: #e11d48; }
-
-    @keyframes pulse-ring {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-
-    /* Clean up Leaflet defaults */
-    ::ng-deep .leaflet-control-attribution { display: none; } /* Optional: Hides OSM text for cleaner UI */
-
-    /* Force hardware-accelerated smooth sliding for all map markers */
-    ::ng-deep .leaflet-marker-icon {
-      transition: transform 0.4s linear !important;
-      will-change: transform;
-    }
+    .map-wrapper { position: relative; width: 100%; height: 100%; border-radius: 12px; overflow: hidden; }
+    .map-container { width: 100%; height: 100%; background: #f8fafc; }
+    .reconnect-bar { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000; background: #fef3c7; border: 1px solid #fde68a; color: #92400e; padding: 8px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 500; }
+    .reconnect-dot { width: 6px; height: 6px; background: #f59e0b; border-radius: 50%; animation: reconnect-pulse 1s infinite; }
+    @keyframes reconnect-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    ::ng-deep .leaflet-control-attribution { display: none; }
+    ::ng-deep .custom-bus-marker { background: none; border: none; }
   `],
 })
 export class FleetMapComponent implements OnInit, OnDestroy, AfterViewInit {
-  @ViewChild('map', { static: true }) mapElement!: ElementRef;
+  @ViewChild('mapContainer', { static: true }) mapElement!: ElementRef;
+
+  readonly telemetryData = input<FleetTelemetry[]>([]);
+  readonly showReconnecting = input<boolean>(false);
+  readonly focusTripId = input<string | null>(null);
+  readonly markerClick = output<string>();
+
   private map!: L.Map;
-  private markers: { [id: string]: L.Marker } = {};
+  private markers: Map<string, L.Marker> = new Map();
+  private circleMarkers: Map<string, L.CircleMarker> = new Map();
   private platformId = inject(PLATFORM_ID);
-  private ngZone = inject(NgZone);
-
-  private fleetService = inject(WebSocketFleetService);
-  readonly transportService = inject(TransportService);
-  private snackBar = inject(MatSnackBar);
-
-  readonly isConnected = this.fleetService.isConnected;
-  readonly vehicles = this.transportService.vehicles;
-  readonly fleetSummary = this.transportService.fleetSummary;
-  readonly displayedColumns = ['vehicle', 'route', 'driver', 'status', 'telemetry', 'actions'];
-
-  currentPage = 0;
-  pageSize = 25;
 
   ngOnInit(): void {
-    this.loadVehicles();
-    this.transportService.loadFleetSummary();
-    this.fleetService.connect();
-
     if (isPlatformBrowser(this.platformId)) {
-      // Run OUTSIDE Angular to prevent WebSocket updates from freezing the UI
-      this.ngZone.runOutsideAngular(() => {
-        this.initMap();
-        this.listenToFleet();
-      });
+      setTimeout(() => this.initMap(), 100);
     }
   }
 
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      // Force Leaflet to recalculate bounds after Angular finishes painting the UI
-      setTimeout(() => {
-        if (this.map) {
-          this.map.invalidateSize();
-        }
-      }, 250);
+      setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 300);
     }
   }
 
   ngOnDestroy(): void {
-    this.fleetService.disconnect();
-    if (this.map) {
-      this.map.remove();
-    }
-  }
-
-  loadVehicles(): void {
-    this.transportService.getVehicles(this.currentPage + 1, this.pageSize)
-      .subscribe({
-        next: (response) => this.transportService.setVehicles(response.results, response.count),
-        error: () => {}
-      });
-  }
-
-  onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadVehicles();
-  }
-
-  onSort(sort: Sort): void { this.loadVehicles(); }
-
-  getTelemetry(vehicleId: number) {
-    return this.fleetService.getVehicleTelemetry(vehicleId);
+    if (this.map) this.map.remove();
   }
 
   private initMap(): void {
-    // Default center: Nairobi, Kenya
-    this.map = L.map(this.mapElement.nativeElement).setView([-1.2921, 36.8219], 13);
+    this.map = L.map(this.mapElement.nativeElement, {
+      center: [-1.2921, 36.8219],
+      zoom: 12,
+      zoomControl: true,
+    });
 
-    // Add CartoDB Voyager tiles (sleek, professional aesthetic - no API key required)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 19
+      maxZoom: 19,
     }).addTo(this.map);
   }
 
-  private listenToFleet(): void {
-    // Connect to the WebSocket stream
-    this.fleetService.telemetry$.subscribe({
-      next: (data: any) => {
-        if (data && data.fleet_id && data.latitude && data.longitude) {
-          this.updateBusLocation(data);
-        }
-      },
-      error: () => {}
-    });
-  }
+  updateMarkers(data: FleetTelemetry[]): void {
+    if (!this.map) return;
 
-  private updateBusLocation(data: any): void {
-    const id = data.fleet_id;
-    const lat = data.latitude;
-    const lng = data.longitude;
-    const status = data.status;
+    const seen = new Set<string>();
 
-    if (this.markers[id]) {
-      // Move existing bus - CSS transition will make this glide smoothly
-      this.markers[id].setLatLng([lat, lng]);
-      this.markers[id].setPopupContent(`<b>${data.license_plate || 'Bus #' + id}</b><br>Speed: ${data.speed_kmh || 0} km/h<br>Status: ${status || 'Active'}`);
-    } else {
-      // Create new bus marker with custom HTML DivIcon for pulsing bus dot
-      const customIcon = L.divIcon({
-        className: 'custom-bus-marker',
-        html: '<div style="background:#2563eb; width:16px; height:16px; border-radius:50%; border:3px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>',
-        iconSize: [22, 22],
-        iconAnchor: [11, 11]
-      });
+    for (const t of data) {
+      const id = t.vehicle_id?.toString() || t.fleet_id || `bus-${Math.random()}`;
+      seen.add(id);
+      const lat = Number(t.latitude);
+      const lng = Number(t.longitude);
+      if (!lat || !lng) continue;
 
-      const marker = L.marker([lat, lng], { icon: customIcon })
-        .bindPopup(`<b>${data.license_plate || 'Bus #' + id}</b><br>Speed: ${data.speed_kmh || 0} km/h<br>Status: ${status || 'Active'}`)
-        .addTo(this.map);
+      const color = this.markerColor(t.status);
 
-      this.markers[id] = marker;
+      if (this.markers.has(id)) {
+        this.markers.get(id)!.setLatLng([lat, lng]);
+      } else {
+        const icon = L.divIcon({
+          className: 'custom-bus-marker',
+          html: `
+            <div style="
+              width:18px; height:18px; border-radius:50%;
+              background:${color};
+              border:3px solid white;
+              box-shadow:0 2px 6px rgba(0,0,0,0.3);
+              transition: all 0.4s linear;
+            "></div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        });
+
+        const marker = L.marker([lat, lng], { icon })
+          .bindPopup(this.buildPopupContent(t))
+          .addTo(this.map);
+
+        marker.on('click', () => this.markerClick.emit(id));
+        this.markers.set(id, marker);
+      }
+
+      this.markers.get(id)!.setPopupContent(this.buildPopupContent(t));
+    }
+
+    for (const [id, marker] of this.markers) {
+      if (!seen.has(id)) {
+        marker.remove();
+        this.markers.delete(id);
+      }
     }
   }
 
-  viewVehicle(vehicle: FleetVehicle): void { this.snackBar.open(`Viewing ${vehicle.registration_number}`, 'Close', { duration: 3000 }); }
-  viewRoute(vehicle: FleetVehicle): void { this.snackBar.open(`Viewing route for ${vehicle.registration_number}`, 'Close', { duration: 3000 }); }
-  trackLive(vehicle: FleetVehicle): void { this.snackBar.open(`Live tracking ${vehicle.registration_number}`, 'Close', { duration: 3000 }); }
+  flyTo(lat: number, lng: number, zoom = 15): void {
+    if (this.map) {
+      this.map.flyTo([lat, lng], zoom, { duration: 1 });
+    }
+  }
+
+  private markerColor(status?: string): string {
+    switch (status) {
+      case 'ON_ROUTE': return '#10b981';
+      case 'DELAYED': return '#f59e0b';
+      case 'STOPPED': return '#ef4444';
+      case 'IDLE': return '#94a3b8';
+      default: return '#3b82f6';
+    }
+  }
+
+  private buildPopupContent(t: FleetTelemetry): string {
+    const color = this.markerColor(t.status);
+    const statusLabel = t.status || 'Unknown';
+    return `
+      <div style="min-width:180px; font-family:Inter,sans-serif;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${color};"></div>
+          <strong style="font-size:0.9rem;">${t.registration_number || 'Bus'}</strong>
+        </div>
+        <div style="font-size:0.8rem;color:#475569;line-height:1.6;">
+          <div><strong>Driver:</strong> ${t.driver_name || 'N/A'}</div>
+          <div><strong>Route:</strong> ${t.route_name || 'N/A'}</div>
+          <div><strong>Students:</strong> ${t.passenger_count ?? 0}</div>
+          <div><strong>Speed:</strong> ${t.speed_kmh ?? 0} km/h</div>
+          <div><strong>Status:</strong> ${statusLabel}</div>
+        </div>
+      </div>`;
+  }
 }

@@ -1,6 +1,10 @@
-/**
- * Transport & Fleet Module Exports
- */
-
 export { TransportService } from './services/transport.service';
 export { FleetMapComponent } from './components/fleet-map/fleet-map';
+export { TransportDashboardComponent } from './components/transport-dashboard/transport-dashboard.component';
+export { TripCardComponent } from './components/trip-card/trip-card.component';
+export { ManifestDrawerComponent } from './components/manifest-drawer/manifest-drawer.component';
+export { DeviceManagerComponent } from './components/device-manager/device-manager.component';
+export { DeviceProvisioningComponent } from './components/device-provisioning/device-provisioning.component';
+export { TelemetryGaugeComponent } from './components/telemetry-gauge/telemetry-gauge.component';
+export { IncidentTickerComponent } from './components/incident-ticker/incident-ticker.component';
+export { RouteStepperComponent } from './components/route-stepper/route-stepper.component';

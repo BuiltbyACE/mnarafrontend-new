@@ -32,9 +32,22 @@ export interface BulkPromotionRequest {
   student_ids: number[];
 }
 
+// export interface YearLevel {
+//   id: number;
+//   name: string;
+//   order: number;
+//   is_active: boolean;
+// }
+
+
+
 export interface YearLevel {
   id: number;
   name: string;
+  key_stage: number;
+  key_stage_name: string; // Required for Promotion Engine
+  key_stage_code: string; 
   order: number;
-  is_active: boolean;
+  is_active: boolean;     // Required for Create Classroom Dialog
+  subject_offering_count?: number;
 }

@@ -13,35 +13,76 @@ interface PaginatedResponse<T> {
 export interface Announcement {
   id: number;
   title: string;
-  message: string;
-  target_audience: 'Staff' | 'Students' | 'All';
-  priority: 'High' | 'Normal' | 'Low';
-  date: string;
+  content: string;
+  audience: string;
+  created_at: string;
+  created_by: number;       // The ID of the user
+  created_by_name: string;  // The actual text name (ADMIN-001)
+  is_active: boolean;
 }
+
+// export interface SchoolEvent {
+//   id: number;
+//   title: string;
+//   start_date: string;
+//   end_date: string;
+//   location: string;
+//   type: 'Academic' | 'Sports' | 'General';
+// }
+
 
 export interface SchoolEvent {
   id: number;
   title: string;
-  start_date: string;
-  end_date: string;
+  description: string;
+  event_date: string;
+  start_time: string;
+  end_time: string;
   location: string;
-  type: 'Academic' | 'Sports' | 'General';
+  organizer: number;       // The ID from Django
+  organizer_name: string;  // The computed name (ADMIN-001)
+  is_active: boolean;
 }
+
+// export interface FacilityBooking {
+//   id: number;
+//   facility_name: string;
+//   requested_by: string;
+//   date: string;
+//   status: 'PENDING' | 'APPROVED' | 'REJECTED';
+// }
+
 
 export interface FacilityBooking {
   id: number;
   facility_name: string;
-  requested_by: string;
-  date: string;
+  purpose: string;         // New field
+  start_time: string;      // New field
+  end_time: string;        // New field
+  requested_by: number;    // The ID (221)
+  requested_by_name: string; // The Name (ADMIN-001)
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
+// export interface IncidentLog {
+//   id: number;
+//   date: string;
+//   description: string;
+//   reported_by: string;
+//   status: 'OPEN' | 'RESOLVED';
+// }
+
+
 export interface IncidentLog {
   id: number;
-  date: string;
+  title: string;           // Backend field
   description: string;
-  reported_by: string;
-  status: 'OPEN' | 'RESOLVED';
+  incident_date: string;   // Backend field
+  severity: 'LOW' | 'MEDIUM' | 'HIGH'; // Backend field
+  status: 'OPEN' | 'INVESTIGATING' | 'CLOSED'; // Backend field
+  reported_by: number;
+  reported_by_name: string; // Backend field
+  action_taken: string;
 }
 
 @Injectable({ providedIn: 'root' })

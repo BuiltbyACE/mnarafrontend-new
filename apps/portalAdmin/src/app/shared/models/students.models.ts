@@ -1,23 +1,24 @@
-/**
- * Students & Admissions Module Models
- */
+
+
 
 export interface Admission {
   id: number;
-  admission_number: string;
-  student: number; // API returns student ID only
   student_first_name: string;
   student_last_name: string;
   student_school_id: string;
-  student_name: string; // Computed from student.first_name + student.last_name
-  year_level_name: string;
-  year_level: number;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'WAITLISTED';
-  application_date: string;
-  current_class: string;
-  class_sought: number;
+  class_sought_name: string;
   date_of_admission: string;
-  is_active: boolean;
+  gender: string;
+  nationality: string;
+  resident: string;
+  religion: string;
+  transport_options: string;
+  lunch_option: boolean;
+  medical_record?: {
+    status: string;
+    last_updated: string;
+  };
+  status: string; // From your backend logic
 }
 
 export interface StudentSummary {
@@ -89,19 +90,72 @@ export interface StudentEnrollment {
   classroom: number;
 }
 
+// apps/portalAdmin/src/app/core/models/student.model.ts
+
+export interface SiblingMinimal {
+  id: string; // Or number, depending on whether we use UUIDs or AutoFields
+  full_name: string;
+  class_name: string;
+}
+
+// export interface StudentProfile {
+//   id: string;
+//   first_name: string;
+//   last_name: string;
+//   date_of_birth: string;
+//   enrollment_date: string;
+  
+//   // Flattened User Data
+//   user_school_id: string;
+//   user_role: string;
+  
+//   // Nested Relational Objects
+//   // (Use optional chaining ? because these can technically be null if incomplete)
+//   admission_record?: Admission; 
+//   medical_record?: MedicalRecord;     
+//   enrollments: StudentEnrollment;          
+  
+//   // Computed & Method Fields
+//   siblings: SiblingMinimal[];
+//   category?: string | null;
+//   category_name?: string;
+//   gender: string; // The backend guarantees this defaults to '' if missing
+//   current_class_name: string;
+  
+//   // House System
+//   house_id?: string | null;
+//   house_name?: string;
+// }
+
+
 export interface StudentProfile {
-  id: number;
+  id: number; // [CRITICAL FIX]: Must be a number, not string
   first_name: string;
   last_name: string;
-  date_of_birth: string | null;
+  date_of_birth: string;
   enrollment_date: string;
+  
   user_school_id: string;
   user_role: string;
-  admission_record: StudentAdmissionRecord | null;
-  medical_record: Record<string, unknown> | null;
-  enrollments: StudentEnrollment[];
-  assigned_course_id?: string;
+  
+  // [CRITICAL FIX]: Use StudentAdmissionRecord instead of Admission
+  admission_record?: StudentAdmissionRecord; 
+  medical_record?: MedicalRecord;     
+  enrollments: StudentEnrollment[];          
+  
+  siblings: SiblingMinimal[];
+  category?: string | null;
+  category_name?: string;
+  gender: string; 
+  current_class_name: string;
+  
+  house_id?: string | null;
+  house_name?: string;
+
+  // [CRITICAL FIX]: UI State Property for the promotion wizard
+  assigned_course_id?: number | string; 
 }
+
 
 export interface MedicalRecord {
   student_id: string;
@@ -131,3 +185,11 @@ export interface StudentHouse {
   student_count: number;
   is_active: boolean;
 }
+
+
+// export interface YearLevel {
+//   id: number;
+//   name: string;
+//   key_stage_name: string;
+//   order: number;
+// }

@@ -17,6 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { StudentsService } from '../../services/students.service';
 import { StudentProfile, StudentEnrollment, StudentAdmissionRecord, CarerData } from '../../../../shared/models/students.models';
+import { MedicalRecord } from '../../../../shared/models/students.models';
 
 @Component({
   selector: 'app-student-detail',
@@ -483,22 +484,28 @@ export class StudentDetailComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
 
   student = signal<StudentProfile | null>(null);
-  medicalRecord = computed<Record<string, unknown> | null>(() => {
-    const s = this.student();
-    return s?.medical_record || null;
+  // medicalRecord = computed<Record<string, unknown> | null>(() => {
+  //   const s = this.student();
+  //   return s?.medical_record || null;
+  // });
+
+  medicalRecord = computed<MedicalRecord | null>(() => {
+    return this.student()?.medical_record || null;
   });
 
   getMedicalString(key: string): string {
     const med = this.medicalRecord();
     if (!med) return 'N/A';
-    const val = med[key];
+    // const val = med[key];
+    const val = med[key as keyof MedicalRecord];
     return typeof val === 'string' ? val : 'N/A';
   }
 
   getMedicalStringArray(key: string): string[] {
     const med = this.medicalRecord();
     if (!med) return [];
-    const val = med[key];
+    // const val = med[key];
+    const val = med[key as keyof MedicalRecord];
     return Array.isArray(val) ? val as string[] : [];
   }
 

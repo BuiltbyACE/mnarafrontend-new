@@ -1,13 +1,12 @@
-/**
- * Finance Service
- * Manages fee balances, payments, and expenses
- */
-
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
-import { FeeBalance, Payment, Expense, CreditNote, ManualPaymentRequest, ExpenseApprovalRequest, CreditNoteRequest } from '../../../shared/models/finance.models';
+import {
+  FeeBalance, Payment, Expense, CreditNote,
+  ManualPaymentRequest, ExpenseApprovalRequest, CreditNoteRequest,
+  PrincipalDashboardData,
+} from '../../../shared/models/finance.models';
 
 interface PaginatedResponse<T> {
   count: number;
@@ -33,6 +32,10 @@ export class FinanceService {
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
   readonly financeSummary = signal<FinanceSummary | null>(null);
+
+  readonly dashboardData = signal<PrincipalDashboardData | null>(null);
+  readonly dashboardLoading = signal<boolean>(false);
+  readonly dashboardError = signal<string | null>(null);
 
   getFeeBalances(
     page: number = 1,
@@ -99,5 +102,47 @@ export class FinanceService {
       next: (summary) => this.financeSummary.set(summary),
       error: () => this.financeSummary.set(null),
     });
+  }
+
+  getDashboardData(): Observable<PrincipalDashboardData> {
+    this.dashboardLoading.set(true);
+    this.dashboardError.set(null);
+
+    return this.http
+      .get<PrincipalDashboardData>(getApiUrl('/finance/principal-dashboard/'))
+      .pipe(
+        catchError((err) => {
+          const message = err.error?.message || 'Failed to load principal dashboard';
+          this.dashboardError.set(message);
+          this.dashboardLoading.set(false);
+          return throwError(() => new Error(message));
+        })
+      );
+  }
+
+  downloadReport(format: 'pdf' | 'xlsx', type: 'financial_statement' | 'aging_debt'): Observable<Blob> {
+    const mimeType = format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    return this.http
+      .get(getApiUrl(`/finance/reports/${type}/`), {
+        params: new HttpParams().set('format', format),
+        responseType: 'blob',
+      })
+      .pipe(
+        catchError((err) => {
+          const message = err.error?.message || `Failed to download ${type} report`;
+          return throwError(() => new Error(message));
+        })
+      );
+  }
+
+  verifyItem(id: number): Observable<{ success: boolean; last_verified: string }> {
+    return this.http
+      .post<{ success: boolean; last_verified: string }>(getApiUrl(`/finance/inventory/${id}/verify/`), {})
+      .pipe(
+        catchError((err) => {
+          const message = err.error?.message || 'Failed to verify inventory item';
+          return throwError(() => new Error(message));
+        })
+      );
   }
 }
