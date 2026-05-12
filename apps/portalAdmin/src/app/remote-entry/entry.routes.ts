@@ -71,6 +71,30 @@ import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
         loadChildren: () =>
           import('../features/lms/lms.routes').then((m) => m.lmsRoutes),
       },
+      // Communication Module
+      {
+        path: 'communication',
+        loadChildren: () =>
+          import('../features/communication/communication.routes').then((m) => m.communicationRoutes),
+      },
+      // System Access & RBAC
+      {
+        path: 'system-access',
+        loadComponent: () =>
+          import('../features/system-access/system-access.component').then((m) => m.SystemAccessComponent),
+      },
+      // Reports & Analytics
+      {
+        path: 'reports',
+        loadComponent: () =>
+          import('../features/reports/reports.component').then((m) => m.ReportsComponent),
+      },
+      // Global System Settings
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('../features/settings/global-settings.component').then((m) => m.GlobalSettingsComponent),
+      },
     ],
   },
 ];

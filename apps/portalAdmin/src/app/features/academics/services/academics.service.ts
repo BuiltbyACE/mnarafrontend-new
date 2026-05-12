@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, tap, throwError } from 'rxjs';
+import { Observable, catchError, map, tap, throwError } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 
 // Interfaces matching backend serializers
@@ -8,27 +8,35 @@ export interface Department {
   id: number;
   name: string;
   head_of_department: { id: number; name: string } | null;
+  head_of_department_name?: string;
   is_active: boolean;
 }
 
 export interface KeyStage {
   id: number;
   name: string;
-  level: string;
-  is_active: boolean;
+  code: string;
+  description: string;
+  year_levels: string[];
+  level?: string;
+  order?: number;
+  is_active?: boolean;
 }
 
 export interface YearLevel {
   id: number;
   name: string;
   key_stage: { id: number; name: string };
+  key_stage_name?: string;
   is_active: boolean;
 }
 
 export interface Subject {
   id: number;
   name: string;
+  code?: string;
   department: { id: number; name: string };
+  department_name?: string;
   is_active: boolean;
 }
 
@@ -49,9 +57,16 @@ export interface ClassroomWritePayload {
 
 export interface SubjectOffering {
   id: number;
-  subject: { id: number; name: string };
-  year_level: { id: number; name: string };
-  is_active: boolean;
+  subject: number;
+  subject_name: string;
+  subject_code: string;
+  year_level: number;
+  year_level_name: string;
+  is_compulsory: boolean;
+  teacher_name: string | null;
+  credit_hours: string;
+  key_stage_name?: string;
+  is_active?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -74,10 +89,10 @@ export class AcademicsService {
   // Department CRUD
   getDepartments(): Observable<Department[]> {
     this.isLoading.set(true);
-    return this.http.get<Department[]>(`${this.baseUrl}departments/`).pipe(
+    return this.http.get<{ results: Department[] }>(`${this.baseUrl}departments/`).pipe(
+      map(data => data.results || []),
       tap(data => {
-        // this.departments.set(data);
-        this.departments.set((data as any).results || data);
+        this.departments.set(data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -109,15 +124,16 @@ export class AcademicsService {
   }
 
   // Classroom CRUD
-  getClassrooms(page?: number, pageSize?: number): Observable<any> {
+  getClassrooms(page?: number, pageSize?: number): Observable<Classroom[]> {
     this.isLoading.set(true);
     let url = `${this.baseUrl}classrooms/`;
     if (page && pageSize) {
       url += `?page=${page}&page_size=${pageSize}`;
     }
-    return this.http.get<any>(url).pipe(
+    return this.http.get<{ results: Classroom[] }>(url).pipe(
+      map(data => data.results || []),
       tap(data => {
-        this.classrooms.set(data.results || data);
+        this.classrooms.set(data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -151,9 +167,10 @@ export class AcademicsService {
   // Key Stage CRUD
   getKeyStages(): Observable<KeyStage[]> {
     this.isLoading.set(true);
-    return this.http.get<KeyStage[]>(`${this.baseUrl}key-stages/`).pipe(
+    return this.http.get<{ results: KeyStage[] }>(`${this.baseUrl}key-stages/`).pipe(
+      map(data => data.results || []),
       tap(data => {
-        this.keyStages.set((data as any).results || data);
+        this.keyStages.set(data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -187,9 +204,10 @@ export class AcademicsService {
   // Year Level CRUD
   getYearLevels(): Observable<YearLevel[]> {
     this.isLoading.set(true);
-    return this.http.get<YearLevel[]>(`${this.baseUrl}year-levels/`).pipe(
+    return this.http.get<{ results: YearLevel[] }>(`${this.baseUrl}year-levels/`).pipe(
+      map(data => data.results || []),
       tap(data => {
-        this.yearLevels.set((data as any).results || data);
+        this.yearLevels.set(data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -223,9 +241,10 @@ export class AcademicsService {
   // Subject CRUD
   getSubjects(): Observable<Subject[]> {
     this.isLoading.set(true);
-    return this.http.get<Subject[]>(`${this.baseUrl}subjects/`).pipe(
+    return this.http.get<{ results: Subject[] }>(`${this.baseUrl}subjects/`).pipe(
+      map(data => data.results || []),
       tap(data => {
-        this.subjects.set((data as any).results || data);
+        this.subjects.set(data);
         this.isLoading.set(false);
         this.error.set(null);
       }),
@@ -259,9 +278,10 @@ export class AcademicsService {
   // Subject Offering CRUD
   getSubjectOfferings(): Observable<SubjectOffering[]> {
     this.isLoading.set(true);
-    return this.http.get<SubjectOffering[]>(`${this.baseUrl}subject-offerings/`).pipe(
+    return this.http.get<{ results: SubjectOffering[] }>(`${this.baseUrl}subject-offerings/`).pipe(
+      map(data => data.results || []),
       tap(data => {
-        this.subjectOfferings.set((data as any).results || data);
+        this.subjectOfferings.set(data);
         this.isLoading.set(false);
         this.error.set(null);
       }),

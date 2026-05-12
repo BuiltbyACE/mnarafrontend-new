@@ -119,9 +119,12 @@ export class YearLevelDialogComponent implements OnInit {
     this.keyStages = this.service.keyStages();
     
     if (this.data.isEdit && this.data.yearLevel) {
+      const ksId = typeof this.data.yearLevel.key_stage === 'object'
+        ? this.data.yearLevel.key_stage.id
+        : this.data.yearLevel.key_stage;
       this.form.patchValue({
         name: this.data.yearLevel.name,
-        key_stage: this.data.yearLevel.key_stage.id,
+        key_stage: ksId,
         is_active: this.data.yearLevel.is_active,
       });
     }

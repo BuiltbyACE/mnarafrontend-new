@@ -111,25 +111,10 @@ interface NavChild {
         </div>
       </nav>
 
-      <!-- Upgrade Card -->
-      <div class="upgrade-card-wrapper">
-        <div class="upgrade-card">
-          <div class="upgrade-icon">
-            <mat-icon>campaign</mat-icon>
-          </div>
-          <h4 class="upgrade-title">Upgrade to<br>Premium</h4>
-          <p class="upgrade-sub">Unlock advanced features</p>
-          <button class="upgrade-btn">Upgrade Now</button>
-        </div>
-      </div>
-
-      <!-- Dark Mode Toggle -->
-      <div class="dark-mode-toggle">
-        <div class="toggle-left">
-          <mat-icon>dark_mode</mat-icon>
-          <span>Dark Mode</span>
-        </div>
-        <mat-icon>chevron_right</mat-icon>
+      <!-- Footer -->
+      <div class="sidebar-footer">
+        <div class="footer-text">&copy; 2024 SafariStack Solutions. All rights reserved.</div>
+        <div class="footer-version">Version 1.0.0</div>
       </div>
     </div>
   `,
@@ -141,13 +126,14 @@ interface NavChild {
       background: #2563EB; /* Bright royal blue */
       color: white;
       font-family: 'Inter', sans-serif;
+      position: relative;
     }
 
     .logo-section {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 24px 20px 24px 24px;
+      padding: 16px 16px 8px 16px;
     }
 
     .logo-group {
@@ -191,7 +177,8 @@ interface NavChild {
     .nav-section {
       flex: 1;
       overflow-y: auto;
-      padding: 8px 16px;
+      padding: 4px 12px;
+      padding-bottom: 56px;
       
       /* Hide scrollbar for a cleaner look */
       &::-webkit-scrollbar {
@@ -203,31 +190,33 @@ interface NavChild {
     .nav-list {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
 
     .nav-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
-      border-radius: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
       color: white;
       text-decoration: none;
-      transition: all 0.2s ease;
       cursor: pointer;
+      position: relative;
 
       &:hover {
         background: rgba(255, 255, 255, 0.1);
       }
 
       &.active {
-        background: white;
-        color: #2563EB;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        background: rgba(255, 255, 255, 0.12);
+        color: white;
+        border-left: 3px solid white;
+        border-radius: 0 6px 6px 0;
+        padding-left: 9px;
 
         .nav-icon {
-          color: #2563EB;
+          color: white;
         }
       }
     }
@@ -257,84 +246,20 @@ interface NavChild {
       color: rgba(255, 255, 255, 0.6);
     }
 
-    /* Upgrade Card */
-    .upgrade-card-wrapper {
-      padding: 16px;
-      margin-top: 8px;
-    }
-
-    .upgrade-card {
-      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
-      padding: 20px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .upgrade-icon {
-      width: 48px;
-      height: 48px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 12px;
-      
-      mat-icon {
-        color: white;
-      }
-    }
-
-    .upgrade-title {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: white;
-      margin: 0 0 4px;
-      line-height: 1.3;
-    }
-
-    .upgrade-sub {
-      font-size: 0.6875rem;
-      color: rgba(255, 255, 255, 0.7);
-      margin: 0 0 16px;
-    }
-
-    .upgrade-btn {
-      width: 100%;
-      padding: 10px 0;
-      background: white;
-      color: #2563EB;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      transition: background 0.2s;
-
-      &:hover {
-        background: #f8fafc;
-      }
-    }
-
     /* Dropdown children */
     .children-list {
-      padding: 4px 0 4px 16px;
+      padding: 2px 0 2px 12px;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
     }
 
     .child-item {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 8px 16px;
-      border-radius: 8px;
+      padding: 6px 12px;
+      border-radius: 4px;
       color: rgba(255, 255, 255, 0.8);
       text-decoration: none;
       font-size: 0.8125rem;
@@ -372,41 +297,27 @@ interface NavChild {
       transform: rotate(90deg);
     }
 
-    /* Dark Mode Toggle */
-    .dark-mode-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 24px 24px;
-      color: rgba(255, 255, 255, 0.8);
-      cursor: pointer;
-      transition: color 0.2s;
+    /* Sidebar Footer */
+    .sidebar-footer {
+      padding: 12px 16px;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      background: #2563EB;
+      text-align: center;
 
-      &:hover {
-        color: white;
+      .footer-text {
+        font-size: 0.625rem;
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 1.3;
       }
 
-      .toggle-left {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        mat-icon {
-          font-size: 20px;
-          width: 20px;
-          height: 20px;
-        }
-
-        span {
-          font-size: 0.875rem;
-          font-weight: 500;
-        }
-      }
-
-      > mat-icon {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
+      .footer-version {
+        font-size: 0.5625rem;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 2px;
       }
     }
   `],
@@ -460,6 +371,7 @@ export class AdminSidebarComponent {
     { name: 'transport', label: 'Transport', icon: 'directions_bus', route: '/portalAdmin/transport' },
     { name: 'communication', label: 'Communication', icon: 'chat', route: '/portalAdmin/communication' },
     { name: 'reports', label: 'Reports', icon: 'bar_chart', route: '/portalAdmin/reports' },
+    { name: 'systemAccess', label: 'System Access', icon: 'admin_panel_settings', route: '/portalAdmin/system-access' },
     { name: 'settings', label: 'Settings', icon: 'settings', route: '/portalAdmin/settings' },
   ];
 }

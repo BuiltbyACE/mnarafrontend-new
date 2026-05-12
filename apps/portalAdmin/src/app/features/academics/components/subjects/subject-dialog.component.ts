@@ -108,9 +108,12 @@ export class SubjectDialogComponent implements OnInit {
     this.departments = this.service.departments();
     
     if (this.data.isEdit && this.data.subject) {
+      const deptId = typeof this.data.subject.department === 'object'
+        ? this.data.subject.department.id
+        : this.data.subject.department;
       this.form.patchValue({
         name: this.data.subject.name,
-        department: this.data.subject.department.id,
+        department: deptId,
         is_active: this.data.subject.is_active,
       });
     }

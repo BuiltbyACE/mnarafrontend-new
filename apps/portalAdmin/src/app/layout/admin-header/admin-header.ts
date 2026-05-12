@@ -66,6 +66,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } fro
           </div>
           <div class="user-info">
             <span class="user-name">{{ authStore.fullName() || 'Admin User' }}</span>
+            <span class="user-id">{{ authStore.identifier() || 'ADM-001' }}</span>
             <span class="user-role">{{ authStore.roleName() || 'Super Admin' }}</span>
           </div>
           <mat-icon class="user-chevron">expand_more</mat-icon>
@@ -87,15 +88,16 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } fro
   styles: [`
     .admin-header {
       background: white;
-      height: 72px;
+      height: 56px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 32px;
+      padding: 0 24px;
       position: sticky;
       top: 0;
       z-index: 100;
       font-family: 'Inter', sans-serif;
+      border-bottom: 1px solid #e2e8f0;
     }
 
     .header-left {
@@ -122,11 +124,11 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } fro
       align-items: center;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 0 12px;
+      border-radius: 6px;
+      padding: 0 10px;
       width: 100%;
-      max-width: 400px;
-      height: 40px;
+      max-width: 360px;
+      height: 36px;
       transition: border-color 0.2s;
 
       &:focus-within {
@@ -172,14 +174,14 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } fro
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 32px;
+      gap: 20px;
     }
 
     /* Notification Bell */
     .notification-btn {
       position: relative;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: #f8fafc;
       display: flex;
@@ -195,26 +197,26 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } fro
       }
 
       mat-icon {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
       }
 
       .notification-badge {
         position: absolute;
-        top: -4px;
-        right: -4px;
+        top: -3px;
+        right: -3px;
         background: #2563EB;
         color: white;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 700;
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 50%;
-        border: 2px solid white;
+        border: 1.5px solid white;
       }
     }
 
@@ -222,8 +224,8 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } fro
     .date-block {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding-right: 32px;
+      gap: 8px;
+      padding-right: 20px;
       border-right: 1px solid #e2e8f0;
 
       .date-icon {
@@ -256,12 +258,12 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } fro
     .user-block {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       cursor: pointer;
 
       .user-avatar {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         background: #f1f5f9;
         overflow: hidden;
@@ -277,13 +279,17 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } fro
 
         mat-icon {
           color: #94a3b8;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
         }
       }
 
       .user-info {
         display: flex;
         flex-direction: column;
-        line-height: 1.2;
+        line-height: 1.15;
+        gap: 0;
       }
 
       .user-name {
@@ -293,17 +299,22 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } fro
       }
 
       .user-role {
-        font-size: 0.6875rem;
+        font-size: 0.625rem;
         color: #64748b;
-        margin-top: 2px;
+      }
+
+      .user-id {
+        font-size: 0.625rem;
+        color: #94a3b8;
+        font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
       }
 
       .user-chevron {
         color: #94a3b8;
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-        margin-left: 4px;
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        margin-left: 2px;
       }
     }
   `],

@@ -57,23 +57,33 @@ import { KeyStageDialogComponent } from './key-stage-dialog.component';
         } @else {
           <table mat-table [dataSource]="filteredKeyStages()" class="full-width-table">
             <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Name</th>
-              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="level">
-              <th mat-header-cell *matHeaderCellDef>Level</th>
+              <th mat-header-cell *matHeaderCellDef>Name &amp; Code</th>
               <td mat-cell *matCellDef="let row">
-                <span class="level-badge">{{ row.level }}</span>
+                <div class="cell-name-code">
+                  <span class="ks-name">{{ row.name }}</span>
+                  <span class="ks-code">{{ row.code }}</span>
+                </div>
               </td>
             </ng-container>
 
-            <ng-container matColumnDef="is_active">
-              <th mat-header-cell *matHeaderCellDef>Status</th>
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>Description</th>
               <td mat-cell *matCellDef="let row">
-                <mat-chip [class.active]="row.is_active" [class.inactive]="!row.is_active">
-                  {{ row.is_active ? 'Active' : 'Inactive' }}
-                </mat-chip>
+                <span class="cell-desc">{{ row.description || '—' }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="levels">
+              <th mat-header-cell *matHeaderCellDef>Year Levels</th>
+              <td mat-cell *matCellDef="let row">
+                <mat-chip-set>
+                  @for (level of row.year_levels; track level) {
+                    <mat-chip class="level-chip">{{ level }}</mat-chip>
+                  }
+                  @empty {
+                    <span class="empty-levels">No levels assigned</span>
+                  }
+                </mat-chip-set>
               </td>
             </ng-container>
 
@@ -149,24 +159,43 @@ import { KeyStageDialogComponent } from './key-stage-dialog.component';
       padding: 48px;
     }
 
-    .level-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      background: #ede9fe;
-      color: #5b21b6;
-      border-radius: 16px;
-      font-size: 0.75rem;
+    .cell-name-code {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ks-name {
+      font-size: 0.8125rem;
       font-weight: 500;
+      color: #1e293b;
     }
 
-    mat-chip.active {
-      background: #dcfce7;
-      color: #166534;
+    .ks-code {
+      font-size: 0.6875rem;
+      color: #94a3b8;
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     }
 
-    mat-chip.inactive {
-      background: #fee2e2;
-      color: #991b1b;
+    .cell-desc {
+      font-size: 0.8125rem;
+      color: #475569;
+    }
+
+    .level-chip {
+      background: #ede9fe !important;
+      color: #5b21b6 !important;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      padding: 0 10px;
+      min-height: 24px;
+      border-radius: 4px;
+    }
+
+    .empty-levels {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-style: italic;
     }
 
     .no-data-row {
@@ -192,7 +221,7 @@ export class KeyStagesListComponent implements OnInit {
   readonly dialog = inject(MatDialog);
 
   searchQuery = '';
-  displayedColumns = ['name', 'level', 'is_active', 'actions'];
+  displayedColumns = ['name', 'description', 'levels', 'actions'];
 
   readonly filteredKeyStages = computed(() => {
     const keyStages = this.service.keyStages();
@@ -200,7 +229,9 @@ export class KeyStagesListComponent implements OnInit {
     const query = this.searchQuery.toLowerCase();
     return keyStages.filter(ks => 
       ks.name.toLowerCase().includes(query) ||
-      ks.level.toLowerCase().includes(query)
+      ks.code.toLowerCase().includes(query) ||
+      (ks.description || '').toLowerCase().includes(query) ||
+      ks.year_levels.some(l => l.toLowerCase().includes(query))
     );
   });
 

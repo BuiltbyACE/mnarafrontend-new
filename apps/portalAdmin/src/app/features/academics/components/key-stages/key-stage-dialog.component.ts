@@ -31,31 +31,20 @@ export interface KeyStageDialogData {
       <form [formGroup]="form" class="dialog-form">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Name</mat-label>
-          <input matInput formControlName="name" placeholder="e.g., Key Stage 1" />
+          <input matInput formControlName="name" placeholder="e.g., Key Stage 5" />
           @if (form.get('name')?.hasError('required')) {
             <mat-error>Name is required</mat-error>
           }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Level</mat-label>
-          <mat-select formControlName="level">
-            <mat-option value="Early Years">Early Years</mat-option>
-            <mat-option value="Primary">Primary</mat-option>
-            <mat-option value="Secondary">Secondary</mat-option>
-            <mat-option value="Further Education">Further Education</mat-option>
-          </mat-select>
-          @if (form.get('level')?.hasError('required')) {
-            <mat-error>Level is required</mat-error>
-          }
+          <mat-label>Code</mat-label>
+          <input matInput formControlName="code" placeholder="e.g., KS5" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="is_active">
-            <mat-option [value]="true">Active</mat-option>
-            <mat-option [value]="false">Inactive</mat-option>
-          </mat-select>
+          <mat-label>Description</mat-label>
+          <textarea matInput formControlName="description" placeholder="Brief description" rows="2"></textarea>
         </mat-form-field>
       </form>
     </mat-dialog-content>
@@ -96,8 +85,8 @@ export class KeyStageDialogComponent implements OnInit {
   constructor() {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      level: ['', Validators.required],
-      is_active: [true],
+      code: [''],
+      description: [''],
     });
   }
 
@@ -105,8 +94,8 @@ export class KeyStageDialogComponent implements OnInit {
     if (this.data.isEdit && this.data.keyStage) {
       this.form.patchValue({
         name: this.data.keyStage.name,
-        level: this.data.keyStage.level,
-        is_active: this.data.keyStage.is_active,
+        code: this.data.keyStage.code,
+        description: this.data.keyStage.description,
       });
     }
   }

@@ -59,23 +59,33 @@ import { SubjectOfferingDialogComponent } from './subject-offering-dialog.compon
             <ng-container matColumnDef="subject">
               <th mat-header-cell *matHeaderCellDef>Subject</th>
               <td mat-cell *matCellDef="let row">
-                <span class="subject-badge">{{ row.subject.name }}</span>
+                <div class="cell-subject">
+                  <span class="subject-badge">{{ row.subject_name }}</span>
+                  <span class="subject-code">{{ row.subject_code }}</span>
+                </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="year_level">
               <th mat-header-cell *matHeaderCellDef>Year Level</th>
               <td mat-cell *matCellDef="let row">
-                <span class="year-badge">{{ row.year_level.name }}</span>
+                <span class="year-badge">{{ row.year_level_name }}</span>
               </td>
             </ng-container>
 
-            <ng-container matColumnDef="is_active">
-              <th mat-header-cell *matHeaderCellDef>Status</th>
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef>Type</th>
               <td mat-cell *matCellDef="let row">
-                <mat-chip [class.active]="row.is_active" [class.inactive]="!row.is_active">
-                  {{ row.is_active ? 'Active' : 'Inactive' }}
+                <mat-chip [class.chip-core]="row.is_compulsory" [class.chip-elective]="!row.is_compulsory" disableRipple>
+                  {{ row.is_compulsory ? 'Core' : 'Elective' }}
                 </mat-chip>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="teacher">
+              <th mat-header-cell *matHeaderCellDef>Teacher</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="cell-teacher">{{ row.teacher_name || 'Unassigned' }}</span>
               </td>
             </ng-container>
 
@@ -151,6 +161,12 @@ import { SubjectOfferingDialogComponent } from './subject-offering-dialog.compon
       padding: 48px;
     }
 
+    .cell-subject {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .subject-badge {
       display: inline-block;
       padding: 4px 12px;
@@ -159,6 +175,12 @@ import { SubjectOfferingDialogComponent } from './subject-offering-dialog.compon
       border-radius: 16px;
       font-size: 0.75rem;
       font-weight: 500;
+    }
+
+    .subject-code {
+      font-size: 0.6875rem;
+      color: #94a3b8;
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     }
 
     .year-badge {
@@ -171,14 +193,29 @@ import { SubjectOfferingDialogComponent } from './subject-offering-dialog.compon
       font-weight: 500;
     }
 
-    mat-chip.active {
-      background: #dcfce7;
-      color: #166534;
+    .cell-teacher {
+      font-size: 0.8125rem;
+      color: #334155;
     }
 
-    mat-chip.inactive {
-      background: #fee2e2;
-      color: #991b1b;
+    mat-chip.chip-core {
+      background: #dbeafe !important;
+      color: #1e40af !important;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 0 10px;
+      min-height: 24px;
+      border-radius: 4px;
+    }
+
+    mat-chip.chip-elective {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 0 10px;
+      min-height: 24px;
+      border-radius: 4px;
     }
 
     .no-data-row {
@@ -204,15 +241,17 @@ export class SubjectOfferingsListComponent implements OnInit {
   readonly dialog = inject(MatDialog);
 
   searchQuery = '';
-  displayedColumns = ['subject', 'year_level', 'is_active', 'actions'];
+  displayedColumns = ['subject', 'year_level', 'type', 'teacher', 'actions'];
 
   readonly filteredOfferings = computed(() => {
     const offerings = this.service.subjectOfferings();
     if (!this.searchQuery) return offerings;
     const query = this.searchQuery.toLowerCase();
     return offerings.filter(o => 
-      o.subject.name.toLowerCase().includes(query) ||
-      o.year_level.name.toLowerCase().includes(query)
+      o.subject_name.toLowerCase().includes(query) ||
+      o.subject_code.toLowerCase().includes(query) ||
+      o.year_level_name.toLowerCase().includes(query) ||
+      (o.teacher_name || '').toLowerCase().includes(query)
     );
   });
 
@@ -222,7 +261,7 @@ export class SubjectOfferingsListComponent implements OnInit {
 
   openCreateDialog(): void {
     const dialogRef = this.dialog.open(SubjectOfferingDialogComponent, {
-      width: '500px',
+      width: '600px',
       data: { isEdit: false },
     });
 
@@ -235,7 +274,7 @@ export class SubjectOfferingsListComponent implements OnInit {
 
   openEditDialog(offering: SubjectOffering): void {
     const dialogRef = this.dialog.open(SubjectOfferingDialogComponent, {
-      width: '500px',
+      width: '600px',
       data: { isEdit: true, offering },
     });
 
@@ -247,7 +286,7 @@ export class SubjectOfferingsListComponent implements OnInit {
   }
 
   deleteOffering(offering: SubjectOffering): void {
-    if (confirm(`Delete ${offering.subject.name} - ${offering.year_level.name} offering?`)) {
+    if (confirm(`Delete ${offering.subject_name} (${offering.subject_code}) - ${offering.year_level_name} offering?`)) {
       this.service.deleteSubjectOffering(offering.id).subscribe();
     }
   }

@@ -64,7 +64,7 @@ import { SubjectDialogComponent } from './subject-dialog.component';
             <ng-container matColumnDef="department">
               <th mat-header-cell *matHeaderCellDef>Department</th>
               <td mat-cell *matCellDef="let row">
-                <span class="dept-badge">{{ row.department.name }}</span>
+                <span class="dept-badge">{{ row.department?.name || row.department_name || 'N/A' }}</span>
               </td>
             </ng-container>
 
@@ -200,7 +200,7 @@ export class SubjectsListComponent implements OnInit {
     const query = this.searchQuery.toLowerCase();
     return subjects.filter(s => 
       s.name.toLowerCase().includes(query) ||
-      s.department.name.toLowerCase().includes(query)
+      (s.department?.name || s.department_name || '').toLowerCase().includes(query)
     );
   });
 

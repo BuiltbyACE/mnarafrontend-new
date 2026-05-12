@@ -64,7 +64,7 @@ import { YearLevelDialogComponent } from './year-level-dialog.component';
             <ng-container matColumnDef="key_stage">
               <th mat-header-cell *matHeaderCellDef>Key Stage</th>
               <td mat-cell *matCellDef="let row">
-                <span class="key-stage-badge">{{ row.key_stage.name }}</span>
+                <span class="key-stage-badge">{{ row.key_stage?.name || row.key_stage_name || 'N/A' }}</span>
               </td>
             </ng-container>
 
@@ -200,7 +200,7 @@ export class YearLevelsListComponent implements OnInit {
     const query = this.searchQuery.toLowerCase();
     return yearLevels.filter(yl => 
       yl.name.toLowerCase().includes(query) ||
-      yl.key_stage.name.toLowerCase().includes(query)
+      (yl.key_stage?.name || yl.key_stage_name || '').toLowerCase().includes(query)
     );
   });
 

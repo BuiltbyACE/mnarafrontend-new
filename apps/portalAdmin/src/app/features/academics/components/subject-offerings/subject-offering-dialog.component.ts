@@ -56,10 +56,20 @@ export interface SubjectOfferingDialogData {
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="is_active">
-            <mat-option [value]="true">Active</mat-option>
-            <mat-option [value]="false">Inactive</mat-option>
+          <mat-label>Credit Hours</mat-label>
+          <input matInput formControlName="credit_hours" placeholder="e.g. 4.0" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Teacher</mat-label>
+          <input matInput formControlName="teacher_name" placeholder="Assign teacher" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Type</mat-label>
+          <mat-select formControlName="is_compulsory">
+            <mat-option [value]="true">Core (Compulsory)</mat-option>
+            <mat-option [value]="false">Elective</mat-option>
           </mat-select>
         </mat-form-field>
       </form>
@@ -106,7 +116,9 @@ export class SubjectOfferingDialogComponent implements OnInit {
     this.form = this.fb.group({
       subject: ['', Validators.required],
       year_level: ['', Validators.required],
-      is_active: [true],
+      credit_hours: [''],
+      teacher_name: [''],
+      is_compulsory: [true],
     });
   }
 
@@ -116,9 +128,11 @@ export class SubjectOfferingDialogComponent implements OnInit {
     
     if (this.data.isEdit && this.data.offering) {
       this.form.patchValue({
-        subject: this.data.offering.subject.id,
-        year_level: this.data.offering.year_level.id,
-        is_active: this.data.offering.is_active,
+        subject: this.data.offering.subject,
+        year_level: this.data.offering.year_level,
+        credit_hours: this.data.offering.credit_hours,
+        teacher_name: this.data.offering.teacher_name,
+        is_compulsory: this.data.offering.is_compulsory,
       });
     }
   }
