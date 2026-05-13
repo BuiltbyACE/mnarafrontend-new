@@ -1,12 +1,8 @@
-/**
- * Authentication Service
- * Handles all authentication API calls
- */
-
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import type {
   LoginRequest,
   LoginResponse,
@@ -16,6 +12,7 @@ import type {
 } from '@sms/shared/models';
 import { environment, getApiUrl } from '@sms/core/config';
 import { TokenStorageService } from './token-storage.service';
+import { AuthStore } from './auth.store';
 
 @Injectable({
   providedIn: 'root',
@@ -23,24 +20,26 @@ import { TokenStorageService } from './token-storage.service';
 export class AuthService {
   private http = inject(HttpClient);
   private tokenStorage = inject(TokenStorageService);
+  private authStore = inject(AuthStore);
+  private router = inject(Router);
 
   /**
    * Login with credentials
+   * Stores tokens in localStorage via tap and returns the full login response
    */
-  login(credentials: LoginRequest): Observable<Tokens> {
-    console.log('Login request to:', getApiUrl(environment.authEndpoints.login));
+  login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(getApiUrl(environment.authEndpoints.login), credentials)
       .pipe(
-        map((response) => {
-          console.log('Login successful, tokens received');
-          return {
-            access: response.access,
-            refresh: response.refresh,
+        tap((response) => {
+          const raw = response as any;
+          const tokens: Tokens = {
+            access: raw.access || raw.access_token,
+            refresh: raw.refresh || raw.refresh_token,
           };
+          this.tokenStorage.saveTokens(tokens);
         }),
         catchError((error) => {
-          console.error('Login error:', error);
           if (error.status === 401) {
             return throwError(
               () => new Error('Invalid credentials. Please try again.')
@@ -51,7 +50,10 @@ export class AuthService {
               () => new Error('Account is inactive or suspended.')
             );
           }
-          const message = error.error?.message || error.error?.detail || 'Login failed. Please try again later.';
+          const message =
+            error.error?.message ||
+            error.error?.detail ||
+            'Login failed. Please try again later.';
           return throwError(() => new Error(message));
         })
       );
@@ -71,45 +73,71 @@ export class AuthService {
       Authorization: `Bearer ${accessToken}`,
     });
 
-    console.log('Fetch user context from:', getApiUrl(environment.authEndpoints.me));
     return this.http
       .get<any>(getApiUrl(environment.authEndpoints.me), { headers })
       .pipe(
         map((response) => {
-          console.log('Raw user context response:', response);
-
-          // Handle different backend response formats
           const userData = response.data || response;
-
-          // Normalize portalKey field (backend might use 'portal', 'portalType', 'role', etc.)
-          const portalKey = userData.portalKey || userData.portal || userData.portal_type ||
-                           userData.portalType || userData.role || userData.user_type ||
-                           userData.type || 'unknown';
-
+          const portalKey =
+            userData.portalKey ||
+            userData.portal ||
+            userData.portal_type ||
+            userData.portalType ||
+            userData.role ||
+            userData.user_type ||
+            userData.type ||
+            'unknown';
           const normalizedContext: UserContext = {
             user: {
-              firstName: userData.user?.firstName || userData.user?.first_name || userData.firstName || userData.first_name || '',
-              lastName: userData.user?.lastName || userData.user?.last_name || userData.lastName || userData.last_name || '',
-              isActive: userData.user?.isActive ?? userData.user?.is_active ?? userData.isActive ?? true,
+              firstName:
+                userData.user?.firstName ||
+                userData.user?.first_name ||
+                userData.firstName ||
+                userData.first_name ||
+                '',
+              lastName:
+                userData.user?.lastName ||
+                userData.user?.last_name ||
+                userData.lastName ||
+                userData.last_name ||
+                '',
+              isActive:
+                userData.user?.isActive ??
+                userData.user?.is_active ??
+                userData.isActive ??
+                true,
               email: userData.user?.email || userData.email || '',
-              schoolId: userData.user?.schoolId || userData.user?.school_id || userData.schoolId || userData.school_id || '',
-              avatarUrl: userData.user?.avatarUrl || userData.user?.avatar_url || userData.avatarUrl || userData.avatar_url,
+              schoolId:
+                userData.user?.schoolId ||
+                userData.user?.school_id ||
+                userData.schoolId ||
+                userData.school_id ||
+                '',
+              avatarUrl:
+                userData.user?.avatarUrl ||
+                userData.user?.avatar_url ||
+                userData.avatarUrl ||
+                userData.avatar_url,
             },
             portalKey: portalKey,
             permissions: userData.permissions || userData.user?.permissions || [],
           };
-
-          console.log('Normalized user context:', normalizedContext);
           return normalizedContext;
         }),
         catchError((error) => {
-          console.error('Fetch user context error:', error);
           if (error.status === 401) {
-            return throwError(() => new Error('Session expired. Please login again.'));
+            return throwError(
+              () => new Error('Session expired. Please login again.')
+            );
           }
-          // Extract backend error message if available
-          const message = error.error?.message || error.error?.detail || error.message || 'Failed to fetch user context';
-          return throwError(() => new Error(`Failed to fetch user context: ${message}`));
+          const message =
+            error.error?.message ||
+            error.error?.detail ||
+            error.message ||
+            'Failed to fetch user context';
+          return throwError(
+            () => new Error(`Failed to fetch user context: ${message}`)
+          );
         })
       );
   }
@@ -145,7 +173,9 @@ export class AuthService {
     if (!token) return true;
 
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64));
       const exp = payload.exp * 1000;
       return Date.now() >= exp;
     } catch {
@@ -154,10 +184,13 @@ export class AuthService {
   }
 
   /**
-   * Complete logout
+   * Complete logout — clears tokens, user context, resets store, navigates to /login
    */
   logout(): void {
     this.tokenStorage.clearTokens();
+    this.tokenStorage.clearUserContext();
+    this.authStore.logout();
+    this.router.navigate(['/login'], { replaceUrl: true });
   }
 
   /**

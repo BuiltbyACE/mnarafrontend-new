@@ -1,0 +1,106 @@
+<div class="dashboard">
+  @if (dashboardService.dashboardData(); as data) {
+    <!-- Welcome -->
+    <div class="welcome">
+      <div>
+        <h1>Welcome back, {{ data.student.first_name }}</h1>
+        <p class="subtitle">Admission: <strong>{{ data.student.admission_number }}</strong> &mdash; Class: <strong>{{ data.student.current_class }}</strong></p>
+      </div>
+      <div class="date-badge">{{ today }}</div>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="stats-grid">
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-icon" style="background: #2563eb">
+            <mat-icon>school</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ data.kpis.upcoming_classes_count }}</span>
+            <span class="stat-label">Upcoming Classes</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-icon" style="background: #d97706">
+            <mat-icon>assignment</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ data.kpis.pending_assignments_count }}</span>
+            <span class="stat-label">Pending Assignments</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-icon" style="background: #059669">
+            <mat-icon>grade</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ data.kpis.average_grade ?? 'N/A' }}</span>
+            <span class="stat-label">Average Grade</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-icon" style="background: #7c3aed">
+            <mat-icon>fact_check</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ data.kpis.attendance_rate != null ? data.kpis.attendance_rate + '%' : 'N/A' }}</span>
+            <span class="stat-label">Attendance Rate</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Main content grid -->
+    <div class="content-grid">
+      <!-- Announcements -->
+      <mat-card class="announcements-card">
+        <mat-card-header>
+          <mat-card-title>Recent Announcements</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @for (announcement of data.recent_announcements; track announcement.id) {
+            <div class="announcement-item">
+              <div class="ann-dot"></div>
+              <div class="ann-body">
+                <span class="ann-title">{{ announcement.title }}</span>
+                <span class="ann-date">{{ announcement.created_at | date:'mediumDate' }}</span>
+                <p class="ann-summary">{{ announcement.content }}</p>
+              </div>
+            </div>
+          } @empty {
+            <p class="empty-state">No recent announcements.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Quick Links -->
+      <mat-card class="quicklinks-card">
+        <mat-card-header>
+          <mat-card-title>Quick Links</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="quick-links">
+            @for (link of quickLinks; track link.label) {
+              <a class="quick-link" [routerLink]="link.route">
+                <mat-icon>{{ link.icon }}</mat-icon>
+                <span>{{ link.label }}</span>
+              </a>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  } @else {
+    <mat-spinner diameter="40" />
+  }
+</div>

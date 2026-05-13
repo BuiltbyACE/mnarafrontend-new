@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { NxWelcome } from './nx-welcome';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
-  imports: [NxWelcome],
   selector: 'app-portalStudent-entry',
-  template: `<app-nx-welcome></app-nx-welcome>`,
+  template: `<router-outlet />`,
+  imports: [RouterOutlet],
 })
 export class RemoteEntry {}

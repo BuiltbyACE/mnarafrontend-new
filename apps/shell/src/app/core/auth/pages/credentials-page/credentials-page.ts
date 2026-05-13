@@ -15,6 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { finalize } from 'rxjs/operators';
 import { AuthStore, AuthService } from '@sms/core/auth';
 
 @Component({
@@ -225,29 +226,83 @@ export class CredentialsPage implements OnInit {
         school_id: this.identifier,
         password: this.password,
       })
+      .pipe(
+        finalize(() => {
+          setTimeout(() => {
+            this.isLoading = false;
+            this.authStore.setLoading(false);
+          });
+        })
+      )
       .subscribe({
-        next: (tokens) => {
-          // Save tokens
-          this.authStore.setTokens(tokens);
+        next: (response) => {
+          // Save tokens (handle both SimpleJWT and legacy formats)
+          const raw = response as any;
+          const accessToken = raw.access || raw.access_token;
+          const refreshToken = raw.refresh || raw.refresh_token;
 
-          // Fetch user context
+          this.authStore.setTokens({
+            access: accessToken,
+            refresh: refreshToken,
+          });
+
+          // Safely decode JWT payload to extract role
+          let payload: any = {};
+          try {
+            const base64Url = accessToken.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            payload = JSON.parse(atob(base64));
+          } catch (e) {
+            console.error('Failed to decode JWT payload:', e);
+          }
+
+          const portalType = (payload.role || payload.portal_key || 'UNKNOWN').toUpperCase();
+
+          // Set minimal user context from JWT so guards can resolve portal type
+          const nameParts = (payload.full_name || '').split(' ');
+          this.authStore.setUserContext({
+            user: {
+              firstName: nameParts[0] || '',
+              lastName: nameParts.slice(1).join(' ') || undefined,
+              isActive: true,
+              email: payload.email || '',
+              schoolId: payload.school_id || '',
+            },
+            portalKey: payload.portal_key || '',
+            permissions: payload.permissions || [],
+          });
+
+          // Navigate based on role
+          switch(portalType) {
+            case 'ADMIN':
+            case 'SUPER_ADMIN':
+            case 'STAFF':
+              this.router.navigate(['/admin']);
+              break;
+            case 'TEACHER':
+              this.router.navigate(['/teacher']);
+              break;
+            case 'STUDENT':
+              this.router.navigate(['/student']);
+              break;
+            case 'PARENT':
+              this.router.navigate(['/parent']);
+              break;
+            case 'TRANSPORT':
+              this.router.navigate(['/transport']);
+              break;
+            default:
+              console.error('No routing rule for portal type:', portalType);
+              setTimeout(() => {
+                this.snackBar.open('Unrecognized user role.', 'Dismiss', { duration: 5000 });
+              });
+              break;
+          }
+
+          // Fire-and-forget fetchUserContext to populate full details
           this.authService.fetchUserContext().subscribe({
             next: (userContext) => {
-              console.log('Credentials: User context received:', userContext);
               this.authStore.setUserContext(userContext);
-              this.authStore.setLoading(false);
-              this.isLoading = false;
-
-              // Navigate to portal
-              const portalRoute = this.authStore.getPortalRoute();
-              console.log('Credentials: Portal route:', portalRoute, 'portalKey:', userContext.portalKey);
-              if (portalRoute) {
-                this.router.navigate([portalRoute]);
-              } else {
-                const errorMsg = `Unable to determine portal access. Unknown portalKey: ${userContext.portalKey}`;
-                console.error('Credentials:', errorMsg);
-                this.handleError(new Error(errorMsg));
-              }
             },
             error: (error) => {
               this.handleError(error);
@@ -281,21 +336,23 @@ export class CredentialsPage implements OnInit {
    * Handle errors from API calls
    */
   private handleError(error: Error): void {
-    this.isLoading = false;
-    this.authStore.setLoading(false);
-    this.authStore.setError(error.message);
-    this.showError(error.message);
+    setTimeout(() => {
+      this.authStore.setError(error.message);
+      this.showError(error.message);
+    });
   }
 
   /**
    * Show error message
    */
   private showError(message: string): void {
-    this.snackBar.open(message, 'Dismiss', {
-      duration: 5000,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom',
-      panelClass: ['error-snackbar'],
+    setTimeout(() => {
+      this.snackBar.open(message, 'Dismiss', {
+        duration: 5000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['error-snackbar'],
+      });
     });
   }
 }

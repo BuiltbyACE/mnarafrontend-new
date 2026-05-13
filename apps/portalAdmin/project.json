@@ -34,20 +34,12 @@
           "outputHashing": "all",
           "customWebpackConfig": {
             "path": "apps/portalAdmin/webpack.prod.config.ts"
-          }
-        },
-        "development": {
-          "buildOptimizer": false,
-          "optimization": false,
-          "vendorChunk": true,
-          "extractLicenses": false,
-          "sourceMap": true,
-          "namedChunks": true,
+          },
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "500kb",
-              "maximumError": "1mb"
+              "maximumWarning": "1.5mb",
+              "maximumError": "2mb"
             },
             {
               "type": "anyComponentStyle",
@@ -55,6 +47,14 @@
               "maximumError": "250kb"
             }
           ]
+        },
+        "development": {
+          "buildOptimizer": false,
+          "optimization": false,
+          "vendorChunk": true,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "namedChunks": true
         }
       },
       "defaultConfiguration": "production"

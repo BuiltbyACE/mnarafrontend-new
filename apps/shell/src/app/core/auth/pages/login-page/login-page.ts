@@ -1,8 +1,3 @@
-/**
- * Premium Login Page Component
- * Split-screen design with school imagery and modern SaaS aesthetics
- */
-
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { finalize } from 'rxjs/operators';
 import { AuthStore, AuthService } from '@sms/core/auth';
 
 @Component({
@@ -42,7 +38,6 @@ export class LoginPage {
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
 
-  // Form fields
   email = '';
   password = '';
   rememberMe = false;
@@ -50,68 +45,91 @@ export class LoginPage {
   isLoading = false;
   currentYear = new Date().getFullYear();
 
-  /**
-   * Toggle password visibility
-   */
   togglePassword(): void {
     this.hidePassword = !this.hidePassword;
   }
 
-  /**
-   * Handle form submission
-   */
   onSubmit(): void {
     if (!this.email || !this.password || this.isLoading) {
       return;
     }
 
-    setTimeout(() => {
-      this.isLoading = true;
-      this.authStore.setLoading(true);
-      this.authStore.clearError();
-    });
+    this.isLoading = true;
+    this.authStore.setLoading(true);
+    this.authStore.clearError();
 
-    // Call login API
     this.authService
       .login({
         school_id: this.email,
         password: this.password,
       })
-      .subscribe({
-        next: (tokens) => {
-          // Save tokens
-          this.authStore.setTokens(tokens);
-
-          // Fetch user context
-          this.authService.fetchUserContext().subscribe({
-            next: (userContext) => {
-              console.log('Login: User context received:', userContext);
-              this.authStore.setUserContext(userContext);
-              this.authStore.setLoading(false);
-              this.isLoading = false;
-
-              // Navigate to portal with small delay for state propagation
-              const portalRoute = this.authStore.getPortalRoute();
-              console.log('Login: Portal route:', portalRoute, 'portalKey:', userContext.portalKey);
-              if (portalRoute) {
-                console.log('Login: Attempting navigation to:', portalRoute);
-                // Delay to ensure signals are propagated before navigation
-                setTimeout(() => {
-                  this.router.navigate([portalRoute]).then(
-                    (success) => console.log('Login: Navigation success:', success),
-                    (error) => console.error('Login: Navigation error:', error)
-                  );
-                }, 100);
-              } else {
-                const errorMsg = `Unable to determine portal access. Unknown portalKey: ${userContext.portalKey}`;
-                console.error('Login:', errorMsg);
-                this.handleError(new Error(errorMsg));
-              }
-            },
-            error: (error) => {
-              this.handleError(error);
-            },
+      .pipe(
+        finalize(() => {
+          setTimeout(() => {
+            this.isLoading = false;
+            this.authStore.setLoading(false);
           });
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          const raw = response as any;
+          const accessToken = raw.access || raw.access_token;
+
+          this.authStore.setTokens({
+            access: accessToken,
+            refresh: raw.refresh || raw.refresh_token,
+          });
+
+          let payload: any = {};
+          try {
+            const base64Url = accessToken.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            payload = JSON.parse(atob(base64));
+          } catch (e) {
+            console.error('Failed to decode JWT payload:', e);
+          }
+
+          const portalType = (payload.role || payload.portal_key || 'UNKNOWN').toUpperCase();
+
+          const nameParts = (payload.full_name || '').split(' ');
+          this.authStore.setUserContext({
+            user: {
+              firstName: nameParts[0] || '',
+              lastName: nameParts.slice(1).join(' ') || undefined,
+              isActive: true,
+              email: payload.email || '',
+              schoolId: payload.school_id || '',
+            },
+            portalKey: payload.portal_key || '',
+            permissions: payload.permissions || [],
+          });
+
+          switch (portalType) {
+            case 'ADMIN':
+            case 'SUPER_ADMIN':
+            case 'STAFF':
+              this.router.navigate(['/admin']);
+              break;
+            case 'TEACHER':
+              this.router.navigate(['/teacher']);
+              break;
+            case 'STUDENT':
+              this.router.navigate(['/student']);
+              break;
+            case 'PARENT':
+              this.router.navigate(['/parent']);
+              break;
+            case 'TRANSPORT':
+              this.router.navigate(['/transport']);
+              break;
+            default:
+              console.error('No routing rule for portal type:', portalType);
+              setTimeout(() => {
+                this.snackBar.open('Unrecognized user role.', 'Dismiss', { duration: 5000 });
+              });
+              break;
+          }
         },
         error: (error) => {
           this.handleError(error);
@@ -119,34 +137,27 @@ export class LoginPage {
       });
   }
 
-  /**
-   * Handle Enter key press
-   */
   onKeyPress(event: Event): void {
     const keyboardEvent = event as KeyboardEvent;
-    if (keyboardEvent.key === 'Enter' && this.email && this.password && !this.isLoading) {
+    if (
+      keyboardEvent.key === 'Enter' &&
+      this.email &&
+      this.password &&
+      !this.isLoading
+    ) {
       this.onSubmit();
     }
   }
 
   private handleError(error: Error): void {
     setTimeout(() => {
-      this.isLoading = false;
-      this.authStore.setLoading(false);
       this.authStore.setError(error.message);
-      this.showError(error.message);
-    });
-  }
-
-  /**
-   * Show error message
-   */
-  private showError(message: string): void {
-    this.snackBar.open(message, 'Dismiss', {
-      duration: 5000,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom',
-      panelClass: ['error-snackbar'],
+      this.snackBar.open(error.message, 'Dismiss', {
+        duration: 5000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['error-snackbar'],
+      });
     });
   }
 }

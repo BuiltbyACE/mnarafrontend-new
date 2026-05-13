@@ -1,0 +1,47 @@
+<div class="header">
+  <h1>My Classes</h1>
+  <p>View your enrolled classes and subjects.</p>
+</div>
+
+@if (classesService.isLoading()) {
+  <div class="spinner-wrapper">
+    <mat-spinner diameter="40" />
+    <p>Loading your classes...</p>
+  </div>
+} @else if (classesService.myClasses().length === 0) {
+  <div class="empty-state">
+    <mat-icon>school</mat-icon>
+    <h3>No classes yet</h3>
+    <p>You are not currently enrolled in any classes.</p>
+  </div>
+} @else {
+  <div class="course-grid">
+    @for (course of classesService.myClasses(); track course.id) {
+      <mat-card class="course-card">
+        <mat-card-header>
+          <span class="course-title">{{ course.subject_name }}</span>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="meta-row">
+            <mat-icon>person</mat-icon>
+            <span>{{ course.teacher_name }}</span>
+          </div>
+
+          <div class="meta-row">
+            <mat-icon>meeting_room</mat-icon>
+            <span>{{ course.classroom_name }}</span>
+          </div>
+
+          @if (course.syllabus_overview; as overview) {
+            <p class="syllabus">{{ overview }}</p>
+          }
+        </mat-card-content>
+
+        <mat-card-actions>
+          <button mat-flat-button color="primary">Enter Workspace</button>
+        </mat-card-actions>
+      </mat-card>
+    }
+  </div>
+}

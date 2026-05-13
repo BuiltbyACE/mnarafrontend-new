@@ -37,9 +37,13 @@ export interface LoginRequest {
 
 /** Login response from API */
 export interface LoginResponse {
-  access: string;
-  refresh: string;
-  user?: UserContext;
+  access_token: string;
+  refresh_token: string;
+  user: {
+    portalType: string;
+    name: string;
+    school_id: string;
+  };
 }
 
 /** Refresh token request */

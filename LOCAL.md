@@ -284,3 +284,8 @@ Files Affected:
 
 
 npx nx serve shell --devRemotes=portalAdmin
+
+
+npx nx run-many --target=build --all
+
+npx nx serve shell --devRemotes=portalAdmin,portalStudent

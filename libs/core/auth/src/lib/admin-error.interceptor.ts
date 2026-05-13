@@ -47,12 +47,6 @@ export class AdminErrorInterceptor implements HttpInterceptor {
         }
         break;
 
-      case 401:
-        message = 'Session expired. Please log in again.';
-        duration = 3000;
-        this.router.navigate(['/login']);
-        break;
-
       case 403:
         message = 'Insufficient permissions for this operation';
         break;
@@ -117,11 +111,6 @@ function handleAdminError(error: HttpErrorResponse, router: Router, snackBar: Ma
       } else {
         message = error.error?.message || 'Invalid request';
       }
-      break;
-    case 401:
-      message = 'Session expired. Please log in again.';
-      duration = 3000;
-      router.navigate(['/login']);
       break;
     case 403:
       message = 'Insufficient permissions for this operation';

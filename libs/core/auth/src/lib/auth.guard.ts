@@ -5,27 +5,17 @@
 
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from './auth.service';
 import { AuthStore } from './auth.store';
-import { TokenStorageService } from './token-storage.service';
 
-export const authGuard: CanActivateFn = (route, state) => {
-  const authStore = inject(AuthStore);
-  const tokenStorage = inject(TokenStorageService);
+export const authGuard: CanActivateFn = (_route, _state) => {
+  const authService = inject(AuthService);
   const router = inject(Router);
 
-  const localToken = tokenStorage.getAccessToken();
-  const hasToken = !!authStore.tokens()?.access || !!localToken;
-
-  if (hasToken) {
-    // Check for required permissions if specified
-    const requiredPermission = route.data?.['requiredPermission'] as string | undefined;
-    if (requiredPermission && !authStore.hasPermission(requiredPermission)) {
-      return router.parseUrl('/login');
-    }
+  if (authService.isAuthenticated()) {
     return true;
   }
 
-  // If no token, redirect to login cleanly
   return router.parseUrl('/login');
 };
 

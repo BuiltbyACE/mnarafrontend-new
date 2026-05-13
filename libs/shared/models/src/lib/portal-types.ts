@@ -7,11 +7,11 @@ import type { PortalType } from './auth.models';
 
 /** Portal route mapping for redirects */
 export const PORTAL_ROUTES: Record<PortalType, string> = {
-  ADMIN: '/portalAdmin',
-  STAFF: '/portalTeacher', // Staff uses teacher portal
-  TRANSPORT: '/portalTransport',
-  STUDENT: '/portalStudent',
-  PARENT: '/portalParent',
+  ADMIN: '/admin',
+  STAFF: '/teacher', // Staff uses teacher portal
+  TRANSPORT: '/transport',
+  STUDENT: '/student',
+  PARENT: '/parent',
 };
 
 /** Portal display names */

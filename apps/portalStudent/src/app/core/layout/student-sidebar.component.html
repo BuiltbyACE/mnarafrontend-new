@@ -1,0 +1,26 @@
+<aside class="sidebar">
+  <div class="logo-section">
+    <mat-icon class="logo-icon">school</mat-icon>
+    <div class="logo-text-group">
+      <span class="logo-text">Mnara ERP</span>
+      <span class="logo-sub">Student Campus</span>
+    </div>
+  </div>
+
+  <nav class="nav-section" aria-label="Student navigation">
+    @for (item of navItems; track item.label) {
+      <a
+        class="nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.route === '/student/dashboard' }"
+      >
+        <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+        <span class="nav-label">{{ item.label }}</span>
+        @if (getBadge(item.route)) {
+          <span class="nav-badge">{{ getBadge(item.route) }}</span>
+        }
+      </a>
+    }
+  </nav>
+</aside>
