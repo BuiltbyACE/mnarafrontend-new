@@ -1,0 +1,91 @@
+<div class="page">
+  <div class="page-heading">
+    <h1>Exam Results</h1>
+    <p>Track your official academic progression.</p>
+  </div>
+
+  @if (service.isLoading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="40" />
+      <p>Loading results...</p>
+    </div>
+  } @else if (service.examData(); as data) {
+    <div class="kpi-row">
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <span class="kpi-label">Current Average</span>
+          <span class="kpi-value">{{ data.kpis.current_average }}<small>%</small></span>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <span class="kpi-label">Target Grade</span>
+          <span class="kpi-value">{{ data.kpis.target_grade }}</span>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <span class="kpi-label">Best Subject</span>
+          <span class="kpi-value">{{ data.kpis.best_subject }}</span>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>Performance Trend</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-wrapper">
+          <canvas #progressChart></canvas>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="transcripts-section">
+      <h2 class="section-title">Official Transcripts</h2>
+      <mat-accordion>
+        @for (series of data.transcript; track series.series_name) {
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>{{ series.series_name }}</mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="transcript-table">
+              <div class="tr-header">
+                <span class="col-subject">Subject</span>
+                <span class="col-score">Score</span>
+                <span class="col-grade">Grade</span>
+              </div>
+              @for (item of series.assessments; track item.subject) {
+                <div class="tr-body">
+                  <div class="col-subject">
+                    <span class="subject-name">{{ item.subject }}</span>
+                    <span class="teacher-name">{{ item.teacher_name }}</span>
+                  </div>
+                  <div class="col-score">
+                    <span class="score-value">{{ item.score }}<span class="score-max"> / {{ item.max_score }}</span></span>
+                  </div>
+                  <div class="col-grade">
+                    <span class="grade-badge" [style.background]="gradeColor(item.grade)">{{ item.grade }}</span>
+                  </div>
+                </div>
+                @if (item.remark) {
+                  <div class="tr-remark">
+                    <mat-icon>format_quote</mat-icon>
+                    <blockquote>{{ item.teacher_name }}: {{ item.remark }}</blockquote>
+                  </div>
+                }
+              }
+            </div>
+          </mat-expansion-panel>
+        }
+      </mat-accordion>
+    </div>
+  } @else {
+    <div class="empty-state">
+      <mat-icon>assignment</mat-icon>
+      <h3>No results yet</h3>
+      <p>Exam results will appear here once published.</p>
+    </div>
+  }
+</div>

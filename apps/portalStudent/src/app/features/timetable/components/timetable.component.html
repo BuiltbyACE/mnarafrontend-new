@@ -1,0 +1,75 @@
+<div class="page">
+  <div class="page-heading">
+    <div class="heading-left">
+      <h1>My Timetable</h1>
+      <p>Your weekly class schedule and institutional events.</p>
+    </div>
+    <button mat-stroked-button class="view-toggle" disabled>
+      <mat-icon>view_week</mat-icon> Weekly View
+    </button>
+  </div>
+
+  @if (service.isLoading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="40" />
+      <p>Loading timetable...</p>
+    </div>
+  } @else {
+    <div class="timetable-grid">
+      @for (day of week; track day) {
+        <div class="day-column">
+          <div class="day-header">
+            <span class="day-name">{{ day }}</span>
+            <span class="slot-count">
+              {{ getEventsForDay(day).length + getLessonsForDay(day).length }}
+            </span>
+          </div>
+          <div class="day-slots">
+            @for (event of getEventsForDay(day); track event.id) {
+              <div
+                class="event-card"
+                [style.borderLeftColor]="event.color"
+                [class]="eventTypeClass(event.type)"
+              >
+                <div class="event-type-strip" [style.background]="event.color"></div>
+                <div class="event-body">
+                  <span class="event-title">{{ event.title }}</span>
+                  <span class="event-label">{{ event.type }}</span>
+                </div>
+              </div>
+            }
+            @for (lesson of getLessonsForDay(day); track lesson.id) {
+              <div
+                class="lesson-card"
+                [style.borderLeftColor]="lesson.color"
+              >
+                <div class="lesson-time">
+                  <span class="lesson-start">{{ lesson.start_time }}</span>
+                  <span class="lesson-sep">–</span>
+                  <span class="lesson-end">{{ lesson.end_time }}</span>
+                </div>
+                <div class="lesson-body">
+                  <span class="lesson-subject">{{ lesson.subject_name }}</span>
+                  <span class="lesson-teacher">{{ lesson.teacher_name }}</span>
+                  <span class="lesson-room">
+                    <mat-icon>meeting_room</mat-icon> {{ lesson.room }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="legend">
+      <span class="legend-title">Key</span>
+      <div class="legend-items">
+        <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Holiday</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Exam</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> Special Day</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#6366f1"></span> Lesson</span>
+      </div>
+    </div>
+  }
+</div>

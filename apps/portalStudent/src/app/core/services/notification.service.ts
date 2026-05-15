@@ -19,9 +19,9 @@ export class NotificationService {
   getBadge(route: string): number {
     const counts = this.badges();
     switch (route) {
-      case '/assignments':
+      case '/student/elearning':
         return counts.assignments;
-      case '/announcements':
+      case '/student/announcements':
         return counts.announcements;
       default:
         return 0;

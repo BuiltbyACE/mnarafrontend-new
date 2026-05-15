@@ -1,4 +1,5 @@
 import { Component, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,8 +20,17 @@ import { ClassesService } from '../classes.service';
 })
 export class ClassesComponent implements OnInit {
   readonly classesService = inject(ClassesService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   ngOnInit(): void {
     this.classesService.fetchMyClasses();
+  }
+
+  enterWorkspace(workspaceId: number): void {
+    this.router.navigate(['../elearning'], {
+      relativeTo: this.route,
+      queryParams: { workspaceId },
+    });
   }
 }

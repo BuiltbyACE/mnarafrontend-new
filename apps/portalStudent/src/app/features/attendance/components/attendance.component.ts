@@ -1,24 +1,36 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, OnInit, computed } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AttendanceService } from '../services/attendance.service';
 
 @Component({
   selector: 'app-student-attendance',
-  imports: [MatCardModule],
-  template: `
-    <div class="page">
-      <mat-card>
-        <mat-card-content>
-          <h1>Attendance History</h1>
-          <p>Review your attendance records here.</p>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  `,
-  styles: [`
-    .page { padding: 24px; }
-    h1 { margin: 0 0 8px; font-size: 1.5rem; font-weight: 700; color: #1e293b; }
-    p { margin: 0; color: #64748b; }
-  `],
+  imports: [
+    DatePipe,
+    MatCardModule, MatIconModule, MatProgressSpinnerModule,
+  ],
+  templateUrl: './attendance.component.html',
+  styleUrl: './attendance.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AttendanceComponent {}
+export class AttendanceComponent implements OnInit {
+  readonly service = inject(AttendanceService);
+
+  readonly statusColor = computed(() => {
+    const pct = this.service.attendanceData()?.stats.attendance_percentage ?? 100;
+    return pct >= 90 ? 'primary' : 'warn';
+  });
+
+  readonly realtimeRate = computed(() => {
+    const s = this.service.attendanceData()?.stats;
+    if (!s) return 100;
+    const total = s.days_present + s.days_late + s.days_absent;
+    return total > 0 ? Math.round((s.days_present / total) * 100) : 100;
+  });
+
+  ngOnInit(): void {
+    this.service.fetchAttendance();
+  }
+}

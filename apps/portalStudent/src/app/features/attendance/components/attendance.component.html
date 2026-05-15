@@ -1,0 +1,83 @@
+<div class="page">
+  <div class="page-heading">
+    <h1>Attendance History</h1>
+    <p>Review your daily presence records.</p>
+  </div>
+
+  @if (service.isLoading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="40" />
+      <p>Loading attendance...</p>
+    </div>
+  } @else if (service.attendanceData(); as data) {
+    <div class="summary-row">
+      <mat-card class="summary-card gauge-card">
+        <mat-card-content>
+          <span class="summary-label">Overall Attendance</span>
+          <div class="gauge-wrap">
+            <mat-progress-spinner
+              [diameter]="100"
+              [strokeWidth]="8"
+              [value]="data.stats.attendance_percentage"
+              [color]="statusColor()"
+            />
+            <span class="gauge-text">{{ data.stats.attendance_percentage }}%</span>
+          </div>
+          <span class="realtime-hint">{{ realtimeRate() }}% real-time accuracy</span>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="summary-card">
+        <mat-card-content>
+          <span class="summary-label">Days Present</span>
+          <span class="summary-value">{{ data.stats.days_present }}</span>
+          <mat-icon class="summary-icon" style="color:#22c55e">check_circle</mat-icon>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="summary-card">
+        <mat-card-content>
+          <span class="summary-label">Excused Absences</span>
+          <span class="summary-value">{{ data.stats.days_excused }}</span>
+          <mat-icon class="summary-icon" style="color:#3b82f6">info</mat-icon>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <mat-card class="log-card">
+      <mat-card-header>
+        <mat-card-title>Daily Log</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="log-list">
+          <div class="log-header">
+            <span class="log-col-date">Date</span>
+            <span class="log-col-status">Status</span>
+            <span class="log-col-remarks">Remarks</span>
+          </div>
+          @for (record of data.logs; track record.date) {
+            <div class="log-row" [class]="'border-left--' + record.status">
+              <span class="log-col-date">{{ record.date | date:'MMM dd, yyyy' }}</span>
+              <span class="log-col-status">
+                @if (record.status === 'present') {
+                  <span class="status-badge bg-green-100 text-green-700">Present</span>
+                } @else if (record.status === 'late') {
+                  <span class="status-badge bg-amber-100 text-amber-700">Late</span>
+                } @else if (record.status === 'absent') {
+                  <span class="status-badge bg-red-100 text-red-700">Absent</span>
+                } @else if (record.status === 'excused') {
+                  <span class="status-badge bg-blue-100 text-blue-700">Excused</span>
+                }
+              </span>
+              <span class="log-col-remarks">{{ record.remarks }}</span>
+            </div>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <div class="empty-state">
+      <mat-icon>fact_check</mat-icon>
+      <h3>No records yet</h3>
+      <p>Attendance data will appear here once published.</p>
+    </div>
+  }
+</div>

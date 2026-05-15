@@ -26,11 +26,6 @@ export const remoteRoutes: Route[] = [
           import('../features/classes/classes.routes').then((m) => m.classesRoutes),
       },
       {
-        path: 'assignments',
-        loadChildren: () =>
-          import('../features/assignments/assignments.routes').then((m) => m.assignmentRoutes),
-      },
-      {
         path: 'exams',
         loadChildren: () =>
           import('../features/exams/exams.routes').then((m) => m.examsRoutes),
@@ -41,11 +36,6 @@ export const remoteRoutes: Route[] = [
           import('../features/timetable/timetable.routes').then((m) => m.timetableRoutes),
       },
       {
-        path: 'grades',
-        loadChildren: () =>
-          import('../features/grades/grades.routes').then((m) => m.gradesRoutes),
-      },
-      {
         path: 'attendance',
         loadChildren: () =>
           import('../features/attendance/attendance.routes').then((m) => m.attendanceRoutes),
@@ -54,11 +44,6 @@ export const remoteRoutes: Route[] = [
         path: 'announcements',
         loadChildren: () =>
           import('../features/announcements/announcements.routes').then((m) => m.announcementsRoutes),
-      },
-      {
-        path: 'resources',
-        loadChildren: () =>
-          import('../features/resources/resources.routes').then((m) => m.resourcesRoutes),
       },
       {
         path: 'elearning',

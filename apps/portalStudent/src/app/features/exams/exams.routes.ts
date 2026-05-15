@@ -4,6 +4,6 @@ export const examsRoutes: Route[] = [
   {
     path: '',
     loadComponent: () =>
-      import('./components/exams.component').then((m) => m.ExamsComponent),
+      import('./components/exam-results.component').then((m) => m.ExamResultsComponent),
   },
 ];

@@ -1,0 +1,211 @@
+:host {
+  display: block;
+  padding: 28px 32px;
+  max-width: 1100px;
+}
+
+.page-heading {
+  margin-bottom: 28px;
+}
+.page-heading h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.page-heading p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.9375rem;
+}
+
+/* ── Loading ── */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+  color: #64748b;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  mat-icon { font-size: 48px; width: 48px; height: 48px; color: #94a3b8; margin-bottom: 16px; }
+  h3 { margin: 0 0 8px; font-size: 1.125rem; font-weight: 600; color: #334155; }
+  p { margin: 0; color: #94a3b8; font-size: 0.875rem; }
+}
+
+/* ── Summary Row ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.summary-card {
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  position: relative;
+}
+.summary-card mat-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px !important;
+  text-align: center;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.summary-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+.summary-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  margin-top: 4px;
+}
+
+/* ── Gauge Card ── */
+.gauge-card mat-card-content {
+  gap: 12px;
+}
+.gauge-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+}
+.gauge-text {
+  position: absolute;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* ── Log Card ── */
+.log-card {
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.log-card mat-card-header {
+  padding: 20px 24px 0;
+}
+.log-card mat-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+.log-card mat-card-content {
+  padding: 8px 24px 20px !important;
+}
+
+.log-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.log-header {
+  display: grid;
+  grid-template-columns: 140px 110px 1fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.log-row {
+  display: grid;
+  grid-template-columns: 140px 110px 1fr;
+  gap: 12px;
+  padding: 14px 0;
+  align-items: center;
+  border-bottom: 1px solid #f8fafc;
+  border-left: 3px solid transparent;
+  padding-left: 8px;
+  transition: background 0.12s;
+}
+.log-row:hover {
+  background: #fafcff;
+}
+.log-row:last-of-type {
+  border-bottom: none;
+}
+
+/* Border-left accent per status */
+.log-row.border-left--present { border-left-color: #22c55e; }
+.log-row.border-left--absent { border-left-color: #ef4444; }
+.log-row.border-left--late { border-left-color: #f59e0b; }
+.log-row.border-left--excused { border-left-color: #3b82f6; }
+
+.log-col-date {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #334155;
+}
+.log-col-remarks {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ── Status Badge ── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+
+/* Tailwind-style utility classes */
+.bg-green-100 { background: #dcfce7; }
+.text-green-700 { color: #15803d; }
+.bg-amber-100 { background: #fef3c7; }
+.text-amber-700 { color: #b45309; }
+.bg-red-100 { background: #fee2e2; }
+.text-red-700 { color: #b91c1c; }
+.bg-blue-100 { background: #dbeafe; }
+.text-blue-700 { color: #1e40af; }
+
+.realtime-hint {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .summary-row { grid-template-columns: 1fr; }
+  .log-header, .log-row { grid-template-columns: 1fr 1fr; }
+  .log-col-remarks { display: none; }
+  :host { padding: 20px 16px; }
+}
