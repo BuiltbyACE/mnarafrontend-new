@@ -1,10 +1,11 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { UpperCasePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { DashboardData } from '../../shared/models/teacher.models';
+import { TeacherDashboardService } from '../../core/services/teacher-dashboard.service';
 
 @Component({
   selector: 'app-teacher-dashboard',
@@ -514,6 +515,8 @@ import { DashboardData } from '../../shared/models/teacher.models';
   `,
 })
 export class TeacherDashboardComponent {
+  private dashboardService = inject(TeacherDashboardService);
+
   currentDate = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
     year: 'numeric',
@@ -521,150 +524,23 @@ export class TeacherDashboardComponent {
     day: 'numeric',
   });
 
-  dashboardData = signal<DashboardData>({
-    teacherName: 'Mr. Johnson',
-    quickActions: [
-      { label: 'Take Attendance', icon: 'how_to_reg' },
-      { label: 'Create Assignment', icon: 'assignment_add' },
-      { label: 'Upload Resource', icon: 'upload_file' },
-      { label: 'Start Live Class', icon: 'videocam' },
-    ],
-    todayClasses: [
-      {
-        id: '1',
-        subject: 'Mathematics',
-        classroom: 'Room 204',
-        time: '08:00 - 09:00',
-        section: 'Form 2A',
-      },
-      {
-        id: '2',
-        subject: 'Physics',
-        classroom: 'Lab 101',
-        time: '09:15 - 10:15',
-        section: 'Form 3B',
-      },
-      {
-        id: '3',
-        subject: 'Chemistry',
-        classroom: 'Lab 102',
-        time: '10:30 - 11:30',
-        section: 'Form 4A',
-      },
-      {
-        id: '4',
-        subject: 'Additional Mathematics',
-        classroom: 'Room 206',
-        time: '12:00 - 13:00',
-        section: 'Form 2B',
-      },
-    ],
-    academicSnapshot: {
-      averagePerformance: 78,
-      assignmentCompletionRate: 85,
-      attendancePercentage: 92,
-    },
-    pendingGrading: [
-      {
-        id: 'g1',
-        title: 'End of Term Exam',
-        subject: 'Mathematics - Form 2A',
-        submittedCount: 28,
-        totalCount: 32,
-        dueDate: '20 May 2026',
-      },
-      {
-        id: 'g2',
-        title: 'Lab Report - Optics',
-        subject: 'Physics - Form 3B',
-        submittedCount: 18,
-        totalCount: 24,
-        dueDate: '18 May 2026',
-      },
-      {
-        id: 'g3',
-        title: 'Quiz: Periodic Table',
-        subject: 'Chemistry - Form 4A',
-        submittedCount: 24,
-        totalCount: 24,
-        dueDate: '16 May 2026',
-      },
-    ],
-    studentAlerts: [
-      {
-        id: 'a1',
-        studentName: 'Alice Kamau',
-        type: 'academic',
-        message: 'Scored below 40% on the last two Mathematics quizzes.',
-        severity: 'high',
-      },
-      {
-        id: 'a2',
-        studentName: 'Brian Ochieng',
-        type: 'attendance',
-        message: 'Has missed 3 Physics classes this term.',
-        severity: 'medium',
-      },
-      {
-        id: 'a3',
-        studentName: 'Catherine Wanjiku',
-        type: 'behavior',
-        message: 'Disruptive behavior reported during Chemistry lab.',
-        severity: 'low',
-      },
-      {
-        id: 'a4',
-        studentName: 'Daniel Mwangi',
-        type: 'academic',
-        message: 'Shows significant improvement in Additional Mathematics.',
-        severity: 'low',
-      },
-    ],
-    announcements: [
-      {
-        id: 'ann1',
-        title: 'Staff Meeting Rescheduled',
-        content: 'The weekly staff meeting has been moved to Thursday at 14:00 in the staffroom.',
-        postedBy: 'Principal',
-        postedAt: '15 May 2026',
-      },
-      {
-        id: 'ann2',
-        title: 'Science Fair - Call for Projects',
-        content: 'All science teachers are requested to submit their students\' project proposals by 25 May.',
-        postedBy: 'Head of Science Department',
-        postedAt: '14 May 2026',
-      },
-      {
-        id: 'ann3',
-        title: 'End of Term Exam Schedule',
-        content: 'The final examination timetable has been published. Please review and confirm your invigilation slots.',
-        postedBy: 'Examinations Office',
-        postedAt: '12 May 2026',
-      },
-    ],
-    upcomingMeetings: [
-      {
-        id: 'm1',
-        title: 'Mathematics Department Meeting',
-        date: '18 May 2026',
-        time: '14:30 - 15:30',
-        organizer: 'Dr. Kimani - HOD Mathematics',
-      },
-      {
-        id: 'm2',
-        title: 'Parent-Teacher Conference',
-        date: '22 May 2026',
-        time: '09:00 - 16:00',
-        organizer: 'Academic Office',
-      },
-      {
-        id: 'm3',
-        title: 'Form 2A Academic Review',
-        date: '25 May 2026',
-        time: '11:00 - 12:00',
-        organizer: 'Mr. Johnson (Class Teacher)',
-      },
-    ],
-  });
+  readonly isLoading = this.dashboardService.isLoading;
+  readonly error = this.dashboardService.error;
+
+  readonly dashboardData = computed<DashboardData>(() =>
+    this.dashboardService.data() ?? {
+      teacherName: 'Teacher',
+      quickActions: [],
+      todayClasses: [],
+      academicSnapshot: { averagePerformance: 0, assignmentCompletionRate: 0, attendancePercentage: 0 },
+      pendingGrading: [],
+      studentAlerts: [],
+      announcements: [],
+      upcomingMeetings: [],
+    }
+  );
+
+  constructor() {
+    this.dashboardService.fetchDashboard();
+  }
 }

@@ -1,4 +1,4 @@
-import { Component, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe, NgClass, TitleCasePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,7 +6,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
 import { MatDividerModule } from '@angular/material/divider';
-import { TeacherProfile, LeaveBalance, LeaveRequest } from '../../shared/models/teacher.models';
+import { TeacherProfile, LeaveBalance } from '../../shared/models/teacher.models';
+import { TeacherSettingsService } from '../../core/services/teacher-settings.service';
+import { TeacherLeaveService } from '../../core/services/teacher-leave.service';
 
 @Component({
   selector: 'app-teacher-hr',
@@ -29,7 +31,7 @@ import { TeacherProfile, LeaveBalance, LeaveRequest } from '../../shared/models/
           <div class="profile-avatar">{{ initials() }}</div>
           <div class="profile-info">
             <h2 class="profile-name">{{ profile.name }}</h2>
-            <span class="profile-id">Employee ID: {{ profile.employeeId }}</span>
+            <span class="profile-id">Employee ID: {{ profile().employeeId }}</span>
           </div>
         </div>
         <mat-divider vertical class="profile-divider" />
@@ -38,28 +40,28 @@ import { TeacherProfile, LeaveBalance, LeaveRequest } from '../../shared/models/
             <mat-icon class="detail-icon">business</mat-icon>
             <div>
               <span class="detail-label">Department</span>
-              <span class="detail-value">{{ profile.department }}</span>
+               <span class="detail-value">{{ profile().department }}</span>
             </div>
           </div>
           <div class="detail-item">
             <mat-icon class="detail-icon">badge</mat-icon>
             <div>
               <span class="detail-label">Role</span>
-              <span class="detail-value">{{ profile.role }}</span>
+               <span class="detail-value">{{ profile().role }}</span>
             </div>
           </div>
           <div class="detail-item">
             <mat-icon class="detail-icon">mail</mat-icon>
             <div>
               <span class="detail-label">Email</span>
-              <span class="detail-value">{{ profile.email }}</span>
+               <span class="detail-value">{{ profile().email }}</span>
             </div>
           </div>
           <div class="detail-item">
             <mat-icon class="detail-icon">phone</mat-icon>
             <div>
               <span class="detail-label">Phone</span>
-              <span class="detail-value">{{ profile.phone }}</span>
+               <span class="detail-value">{{ profile().phone }}</span>
             </div>
           </div>
         </div>
@@ -246,35 +248,34 @@ import { TeacherProfile, LeaveBalance, LeaveRequest } from '../../shared/models/
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HrComponent {
+  private settingsService = inject(TeacherSettingsService);
+  private leaveService = inject(TeacherLeaveService);
+
   readonly displayedColumns = ['leaveType', 'startDate', 'endDate', 'status', 'reason'];
 
-  readonly profile: TeacherProfile = {
-    name: 'Mr. David Johnson',
-    employeeId: 'TCH-2024-0042',
-    department: 'Science Department',
-    role: 'Senior Science Teacher',
-    email: 'david.johnson@mnaraschool.com',
-    phone: '+254 712 345 678',
-  };
-
-  readonly initials = computed(() =>
-    this.profile.name.split(' ').filter(n => n.length > 0).map(n => n[0]).join('').toUpperCase()
+  readonly profile = computed<TeacherProfile>(() =>
+    this.settingsService.profile() ?? {
+      name: 'Loading...',
+      employeeId: '',
+      department: '',
+      role: '',
+      email: '',
+      phone: '',
+    }
   );
 
-  readonly leaveBalances = signal<LeaveBalance[]>([
-    { type: 'Sick Leave', total: 30, used: 8, remaining: 22 },
-    { type: 'Annual Leave', total: 24, used: 10, remaining: 14 },
-    { type: 'Personal Leave', total: 12, used: 3, remaining: 9 },
-  ]);
+  readonly initials = computed(() =>
+    this.profile().name.split(' ').filter(n => n.length > 0).map(n => n[0]).join('').toUpperCase()
+  );
 
-  readonly leaveRequests = signal<LeaveRequest[]>([
-    { id: 'LR-001', leaveType: 'Annual Leave', startDate: '2026-06-15', endDate: '2026-06-20', status: 'approved', reason: 'Family vacation abroad', appliedOn: '2026-05-01' },
-    { id: 'LR-002', leaveType: 'Sick Leave', startDate: '2026-04-22', endDate: '2026-04-23', status: 'approved', reason: 'Medical appointment', appliedOn: '2026-04-21' },
-    { id: 'LR-003', leaveType: 'Personal Leave', startDate: '2026-05-10', endDate: '2026-05-10', status: 'approved', reason: 'Personal errand', appliedOn: '2026-05-05' },
-    { id: 'LR-004', leaveType: 'Annual Leave', startDate: '2026-07-01', endDate: '2026-07-10', status: 'pending', reason: 'End of term break', appliedOn: '2026-05-12' },
-    { id: 'LR-005', leaveType: 'Personal Leave', startDate: '2026-03-05', endDate: '2026-03-05', status: 'rejected', reason: 'Insufficient coverage in department', appliedOn: '2026-03-01' },
-    { id: 'LR-006', leaveType: 'Sick Leave', startDate: '2026-02-10', endDate: '2026-02-12', status: 'approved', reason: 'Flu recovery', appliedOn: '2026-02-09' },
-  ]);
+  readonly leaveBalances = this.leaveService.leaveBalances;
+  readonly leaveRequests = this.leaveService.leaveRequests;
+
+  constructor() {
+    this.settingsService.fetchProfile();
+    this.leaveService.fetchBalances();
+    this.leaveService.fetchRequests();
+  }
 
   usagePercent(lb: LeaveBalance): number {
     return lb.total > 0 ? Math.round((lb.used / lb.total) * 100) : 0;

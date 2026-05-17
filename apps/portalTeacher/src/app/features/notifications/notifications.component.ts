@@ -1,4 +1,4 @@
-import { Component, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { Notification } from '../../shared/models/teacher.models';
+import { TeacherNotificationService } from '../../core/services/teacher-notification.service';
 
 @Component({
   selector: 'app-teacher-notifications',
@@ -161,6 +162,8 @@ import { Notification } from '../../shared/models/teacher.models';
   `,
 })
 export class NotificationsComponent {
+  private notificationService = inject(TeacherNotificationService);
+
   filterTabs = [
     { label: 'All', value: 'all' as const },
     { label: 'Unread', value: 'unread' as const },
@@ -169,30 +172,13 @@ export class NotificationsComponent {
 
   activeFilter = signal<'all' | 'unread' | 'read'>('all');
 
-  private allNotifications: Notification[] = [
-    { id: 'n1', type: 'SUCCESS', title: 'Grade Published', message: 'Your grades for Form 2A Mathematics have been published successfully.', timestamp: new Date().toISOString(), read: false },
-    { id: 'n2', type: 'INFO', title: 'Staff Meeting Reminder', message: 'Staff meeting tomorrow at 14:00 in the main hall.', timestamp: new Date().toISOString(), read: false },
-    { id: 'n3', type: 'WARNING', title: 'Pending Grades', message: 'You have 3 pending grading items due this week.', timestamp: new Date(Date.now() - 3600000).toISOString(), read: false },
-    { id: 'n4', type: 'ERROR', title: 'System Alert', message: 'Timetable sync failed for Room 204. Please check scheduling.', timestamp: new Date(Date.now() - 7200000).toISOString(), read: true },
-    { id: 'n5', type: 'INFO', title: 'Resource Uploaded', message: 'New Chemistry lab manual has been added to resources.', timestamp: new Date(Date.now() - 14400000).toISOString(), read: false },
-    { id: 'n6', type: 'SUCCESS', title: 'Attendance Recorded', message: 'Today\'s attendance has been recorded for all your classes.', timestamp: new Date(Date.now() - 86400000).toISOString(), read: true },
-    { id: 'n7', type: 'WARNING', title: 'Low Performance Alert', message: 'Form 3B Physics class average dropped by 12% this term.', timestamp: new Date(Date.now() - 86400000).toISOString(), read: false },
-    { id: 'n8', type: 'INFO', title: 'Exam Schedule Updated', message: 'End of term exam timetable has been revised.', timestamp: new Date(Date.now() - 86400000).toISOString(), read: true },
-    { id: 'n9', type: 'SUCCESS', title: 'Leave Approved', message: 'Your leave request for 25 May has been approved.', timestamp: new Date(Date.now() - 172800000).toISOString(), read: false },
-    { id: 'n10', type: 'ERROR', title: 'Submission Error', message: 'Failed to upload student grades. Please try again.', timestamp: new Date(Date.now() - 259200000).toISOString(), read: true },
-    { id: 'n11', type: 'INFO', title: 'New Student Enrolled', message: 'A new student has been enrolled in Form 2A.', timestamp: new Date(Date.now() - 259200000).toISOString(), read: true },
-    { id: 'n12', type: 'WARNING', title: 'Classroom Change', message: 'Physics lab session moved to Lab 103 this week.', timestamp: new Date(Date.now() - 345600000).toISOString(), read: false },
-    { id: 'n13', type: 'SUCCESS', title: 'Curriculum Updated', message: 'Term 2 curriculum changes have been applied.', timestamp: new Date(Date.now() - 432000000).toISOString(), read: true },
-    { id: 'n14', type: 'INFO', title: 'Professional Development', message: 'Online teaching workshop available for registration.', timestamp: new Date(Date.now() - 518400000).toISOString(), read: true },
-    { id: 'n15', type: 'ERROR', title: 'Payment Discrepancy', message: 'There is a discrepancy in the March payslip. Contact HR.', timestamp: new Date(Date.now() - 604800000).toISOString(), read: true },
-  ];
-
-  unreadCount = computed(() => this.allNotifications.filter(n => !n.read).length);
+  private allNotifications = this.notificationService.notifications;
+  readonly unreadCount = this.notificationService.unreadCount;
 
   filteredNotifications = computed(() => {
     const filter = this.activeFilter();
-    if (filter === 'all') return this.allNotifications;
-    return this.allNotifications.filter(n => filter === 'unread' ? !n.read : n.read);
+    if (filter === 'all') return this.allNotifications();
+    return this.allNotifications().filter(n => filter === 'unread' ? !n.read : n.read);
   });
 
   groupedNotifications = computed(() => {
@@ -226,14 +212,17 @@ export class NotificationsComponent {
     return groups.filter(g => g.items.length > 0);
   });
 
+  constructor() {
+    this.notificationService.fetchNotifications();
+  }
+
   markRead(item: Notification): void {
     if (!item.read) {
-      item.read = true;
-      this.allNotifications = [...this.allNotifications];
+      this.notificationService.markRead(item.id);
     }
   }
 
   markAllRead(): void {
-    this.allNotifications = this.allNotifications.map(n => ({ ...n, read: true }));
+    this.notificationService.markAllRead();
   }
 }

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,7 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { GradeDistribution } from '../../shared/models/teacher.models';
+import { TeacherGradingService } from '../../core/services/teacher-grading.service';
 
 interface PendingItem {
   id: number;
@@ -260,32 +260,31 @@ interface SubjectAverage {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GradingComponent {
+  private gradingService = inject(TeacherGradingService);
 
   readonly selectedSeries = signal<string>('Term 2 2026');
   readonly selectedSubject = signal<string>('All');
 
-  readonly pendingItems = signal<PendingItem[]>([
+  readonly pendingItems = signal([
     { id: 1, title: 'Algebra Quiz 1', submissionCount: 22, dueDate: 'Jun 15, 2026', subject: 'Mathematics', class: 'Form 2A' },
     { id: 2, title: 'Organic Chemistry Essay', submissionCount: 15, dueDate: 'Jun 28, 2026', subject: 'Chemistry', class: 'Form 4A' },
     { id: 3, title: 'Thermodynamics Lab Report', submissionCount: 18, dueDate: 'Jun 22, 2026', subject: 'Physics', class: 'Form 3B' },
     { id: 4, title: 'Genetics Research Project', submissionCount: 8, dueDate: 'Jul 10, 2026', subject: 'Biology', class: 'Form 1C' },
   ]);
 
-  readonly gradeDistribution = signal<GradeDistribution[]>([
-    { grade: 'A', count: 42, percentage: 28 },
-    { grade: 'B', count: 55, percentage: 37 },
-    { grade: 'C', count: 31, percentage: 21 },
-    { grade: 'D', count: 14, percentage: 9 },
-    { grade: 'F', count: 8, percentage: 5 },
-  ]);
+  readonly gradeDistribution = this.gradingService.gradeDistribution;
 
-  readonly subjectAverages = signal<SubjectAverage[]>([
+  readonly subjectAverages = signal([
     { subject: 'Mathematics', averageScore: 72, classRank: 2 },
     { subject: 'Physics', averageScore: 68, classRank: 3 },
     { subject: 'Chemistry', averageScore: 74, classRank: 1 },
     { subject: 'Biology', averageScore: 65, classRank: 4 },
   ]);
 
-  gradeItem(item: PendingItem) {
+  constructor() {
+    this.gradingService.fetchGradeDistribution();
+  }
+
+  gradeItem(item: { id: number }) {
   }
 }

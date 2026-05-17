@@ -352,6 +352,7 @@ export class AdminSidebarComponent {
     {
       name: 'lms', label: 'LMS', icon: 'menu_book', route: '/portalAdmin/lms',
       children: [
+        { label: 'Assignments', route: '/portalAdmin/lms/assignments', icon: 'assignment' },
         { label: 'Scheduling Hub', route: '/portalAdmin/lms/scheduling', icon: 'calendar_month' },
         { label: 'Examinations Hub', route: '/portalAdmin/lms/examinations', icon: 'school' },
         { label: 'Operations Hub', route: '/portalAdmin/lms/operations', icon: 'event_note' },
@@ -366,10 +367,12 @@ export class AdminSidebarComponent {
         { label: 'Student Houses', route: '/portalAdmin/students/houses' },
       ],
     },
+    { name: 'timetable', label: 'Timetable', icon: 'calendar_month', route: '/portalAdmin/timetable' },
     { name: 'staff', label: 'HR', icon: 'person_outline', route: '/portalAdmin/staff' },
     { name: 'finance', label: 'Finance', icon: 'account_balance', route: '/portalAdmin/finance' },
     { name: 'transport', label: 'Transport', icon: 'directions_bus', route: '/portalAdmin/transport' },
     { name: 'communication', label: 'Communication', icon: 'chat', route: '/portalAdmin/communication' },
+    { name: 'monitoring', label: 'Live Monitor', icon: 'security', route: '/portalAdmin/monitoring' },
     { name: 'reports', label: 'Reports', icon: 'bar_chart', route: '/portalAdmin/reports' },
     { name: 'systemAccess', label: 'System Access', icon: 'admin_panel_settings', route: '/portalAdmin/system-access' },
     { name: 'settings', label: 'Settings', icon: 'settings', route: '/portalAdmin/settings' },

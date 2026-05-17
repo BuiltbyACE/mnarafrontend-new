@@ -1,10 +1,11 @@
-import { Component, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { Announcement } from '../../shared/models/teacher.models';
+import { TeacherAnnouncementService } from '../../core/services/teacher-announcement.service';
 
 type CategoryFilter = 'all' | 'general' | 'academic' | 'administrative' | 'emergency';
 
@@ -190,6 +191,8 @@ type CategoryFilter = 'all' | 'general' | 'academic' | 'administrative' | 'emerg
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnnouncementsComponent {
+  private announcementService = inject(TeacherAnnouncementService);
+
   readonly selectedCategory = signal<CategoryFilter>('all');
 
   readonly categories: { label: string; value: CategoryFilter; color: string }[] = [
@@ -199,56 +202,7 @@ export class AnnouncementsComponent {
     { label: 'Emergency', value: 'emergency', color: '#dc2626' },
   ];
 
-  private readonly allAnnouncements = signal<Announcement[]>([
-    {
-      id: '1', title: 'Welcome to Term 2 – 2026',
-      content: 'We are pleased to welcome all staff and students to Term 2 of the 2026 academic year. The term begins on Monday, May 19th. Kindly ensure all lesson plans and schemes of work are submitted to your respective Heads of Department by Friday this week. Let us work together to make this term productive and successful.',
-      postedBy: 'Principal’s Office', postedAt: '2026-05-15T08:00:00',
-      category: 'general', pinned: true, hasAttachments: false, department: 'School-wide',
-    },
-    {
-      id: '2', title: 'Science Department Meeting – This Friday',
-      content: 'There will be a mandatory Science Department meeting on Friday, May 22nd at 2:30 PM in the Science Lab B. Agenda includes: review of term 1 performance, lab safety protocols, and preparation for the upcoming science fair. All science teachers must attend.',
-      postedBy: 'Dr. Sarah Kimani', postedAt: '2026-05-14T10:30:00',
-      category: 'academic', pinned: true, hasAttachments: true, department: 'Science Department',
-    },
-    {
-      id: '3', title: 'Staff Room Renovation Notice',
-      content: 'The main staff room will undergo renovation starting May 25th through June 5th. During this period, staff are requested to use the temporary lounge on the ground floor (Room G12). Tea and refreshments will still be served from 10:00 AM to 10:30 AM. We apologise for any inconvenience.',
-      postedBy: 'Administration Office', postedAt: '2026-05-12T09:00:00',
-      category: 'administrative', pinned: false, hasAttachments: false, department: 'School-wide',
-    },
-    {
-      id: '4', title: 'School Closure – Heavy Rains Warning',
-      content: 'Due to the ongoing heavy rains and potential flooding in the region, the school will be closed tomorrow, May 11th. All learning activities will resume on Tuesday. Parents have been notified via the parent portal. Stay safe and avoid non-essential travel.',
-      postedBy: 'Emergency Response Team', postedAt: '2026-05-10T06:00:00',
-      category: 'emergency', pinned: false, hasAttachments: false, department: 'School-wide',
-    },
-    {
-      id: '5', title: 'Form 4 Mock Exam Schedule Released',
-      content: 'The Form 4 Mock Examination timetable is now available for download. Exams will run from June 2nd to June 12th. Invigilation duties have been assigned and are visible on the teacher portal. Please review the schedule and report any clashes to the Examinations Office by May 25th.',
-      postedBy: 'Examinations Office', postedAt: '2026-05-08T14:00:00',
-      category: 'academic', pinned: false, hasAttachments: true, department: 'School-wide',
-    },
-    {
-      id: '6', title: 'New School Uniform Policy – Effective June 1st',
-      content: 'The Board of Management has approved an updated uniform policy. Key changes include: new sweater design (navy blue with school crest), optional house t-shirts on Fridays, and明确规定 on acceptable footwear. The full policy document is attached. Current uniforms remain acceptable until end of Term 2.',
-      postedBy: 'Board of Management', postedAt: '2026-05-05T11:00:00',
-      category: 'general', pinned: true, hasAttachments: true, department: 'School-wide',
-    },
-    {
-      id: '7', title: 'Lab Equipment Inventory Exercise',
-      content: 'All science teachers are requested to conduct an inventory audit of their respective laboratory equipment and chemicals. The inventory sheets are available from the lab technician. Completed forms must be returned by May 30th. This is in preparation for the annual audit.',
-      postedBy: 'Science Department', postedAt: '2026-05-03T08:30:00',
-      category: 'administrative', pinned: false, hasAttachments: false, department: 'Science Department',
-    },
-    {
-      id: '8', title: 'Academic Excellence Awards Ceremony',
-      content: 'The Term 1 Academic Excellence Awards Ceremony will be held on May 30th at 9:00 AM in the school hall. Parents of award recipients have been invited. Teachers are requested to be seated by 8:45 AM. Dress code: formal. A rehearsal will be held on May 29th at 2:00 PM.',
-      postedBy: 'Academic Affairs', postedAt: '2026-04-28T10:00:00',
-      category: 'academic', pinned: false, hasAttachments: false, department: 'School-wide',
-    },
-  ]);
+  private readonly allAnnouncements = this.announcementService.announcements;
 
   private readonly filtered = computed(() => {
     const cat = this.selectedCategory();
@@ -264,7 +218,11 @@ export class AnnouncementsComponent {
     this.filtered().filter(a => !a.pinned)
   );
 
-  readonly announcements = this.allAnnouncements.asReadonly();
+  readonly announcements = this.allAnnouncements;
+
+  constructor() {
+    this.announcementService.fetchAnnouncements();
+  }
 
   categoryLabel(cat: string): string {
     return cat.charAt(0).toUpperCase() + cat.slice(1);

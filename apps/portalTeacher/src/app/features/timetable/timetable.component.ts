@@ -1,14 +1,10 @@
-import { Component, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
-
-interface TimetableEntry {
-  subject: string;
-  classroom: string;
-  teacher?: string;
-}
+import { TeacherTimetableService } from '../../core/services/teacher-timetable.service';
+import { CalendarViewComponent } from './components/calendar-view.component';
 
 type Weekday = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
 
@@ -19,10 +15,14 @@ const TIME_SLOTS: string[] = [
   '12:30', '13:30', '14:30', '15:30', '16:30'
 ];
 
+function dateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 @Component({
   selector: 'app-teacher-timetable',
   standalone: true,
-  imports: [DatePipe, MatCardModule, MatIconModule, MatChipsModule],
+  imports: [DatePipe, MatCardModule, MatIconModule, MatChipsModule, CalendarViewComponent],
   template: `
     <div class="timetable-page">
       <header class="page-header">
@@ -37,42 +37,52 @@ const TIME_SLOTS: string[] = [
           <button class="nav-btn" (click)="navigateWeek(1)">
             <mat-icon>chevron_right</mat-icon>
           </button>
-          <button class="today-btn" (click)="resetToToday()">Today</button>
+          <button class="today-btn" (click)="resetToToday()">This Week</button>
         </div>
       </header>
 
-      <div class="timetable-container">
-        <div class="timetable-grid">
-          <div class="grid-header corner"></div>
-          @for (day of days; track day) {
-            <div
-              class="grid-header day-header"
-              [class.today]="day === todayDay()"
-            >
-              <span class="day-name">{{ day }}</span>
-              <span class="day-date">{{ dayDate(day) | date:'d MMM' }}</span>
-            </div>
-          }
+      <div class="timetable-body">
+        <aside class="calendar-sidebar">
+          <app-calendar-view
+            [classDates]="classDates()"
+            [selectedDate]="selectedDate()"
+            (dateSelected)="onDateSelected($event)"
+          />
+        </aside>
 
-          @for (slot of timeSlots; track slot) {
-            <div class="time-label">{{ slot }}</div>
+        <div class="timetable-container">
+          <div class="timetable-grid">
+            <div class="grid-header corner"></div>
             @for (day of days; track day) {
-              @let entry = timetable()[day]?.[slot];
-              @let isCurrent = currentSlot() === slot && day === todayDay();
               <div
-                class="grid-cell"
-                [class.current]="isCurrent"
-                [class.has-class]="!!entry"
+                class="grid-header day-header"
+                [class.today]="day === todayDay()"
               >
-                @if (entry) {
-                  <div class="cell-content">
-                    <span class="cell-subject">{{ entry.subject }}</span>
-                    <span class="cell-room">{{ entry.classroom }}</span>
-                  </div>
-                }
+                <span class="day-name">{{ day }}</span>
+                <span class="day-date">{{ dayDate(day) | date:'d MMM' }}</span>
               </div>
             }
-          }
+
+            @for (slot of timeSlots; track slot) {
+              <div class="time-label">{{ slot }}</div>
+              @for (day of days; track day) {
+                @let entry = timetable()[day]?.[slot];
+                @let isCurrent = currentSlot() === slot && day === todayDay();
+                <div
+                  class="grid-cell"
+                  [class.current]="isCurrent"
+                  [class.has-class]="!!entry"
+                >
+                  @if (entry) {
+                    <div class="cell-content">
+                      <span class="cell-subject">{{ entry.subject }}</span>
+                      <span class="cell-room">{{ entry.classroom }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
         </div>
       </div>
     </div>
@@ -94,7 +104,7 @@ const TIME_SLOTS: string[] = [
     }
     .timetable-page {
       padding: 32px;
-      max-width: 1280px;
+      max-width: 1360px;
       margin: 0 auto;
     }
     .page-header {
@@ -147,16 +157,28 @@ const TIME_SLOTS: string[] = [
     .today-btn:hover {
       background: var(--mnara-primary-dark);
     }
+    .timetable-body {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .calendar-sidebar {
+      flex: 0 0 320px;
+      position: sticky;
+      top: 32px;
+    }
     .timetable-container {
+      flex: 1;
       overflow-x: auto;
       border-radius: 12px;
       border: 1px solid var(--mnara-border);
       background: var(--mnara-surface);
+      min-width: 0;
     }
     .timetable-grid {
       display: grid;
       grid-template-columns: 80px repeat(5, 1fr);
-      min-width: 720px;
+      min-width: 580px;
     }
     .grid-header {
       padding: 12px 8px;
@@ -227,15 +249,40 @@ const TIME_SLOTS: string[] = [
       font-size: 11px;
       color: var(--mnara-text-secondary);
     }
+    @media (max-width: 1024px) {
+      .timetable-body {
+        flex-direction: column;
+      }
+      .calendar-sidebar {
+        flex: none;
+        width: 100%;
+        position: static;
+      }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TimetableComponent {
+  private timetableService = inject(TeacherTimetableService);
+
   readonly weekOffset = signal(0);
+  readonly selectedDate = signal(new Date());
   readonly timeSlots = TIME_SLOTS;
   readonly days = DAYS;
 
   readonly today: Date = new Date();
+
+  readonly isLoading = this.timetableService.isLoading;
+
+  readonly timetable = computed(() =>
+    this.timetableService.data() ?? {
+      Monday: {},
+      Tuesday: {},
+      Wednesday: {},
+      Thursday: {},
+      Friday: {},
+    }
+  );
 
   readonly weekStart = computed(() => {
     const d = new Date(this.today);
@@ -267,70 +314,26 @@ export class TimetableComponent {
     return '';
   });
 
-  private readonly mockTimetable: Record<Weekday, Record<string, TimetableEntry>> = {
-    Monday: {
-      '7:30': { subject: 'Mathematics', classroom: 'Rm 12' },
-      '8:30': { subject: 'Physics', classroom: 'Lab 3' },
-      '9:30': { subject: 'Mathematics', classroom: 'Rm 12' },
-      '10:30': { subject: 'Free Period', classroom: '—' },
-      '11:30': { subject: 'English Literature', classroom: 'Rm 8' },
-      '12:30': { subject: 'Lunch Break', classroom: '—' },
-      '13:30': { subject: 'History', classroom: 'Rm 5' },
-      '14:30': { subject: 'Free Period', classroom: '—' },
-      '15:30': { subject: 'Staff Meeting', classroom: 'Conf Rm' },
-      '16:30': { subject: '—', classroom: '' },
-    },
-    Tuesday: {
-      '7:30': { subject: 'Chemistry', classroom: 'Lab 1' },
-      '8:30': { subject: 'Physics', classroom: 'Lab 3' },
-      '9:30': { subject: 'Chemistry', classroom: 'Lab 1' },
-      '10:30': { subject: 'Mathematics', classroom: 'Rm 12' },
-      '11:30': { subject: 'Free Period', classroom: '—' },
-      '12:30': { subject: 'Lunch Break', classroom: '—' },
-      '13:30': { subject: 'Biology', classroom: 'Lab 2' },
-      '14:30': { subject: 'English Literature', classroom: 'Rm 8' },
-      '15:30': { subject: 'Free Period', classroom: '—' },
-      '16:30': { subject: '—', classroom: '' },
-    },
-    Wednesday: {
-      '7:30': { subject: 'Biology', classroom: 'Lab 2' },
-      '8:30': { subject: 'Mathematics', classroom: 'Rm 12' },
-      '9:30': { subject: 'Physics', classroom: 'Lab 3' },
-      '10:30': { subject: 'Chemistry', classroom: 'Lab 1' },
-      '11:30': { subject: 'History', classroom: 'Rm 5' },
-      '12:30': { subject: 'Lunch Break', classroom: '—' },
-      '13:30': { subject: 'Free Period', classroom: '—' },
-      '14:30': { subject: 'English Literature', classroom: 'Rm 8' },
-      '15:30': { subject: 'Mathematics', classroom: 'Rm 12' },
-      '16:30': { subject: '—', classroom: '' },
-    },
-    Thursday: {
-      '7:30': { subject: 'English Literature', classroom: 'Rm 8' },
-      '8:30': { subject: 'History', classroom: 'Rm 5' },
-      '9:30': { subject: 'Biology', classroom: 'Lab 2' },
-      '10:30': { subject: 'Mathematics', classroom: 'Rm 12' },
-      '11:30': { subject: 'Free Period', classroom: '—' },
-      '12:30': { subject: 'Lunch Break', classroom: '—' },
-      '13:30': { subject: 'Physics', classroom: 'Lab 3' },
-      '14:30': { subject: 'Chemistry', classroom: 'Lab 1' },
-      '15:30': { subject: 'Free Period', classroom: '—' },
-      '16:30': { subject: '—', classroom: '' },
-    },
-    Friday: {
-      '7:30': { subject: 'Physics', classroom: 'Lab 3' },
-      '8:30': { subject: 'Chemistry', classroom: 'Lab 1' },
-      '9:30': { subject: 'Mathematics', classroom: 'Rm 12' },
-      '10:30': { subject: 'English Literature', classroom: 'Rm 8' },
-      '11:30': { subject: 'History', classroom: 'Rm 5' },
-      '12:30': { subject: 'Lunch Break', classroom: '—' },
-      '13:30': { subject: 'Biology', classroom: 'Lab 2' },
-      '14:30': { subject: 'Free Period', classroom: '—' },
-      '15:30': { subject: 'Sports', classroom: 'Field' },
-      '16:30': { subject: '—', classroom: '' },
-    },
-  };
+  readonly classDates = computed<Set<string>>(() => {
+    const data = this.timetableService.data();
+    if (!data) return new Set();
+    const ws = this.weekStart();
+    const dates = new Set<string>();
+    for (const day of DAYS) {
+      const entries = data[day];
+      if (entries && Object.keys(entries).length > 0) {
+        const idx = DAYS.indexOf(day);
+        const d = new Date(ws);
+        d.setDate(d.getDate() + idx);
+        dates.add(dateKey(d));
+      }
+    }
+    return dates;
+  });
 
-  readonly timetable = signal(this.mockTimetable);
+  constructor() {
+    this.timetableService.fetchTimetable();
+  }
 
   dayDate(day: Weekday): Date {
     const ws = this.weekStart();
@@ -346,5 +349,14 @@ export class TimetableComponent {
 
   resetToToday(): void {
     this.weekOffset.set(0);
+    this.selectedDate.set(new Date());
+  }
+
+  onDateSelected(date: Date): void {
+    this.selectedDate.set(date);
+    const now = new Date();
+    const diffDays = Math.floor((date.getTime() - now.getTime()) / 86400000);
+    const weekDelta = Math.round(diffDays / 7);
+    this.weekOffset.set(weekDelta);
   }
 }

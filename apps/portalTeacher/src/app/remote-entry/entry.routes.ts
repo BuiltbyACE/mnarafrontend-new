@@ -12,12 +12,12 @@ export const remoteRoutes: Route[] = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('../features/dashboard/teacher-dashboard.component').then(m => m.TeacherDashboardComponent),
+          import('../features/dashboard/components/dashboard.component').then(m => m.DashboardComponent),
       },
       {
         path: 'classes',
         loadComponent: () =>
-          import('../features/classes/classes.component').then(m => m.ClassesComponent),
+          import('../features/classes/components/classes-list.component').then(m => m.ClassesListComponent),
       },
       {
         path: 'timetable',
@@ -27,22 +27,42 @@ export const remoteRoutes: Route[] = [
       {
         path: 'attendance',
         loadComponent: () =>
-          import('../features/attendance/attendance.component').then(m => m.AttendanceComponent),
+          import('../features/attendance/live-roster.component').then(m => m.LiveRosterComponent),
       },
       {
         path: 'assignments',
-        loadComponent: () =>
-          import('../features/assignments/assignments.component').then(m => m.AssignmentsComponent),
+        children: [
+          {
+            path: 'create',
+            loadComponent: () =>
+              import('../features/assignments/create/create-assignment.component').then(m => m.CreateAssignmentComponent),
+          },
+          {
+            path: '',
+            loadComponent: () =>
+              import('../features/assignments/assignments.component').then(m => m.AssignmentsComponent),
+          },
+        ],
       },
       {
         path: 'grading',
         loadComponent: () =>
-          import('../features/grading/grading.component').then(m => m.GradingComponent),
+          import('../features/grading/components/grading-dashboard.component').then(m => m.GradingDashboardComponent),
       },
       {
         path: 'resources',
-        loadComponent: () =>
-          import('../features/resources/resources.component').then(m => m.ResourcesComponent),
+        children: [
+          {
+            path: 'upload',
+            loadComponent: () =>
+              import('../features/resources/upload/upload-resource.component').then(m => m.UploadResourceComponent),
+          },
+          {
+            path: '',
+            loadComponent: () =>
+              import('../features/resources/resources.component').then(m => m.ResourcesComponent),
+          },
+        ],
       },
       {
         path: 'students',

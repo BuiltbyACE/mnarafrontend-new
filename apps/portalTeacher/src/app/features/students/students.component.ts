@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { NgClass, NgStyle } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,9 +8,10 @@ import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TeacherStudentService } from '../../core/services/teacher-student.service';
 
 interface Student {
-  id: string;
+  id: number;
   name: string;
   studentId: string;
   class: string;
@@ -512,48 +513,52 @@ interface FilterChip {
   `]
 })
 export class StudentsComponent {
+  private studentService = inject(TeacherStudentService);
+
   readonly displayedColumns = ['expand', 'name', 'studentId', 'class', 'attendance', 'performance', 'parentContact', 'actions'];
 
-  readonly allStudents = signal<Student[]>([
-    { id: '1', name: 'Amara Okafor', studentId: 'MNS-2401', class: 'Form 2A', attendance: 92, performance: 85, parentContact: '+254 712 345 001', gender: 'Female', stream: 'Science', dob: '2008-03-14', address: '14 Kimathi Street, Nairobi', subjects: ['Math', 'English', 'Science', 'History'] },
-    { id: '2', name: 'Brian Kamau', studentId: 'MNS-2402', class: 'Form 2A', attendance: 78, performance: 62, parentContact: '+254 723 456 002', gender: 'Male', stream: 'Science', dob: '2008-07-21', address: '55 Moi Avenue, Nairobi', subjects: ['Math', 'English', 'Science', 'Geography'] },
-    { id: '3', name: 'Cynthia Wanjiku', studentId: 'MNS-2403', class: 'Form 2A', attendance: 95, performance: 91, parentContact: '+254 734 567 003', gender: 'Female', stream: 'Humanities', dob: '2008-01-09', address: '28 Kenyatta Road, Kiambu', subjects: ['English', 'History', 'Geography', 'CRE'] },
-    { id: '4', name: 'David Mwangi', studentId: 'MNS-2404', class: 'Form 2A', attendance: 55, performance: 41, parentContact: '+254 745 678 004', gender: 'Male', stream: 'Science', dob: '2008-11-30', address: '7 Industrial Area, Nairobi', subjects: ['Math', 'English', 'Science'] },
-    { id: '5', name: 'Esther Akinyi', studentId: 'MNS-2405', class: 'Form 2A', attendance: 88, performance: 76, parentContact: '+254 756 789 005', gender: 'Female', stream: 'Humanities', dob: '2008-05-17', address: '42 Ngong Road, Nairobi', subjects: ['English', 'History', 'Geography', 'Business'] },
-    { id: '6', name: 'Felix Odhiambo', studentId: 'MNS-2406', class: 'Form 2A', attendance: 73, performance: 58, parentContact: '+254 767 890 006', gender: 'Male', stream: 'Science', dob: '2008-09-03', address: '19 Jogoo Road, Nairobi', subjects: ['Math', 'Science', 'Geography'] },
-    { id: '7', name: 'Grace Nyambura', studentId: 'MNS-2407', class: 'Form 2A', attendance: 97, performance: 94, parentContact: '+254 778 901 007', gender: 'Female', stream: 'Science', dob: '2008-02-28', address: '8 Riverside Drive, Nairobi', subjects: ['Math', 'English', 'Science', 'Physics'] },
-    { id: '8', name: 'Hassan Ali', studentId: 'MNS-2408', class: 'Form 2A', attendance: 81, performance: 70, parentContact: '+254 789 012 008', gender: 'Male', stream: 'Humanities', dob: '2008-06-14', address: '33 River Road, Nairobi', subjects: ['English', 'History', 'Business', 'CRE'] },
-    { id: '9', name: 'Irene Chebet', studentId: 'MNS-2409', class: 'Form 3B', attendance: 68, performance: 53, parentContact: '+254 790 123 009', gender: 'Female', stream: 'Science', dob: '2007-04-19', address: '11 Langata Road, Nairobi', subjects: ['Math', 'English', 'Science', 'Chemistry'] },
-    { id: '10', name: 'James Kiprop', studentId: 'MNS-2410', class: 'Form 3B', attendance: 91, performance: 88, parentContact: '+254 701 234 010', gender: 'Male', stream: 'Science', dob: '2007-08-22', address: '27 Thika Road, Nairobi', subjects: ['Math', 'Physics', 'Chemistry', 'Biology'] },
-    { id: '11', name: 'Katherine Njoki', studentId: 'MNS-2411', class: 'Form 3B', attendance: 85, performance: 79, parentContact: '+254 712 345 011', gender: 'Female', stream: 'Humanities', dob: '2007-12-05', address: '16 Muthithi Road, Nairobi', subjects: ['English', 'History', 'Geography', 'Literature'] },
-    { id: '12', name: 'Lawrence Otieno', studentId: 'MNS-2412', class: 'Form 3B', attendance: 45, performance: 35, parentContact: '+254 723 456 012', gender: 'Male', stream: 'Science', dob: '2007-03-11', address: '5 Kariokor, Nairobi', subjects: ['Math', 'Science'] },
-    { id: '13', name: 'Mary Wambui', studentId: 'MNS-2413', class: 'Form 3B', attendance: 94, performance: 96, parentContact: '+254 734 567 013', gender: 'Female', stream: 'Science', dob: '2007-07-29', address: '21 Lavington, Nairobi', subjects: ['Math', 'Physics', 'Chemistry', 'Biology', 'English'] },
-    { id: '14', name: 'Nicholas Mutua', studentId: 'MNS-2414', class: 'Form 3B', attendance: 77, performance: 65, parentContact: '+254 745 678 014', gender: 'Male', stream: 'Humanities', dob: '2007-10-15', address: '38 Eastleigh, Nairobi', subjects: ['English', 'History', 'Geography', 'Business'] },
-    { id: '15', name: 'Olivia Achieng', studentId: 'MNS-2415', class: 'Form 3B', attendance: 89, performance: 82, parentContact: '+254 756 789 015', gender: 'Female', stream: 'Science', dob: '2007-01-08', address: '9 Westlands, Nairobi', subjects: ['Math', 'English', 'Science', 'Chemistry'] },
-    { id: '16', name: 'Patrick Kimani', studentId: 'MNS-2416', class: 'Form 3B', attendance: 82, performance: 74, parentContact: '+254 767 890 016', gender: 'Male', stream: 'Humanities', dob: '2007-05-26', address: '12 Buruburu, Nairobi', subjects: ['Math', 'English', 'History', 'Geography'] }
-  ]);
+  readonly allStudents = computed<Student[]>(() =>
+    this.studentService.profiles().map(p => ({
+      id: p.id,
+      name: `${p.first_name} ${p.last_name}`,
+      studentId: p.user_school_id,
+      class: p.class_name,
+      attendance: p.attendance_percentage,
+      performance: p.performance_average,
+      parentContact: p.parent_contact,
+      gender: p.gender ?? '',
+      stream: p.stream ?? '',
+      dob: p.date_of_birth ?? '',
+      address: p.address ?? '',
+      subjects: p.subjects ?? [],
+    }))
+  );
 
   readonly searchQuery = signal('');
   readonly activeFilter = signal('all');
-  readonly expandedStudentId = signal<string | null>(null);
+  readonly expandedStudentId = signal<number | null>(null);
 
-  readonly filterChips = signal<FilterChip[]>([
+  readonly filterChips = signal([
     { label: 'All Students', value: 'all', active: true },
     { label: 'By Class', value: 'class', active: false },
     { label: 'By Performance', value: 'performance', active: false }
   ]);
 
-  readonly filteredStudents = () => {
+  readonly filteredStudents = computed(() => {
     const query = this.searchQuery().toLowerCase();
     const filter = this.activeFilter();
     return this.allStudents().filter(s => {
       const matchesSearch = !query || s.name.toLowerCase().includes(query) || s.studentId.toLowerCase().includes(query) || s.class.toLowerCase().includes(query);
       if (!matchesSearch) return false;
-      if (filter === 'class') return s.class === 'Form 2A' || s.class === 'Form 3B';
-      if (filter === 'performance') return s.performance >= 70;
+      if (filter === 'class') return true;
+      if (filter === 'performance') return (s.performance ?? 0) >= 70;
       return true;
     });
-  };
+  });
+
+  constructor() {
+    this.studentService.fetchProfiles();
+  }
 
   onSearch(value: string) {
     this.searchQuery.set(value ?? '');
@@ -564,7 +569,7 @@ export class StudentsComponent {
     this.filterChips.update(chips => chips.map(c => ({ ...c, active: c.value === value })));
   }
 
-  toggleExpand(id: string) {
+  toggleExpand(id: number) {
     this.expandedStudentId.update(current => current === id ? null : id);
   }
 }

@@ -8,6 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
 import { MatMenuModule } from '@angular/material/menu';
 import { Assignment } from '../../shared/models/teacher.models';
+import { TeacherAssignmentService } from '../../core/services/teacher-assignment.service';
 
 type FilterType = 'ALL' | 'QUIZ' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'PHYSICAL';
 
@@ -235,27 +236,23 @@ type FilterType = 'ALL' | 'QUIZ' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'PHYSICAL';
 })
 export class AssignmentsComponent {
   private router = inject(Router);
+  private assignmentService = inject(TeacherAssignmentService);
 
   readonly displayedColumns = ['title', 'type', 'class', 'subject', 'dueDate', 'submissions', 'status', 'actions'];
 
   readonly activeFilter = signal<FilterType>('ALL');
 
-  private readonly allAssignments = signal<Assignment[]>([
-    { id: 1, title: 'Algebra Quiz 1', type: 'QUIZ', class: 'Mathematics Form 2A', subject: 'Mathematics', dueDate: '2026-06-15', submissions: 22, totalStudents: 28, status: 'OPEN' },
-    { id: 2, title: 'Newton\'s Laws Worksheet', type: 'FILE_UPLOAD', class: 'Physics Form 3B', subject: 'Physics', dueDate: '2026-05-10', submissions: 30, totalStudents: 30, status: 'CLOSED' },
-    { id: 3, title: 'Organic Chemistry Essay', type: 'ONLINE_TEXT', class: 'Chemistry Form 4A', subject: 'Chemistry', dueDate: '2026-06-28', submissions: 15, totalStudents: 24, status: 'OPEN' },
-    { id: 4, title: 'Cell Structure Diagram', type: 'PHYSICAL', class: 'Biology Form 1C', subject: 'Biology', dueDate: '2026-05-05', submissions: 32, totalStudents: 32, status: 'CLOSED' },
-    { id: 5, title: 'Quadratic Equations Test', type: 'QUIZ', class: 'Mathematics Form 2A', subject: 'Mathematics', dueDate: '2026-07-02', submissions: 0, totalStudents: 28, status: 'DRAFT' },
-    { id: 6, title: 'Thermodynamics Lab Report', type: 'FILE_UPLOAD', class: 'Physics Form 3B', subject: 'Physics', dueDate: '2026-06-22', submissions: 18, totalStudents: 30, status: 'OPEN' },
-    { id: 7, title: 'Periodic Table Quiz', type: 'QUIZ', class: 'Chemistry Form 4A', subject: 'Chemistry', dueDate: '2026-03-20', submissions: 24, totalStudents: 24, status: 'CLOSED' },
-    { id: 8, title: 'Genetics Research Project', type: 'ONLINE_TEXT', class: 'Biology Form 1C', subject: 'Biology', dueDate: '2026-07-10', submissions: 8, totalStudents: 32, status: 'OPEN' },
-  ]);
+  private readonly allAssignments = this.assignmentService.assignments;
 
   readonly filteredAssignments = computed(() => {
     const filter = this.activeFilter();
     if (filter === 'ALL') return this.allAssignments();
     return this.allAssignments().filter(a => a.type === filter);
   });
+
+  constructor() {
+    this.assignmentService.fetchAssignments();
+  }
 
   setFilter(filter: FilterType) {
     this.activeFilter.set(filter);

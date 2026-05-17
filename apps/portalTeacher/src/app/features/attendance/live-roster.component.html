@@ -1,0 +1,93 @@
+<div class="roster-page">
+  @if (loading() && !data()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading live roster...</p>
+    </div>
+  } @else if (error(); as err) {
+    <div class="error-state">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ err }}</p>
+      <button class="retry-btn" (click)="refresh()">Retry</button>
+    </div>
+  } @else if (data(); as payload) {
+    @if (!payload.has_active_class) {
+      <div class="free-period">
+        <div class="free-icon">
+          <mat-icon>coffee</mat-icon>
+        </div>
+        <h2>You have a free period</h2>
+        <p>No active class to monitor right now.</p>
+        <button class="refresh-btn" (click)="refresh()">Check Again</button>
+      </div>
+    } @else {
+      <header class="roster-header">
+        <div>
+          <h1>Live Roster</h1>
+          <div class="class-badge">
+            <mat-icon>school</mat-icon>
+            <span>{{ payload.class_info!.subject }}</span>
+            <span class="badge-sep">|</span>
+            <span>{{ payload.class_info!.room }}</span>
+            <span class="badge-sep">|</span>
+            <span>{{ payload.class_info!.start_time }} – {{ payload.class_info!.end_time }}</span>
+          </div>
+        </div>
+        <div class="live-indicator">
+          <span class="live-dot"></span>
+          <span>Live Biometric Tracking Active</span>
+        </div>
+      </header>
+
+      <div class="kpi-bar">
+        <div class="kpi total">
+          <span class="kpi-value">{{ payload.summary.total }}</span>
+          <span class="kpi-label">Total Students</span>
+        </div>
+        <div class="kpi present">
+          <span class="kpi-value">{{ payload.summary.present }}</span>
+          <span class="kpi-label">Verified Present</span>
+        </div>
+        <div class="kpi missing">
+          <span class="kpi-value">{{ payload.summary.missing + payload.summary.absent }}</span>
+          <span class="kpi-label">Missing</span>
+        </div>
+      </div>
+
+      <div class="roster-grid">
+        @for (student of payload.students; track student.id) {
+          <div class="student-card" [class.absent]="isAbsent(student)" [class.present]="student.status === 'PRESENT'">
+            <div class="card-left">
+              <div class="avatar">{{ student.name.charAt(0).toUpperCase() }}</div>
+              <div class="student-info">
+                <span class="student-name">{{ student.name }}</span>
+                <span class="student-id">{{ student.student_id }}</span>
+              </div>
+            </div>
+
+            @if (student.status === 'PRESENT') {
+              <div class="status-verified">
+                <mat-icon class="check-icon">check_circle</mat-icon>
+                <span>Verified at {{ student.time_logged }}</span>
+              </div>
+            } @else if (overridingAbsent().has(student.id) || student.status === 'ABSENT') {
+              <div class="status-absent">
+                <mat-icon class="cross-icon">cancel</mat-icon>
+                <span>Marked Absent</span>
+              </div>
+            } @else {
+              <div class="status-actions">
+                <button class="action-btn verify" (click)="markAbsent(student)">
+                  <mat-icon>person_add</mat-icon> Verify Manually
+                </button>
+                <button class="action-btn absent" (click)="markAbsent(student)">
+                  <mat-icon>block</mat-icon> Confirm Absent
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTabsModule } from '@angular/material/tabs';
+import { TeacherClassService, ClassAssignment } from '../../core/services/teacher-class.service';
 
 interface ClassSubject {
   id: string;
@@ -379,18 +380,28 @@ interface ClassDetail {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ClassesComponent {
+  private classService = inject(TeacherClassService);
+
   readonly selectedClassId = signal<string | null>(null);
 
-  readonly classes = signal<ClassSubject[]>([
-    { id: 'MATH2A', subjectName: 'Mathematics', subjectCode: 'MATH 201', classroom: 'Room 12', studentCount: 28, teacherRole: 'Class Teacher', nextLesson: 'Mon 7:30 AM', form: 'Form 2A' },
-    { id: 'PHY3B', subjectName: 'Physics', subjectCode: 'PHY 301', classroom: 'Lab 3', studentCount: 24, teacherRole: 'Subject Teacher', nextLesson: 'Mon 8:30 AM', form: 'Form 3B' },
-    { id: 'CHEM4A', subjectName: 'Chemistry', subjectCode: 'CHEM 401', classroom: 'Lab 1', studentCount: 22, teacherRole: 'Subject Teacher', nextLesson: 'Tue 9:30 AM', form: 'Form 4A' },
-    { id: 'BIO1C', subjectName: 'Biology', subjectCode: 'BIO 101', classroom: 'Lab 2', studentCount: 26, teacherRole: 'Subject Teacher', nextLesson: 'Wed 10:30 AM', form: 'Form 1C' },
-    { id: 'ENG2B', subjectName: 'English Literature', subjectCode: 'ENG 202', classroom: 'Room 8', studentCount: 30, teacherRole: 'Class Teacher', nextLesson: 'Thu 11:30 AM', form: 'Form 2B' },
-    { id: 'HIS3A', subjectName: 'History', subjectCode: 'HIS 302', classroom: 'Room 5', studentCount: 20, teacherRole: 'Subject Teacher', nextLesson: 'Fri 12:30 PM', form: 'Form 3A' },
-  ]);
+  readonly classes = computed<ClassSubject[]>(() =>
+    this.classService.assignments().map(a => ({
+      id: String(a.id),
+      subjectName: a.subject,
+      subjectCode: a.class_name,
+      classroom: a.section,
+      studentCount: a.student_count,
+      teacherRole: 'Subject Teacher',
+      nextLesson: '—',
+      form: a.class_name,
+    }))
+  );
 
-  readonly selectedClass = signal<ClassSubject | undefined>(undefined);
+  readonly selectedClass = computed<ClassSubject | undefined>(() => {
+    const id = this.selectedClassId();
+    if (!id) return undefined;
+    return this.classes().find(c => c.id === id);
+  });
 
   readonly detailData = signal<ClassDetail>({
     students: [
@@ -425,10 +436,13 @@ export class ClassesComponent {
     ],
   });
 
+  constructor() {
+    this.classService.fetchAssignments();
+    this.classService.fetchRoles();
+  }
+
   selectClass(id: string | null): void {
     this.selectedClassId.set(id);
-    const found = this.classes().find(c => c.id === id);
-    this.selectedClass.set(found);
   }
 
   takeAttendance(id: string): void {

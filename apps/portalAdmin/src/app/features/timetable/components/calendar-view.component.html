@@ -1,0 +1,33 @@
+<div class="cal-wrapper">
+  <div class="cal-header">
+    <button class="cal-nav-btn" (click)="prevMonth()" mat-icon-button>
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="cal-month-label">{{ monthLabel() }}</span>
+    <button class="cal-nav-btn" (click)="nextMonth()" mat-icon-button>
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button class="cal-today-btn" (click)="goToToday()">Today</button>
+  </div>
+
+  <div class="cal-weekdays">
+    @for (d of dayHeaders; track d) {
+      <span class="cal-weekday">{{ d }}</span>
+    }
+  </div>
+
+  <div class="cal-grid">
+    @for (day of calendarDays(); track day.date.getTime()) {
+      <button
+        class="cal-cell"
+        [class.other-month]="day.monthOffset !== 0"
+        [class.today]="day.isToday"
+        [class.selected]="day.isSelected"
+        [class.has-class]="day.hasClass"
+        (click)="selectDay(day)"
+      >
+        <span class="cal-day-num">{{ day.day }}</span>
+      </button>
+    }
+  </div>
+</div>

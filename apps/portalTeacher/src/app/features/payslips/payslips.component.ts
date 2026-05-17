@@ -1,4 +1,4 @@
-import { Component, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
 import { MatDividerModule } from '@angular/material/divider';
 import { Payslip } from '../../shared/models/teacher.models';
+import { TeacherPayslipService } from '../../core/services/teacher-payslip.service';
 
 @Component({
   selector: 'app-teacher-payslips',
@@ -219,26 +220,13 @@ import { Payslip } from '../../shared/models/teacher.models';
   `,
 })
 export class PayslipsComponent {
+  private payslipService = inject(TeacherPayslipService);
+
   displayedColumns = ['month', 'year', 'gross', 'net', 'status', 'action'];
 
-  selectedYear = signal<number>(2026);
-
-  private allPayslips: Payslip[] = [
-    { id: 'p1', month: 'May', year: 2026, gross: 95000, net: 79000, deductions: 16000, status: 'paid' },
-    { id: 'p2', month: 'April', year: 2026, gross: 90000, net: 75600, deductions: 14400, status: 'paid' },
-    { id: 'p3', month: 'March', year: 2026, gross: 88000, net: 74000, deductions: 14000, status: 'paid' },
-    { id: 'p4', month: 'February', year: 2026, gross: 85000, net: 71800, deductions: 13200, status: 'paid' },
-    { id: 'p5', month: 'January', year: 2026, gross: 85000, net: 72000, deductions: 13000, status: 'paid' },
-    { id: 'p6', month: 'December', year: 2025, gross: 82000, net: 69600, deductions: 12400, status: 'paid' },
-  ];
-
-  filteredPayslips = computed(() =>
-    this.allPayslips.filter(s => s.year === this.selectedYear())
-  );
-
-  latestPayslip = computed(() =>
-    this.allPayslips.length ? this.allPayslips[0] : null
-  );
+  selectedYear = this.payslipService.selectedYear;
+  filteredPayslips = this.payslipService.filteredPayslips;
+  latestPayslip = this.payslipService.latestPayslip;
 
   downloadPayslip(slip: Payslip): void {
     console.log('Download payslip:', slip.id, slip.month, slip.year);

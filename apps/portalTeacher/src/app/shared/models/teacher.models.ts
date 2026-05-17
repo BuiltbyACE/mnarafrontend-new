@@ -82,6 +82,34 @@ export interface Assignment {
   submissions: number;
   totalStudents: number;
   status: 'OPEN' | 'CLOSED' | 'DRAFT';
+  max_score?: number;
+  instructions?: string;
+}
+
+export interface CreateAssignmentPayload {
+  title: string;
+  instructions: string;
+  submission_type: 'PHYSICAL' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'QUIZ';
+  max_score: number;
+  due_date: string;
+  is_published: boolean;
+  allow_immediate_review: boolean;
+  course_workspace: number;
+  quiz_questions?: QuizQuestionPayload[];
+}
+
+export interface QuizQuestionPayload {
+  question_text: string;
+  marks: number;
+  options: { label: string; is_correct: boolean }[];
+}
+
+export interface CourseWorkspace {
+  id: number;
+  subject: string;
+  class_name: string;
+  section: string;
+  student_count: number;
 }
 
 export interface GradeDistribution {
@@ -90,15 +118,30 @@ export interface GradeDistribution {
   percentage: number;
 }
 
+export type ResourceType = 'DOCUMENT' | 'VIDEO' | 'LINK' | 'SLIDES' | 'TEXTBOOK' | 'COURSEBOOK' | 'PAST_PAPER';
+
 export interface Resource {
   id: number;
   title: string;
-  type: 'NOTES' | 'VIDEO' | 'WORKSHEET' | 'PAST_PAPER' | 'COURSEBOOK';
+  type: ResourceType;
+  description?: string;
   subject: string;
-  subjectCode: string;
-  uploadedAt: string;
-  fileSize?: string;
-  downloadUrl?: string;
+  course: number;
+  file_attachment?: string | null;
+  file_size_mb?: number | null;
+  external_url?: string | null;
+  is_published: boolean;
+  created_at: string;
+}
+
+export interface CreateResourcePayload {
+  course: number;
+  title: string;
+  resource_type: ResourceType;
+  description?: string;
+  file_attachment?: File | null;
+  external_url?: string;
+  file_size_mb?: number;
 }
 
 export interface BehaviourRecord {

@@ -1,0 +1,73 @@
+<div class="workspaces-page">
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">My Classes</h1>
+      <p class="page-subtitle">Select a workspace to manage assignments, resources, and grades.</p>
+    </div>
+    <div class="header-right">
+      <span class="stat-badge">
+        <mat-icon>school</mat-icon>
+        {{ workspaces().length }} classes
+      </span>
+      <span class="stat-badge">
+        <mat-icon>people</mat-icon>
+        {{ totalStudents() }} students
+      </span>
+    </div>
+  </header>
+
+  @if (isLoading() && workspaces().length === 0) {
+    <div class="loading-state">
+      <mat-icon class="spin">sync</mat-icon>
+      <p>Loading your workspaces&hellip;</p>
+    </div>
+  } @else if (hasError() && workspaces().length === 0) {
+    <div class="error-state">
+      <mat-icon>error_outline</mat-icon>
+      <p>Could not load workspaces. Try again later.</p>
+    </div>
+  } @else {
+    <div class="workspace-grid">
+      @for (ws of workspaces(); track ws.id) {
+        <div class="workspace-card" (click)="enterWorkspace(ws.id)">
+          <div class="card-header">
+            <div class="card-icon-wrapper">
+              <mat-icon>auto_stories</mat-icon>
+            </div>
+            <h2 class="card-title">{{ ws.subject_name }}</h2>
+            <span class="card-subtitle">{{ ws.classroom_name }}</span>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <div class="card-body">
+            <p class="card-overview">{{ ws.syllabus_overview }}</p>
+          </div>
+
+          <div class="card-stats-row">
+            @if (ws.student_count !== undefined) {
+              <span class="stat-pill">
+                <mat-icon>people</mat-icon>
+                {{ ws.student_count }} enrolled
+              </span>
+            }
+            <span class="stat-pill pending">
+              <mat-icon>rate_review</mat-icon>
+              Pending Grading
+            </span>
+          </div>
+
+          <div class="card-action">
+            <button
+              class="enter-btn"
+              (click)="$event.stopPropagation(); enterWorkspace(ws.id)"
+            >
+              <span>Enter Workspace</span>
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,272 @@
+@if (dashboardService.isLoading() && !dashboardService.data()) {
+  <div class="dashboard">
+    <div class="loading-state">
+      <mat-icon class="spin">sync</mat-icon>
+      <p>Loading your dashboard&hellip;</p>
+    </div>
+  </div>
+} @else if (dashboardService.error() && !dashboardService.data()) {
+  <div class="dashboard error-bg">
+    <div class="error-state">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ dashboardService.error() }}</p>
+      <button mat-stroked-button color="primary" (click)="dashboardService.fetchDashboardSummary()">Retry</button>
+    </div>
+  </div>
+} @else if (dashboardService.data(); as data) {
+  <div class="dashboard">
+    <header class="welcome-section">
+      <div class="welcome-text">
+        <h1 class="welcome-greeting">{{ greeting }}, {{ data.teacher_name }}</h1>
+        <p class="welcome-date">{{ todayDate }}</p>
+      </div>
+      <div class="quick-actions">
+        @for (action of quickActions; track action.label) {
+          <button mat-raised-button color="primary" class="quick-action-btn" [routerLink]="action.route">
+            <mat-icon>{{ action.icon }}</mat-icon>
+            <span>{{ action.label }}</span>
+          </button>
+        }
+      </div>
+    </header>
+
+    <main class="dashboard-grid">
+      <section class="grid-column column-now">
+        <div class="section-header">
+          <mat-icon class="section-icon">schedule</mat-icon>
+          <h2 class="section-title">Today's Classes</h2>
+          @let slots = data.todays_classes;
+          @let done = slots.filter(s => effectiveStatus(s) === 'COMPLETED' || effectiveStatus(s) === 'ATTENDANCE_TAKEN');
+          <span class="section-badge">{{ done.length }}/{{ slots.length }}</span>
+        </div>
+        <mat-divider></mat-divider>
+
+        @if (slots.length === 0) {
+          <div class="empty-state">
+            <mat-icon>event_busy</mat-icon>
+            <p>No classes scheduled for today.</p>
+          </div>
+        } @else {
+          <div class="timeline">
+            @for (slot of slots; track slot.id) {
+              @let effective = effectiveStatus(slot);
+              <div
+                class="timeline-card"
+                [class.card-current]="effective === 'LIVE'"
+                [class.card-next]="effective === 'UPCOMING'"
+                [class.card-done]="effective === 'COMPLETED' || effective === 'ATTENDANCE_TAKEN'"
+              >
+                <div class="timeline-dot" [class.dot-current]="effective === 'LIVE'">
+                  @if (effective === 'COMPLETED' || effective === 'ATTENDANCE_TAKEN') {
+                    <mat-icon class="dot-icon-done">check_circle</mat-icon>
+                  }
+                </div>
+
+                <div class="timeline-body">
+                  <div class="timeline-top">
+                    <span class="slot-time">{{ slot.start_time }} – {{ slot.end_time }}</span>
+                    @if (effective === 'LIVE') {
+                      <span class="live-chip">
+                        <span class="live-dot"></span>
+                        LIVE
+                      </span>
+                    }
+                    @if (effective === 'ATTENDANCE_TAKEN') {
+                      <span class="attendance-chip done">Attendance Taken</span>
+                    }
+                  </div>
+
+                  <h3 class="slot-subject">{{ slot.subject }}</h3>
+                  <p class="slot-meta">
+                    <mat-icon>group</mat-icon> {{ slot.class_name }}
+                    <mat-icon>meeting_room</mat-icon> {{ slot.room }}
+                    <mat-icon>school</mat-icon> {{ slot.student_count }} students
+                  </p>
+                  @if (slot.topic) {
+                    <p class="slot-topic">{{ slot.topic }}</p>
+                  }
+
+                  <div class="slot-actions">
+                    @if (effective === 'LIVE') {
+                      <button mat-raised-button color="primary" size="small" class="mark-btn" (click)="markAttendance(slot.id)">
+                        <mat-icon>fact_check</mat-icon> Mark Attendance
+                      </button>
+                    }
+                    @if (effective === 'LIVE' || effective === 'UPCOMING') {
+                      <button mat-stroked-button size="small" routerLink="/teacher/classes">
+                        <mat-icon>launch</mat-icon> Open Class
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="grid-column column-work">
+        <div class="section-header">
+          <mat-icon class="section-icon">monitoring</mat-icon>
+          <h2 class="section-title">Academic Snapshot</h2>
+        </div>
+        <mat-divider></mat-divider>
+
+        @let k = data.kpis;
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <mat-icon class="kpi-icon" style="color: var(--mnara-primary)">trending_up</mat-icon>
+            <div class="kpi-value">{{ k.avg_performance.value }}%</div>
+            <div class="kpi-label">Avg Performance</div>
+            <div class="kpi-change" [class.positive]="k.avg_performance.trend.includes('+')">
+              <mat-icon>{{ k.avg_performance.trend.includes('+') ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+              {{ k.avg_performance.trend }}
+            </div>
+          </div>
+          <div class="kpi-card">
+            <mat-icon class="kpi-icon" style="color: var(--mnara-success)">task_alt</mat-icon>
+            <div class="kpi-value">{{ k.submission_rate.value }}%</div>
+            <div class="kpi-label">Submission Rate</div>
+            <div class="kpi-change" [class.positive]="k.submission_rate.trend.includes('+')">
+              <mat-icon>{{ k.submission_rate.trend.includes('+') ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+              {{ k.submission_rate.trend }}
+            </div>
+          </div>
+          <div class="kpi-card">
+            <mat-icon class="kpi-icon" style="color: var(--mnara-info)">how_to_reg</mat-icon>
+            <div class="kpi-value">{{ k.attendance_rate.value }}%</div>
+            <div class="kpi-label">Attendance Rate</div>
+            <div class="kpi-change" [class.positive]="k.attendance_rate.trend.includes('+')">
+              <mat-icon>{{ k.attendance_rate.trend.includes('+') ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+              {{ k.attendance_rate.trend }}
+            </div>
+          </div>
+          <div class="kpi-card">
+            <mat-icon class="kpi-icon" style="color: var(--mnara-warning)">pending_actions</mat-icon>
+            <div class="kpi-value">{{ k.pending_tasks.value }}</div>
+            <div class="kpi-label">Pending Tasks</div>
+            <div class="kpi-change" [class.positive]="k.pending_tasks.trend.includes('+')">
+              <mat-icon>{{ k.pending_tasks.trend.includes('+') ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+              {{ k.pending_tasks.trend }}
+            </div>
+          </div>
+        </div>
+
+        <div class="inbox-section">
+          <div class="section-header">
+            <mat-icon class="section-icon">inbox</mat-icon>
+            <h2 class="section-title">Actionable Inbox</h2>
+            @let urgentCount = data.actionable_inbox.filter(i => i.urgency === 'high').length;
+            @if (urgentCount) {
+              <span class="urgency-badge">{{ urgentCount }} urgent</span>
+            }
+          </div>
+          <mat-divider></mat-divider>
+
+          @if (data.actionable_inbox.length === 0) {
+            <div class="empty-state">
+              <mat-icon>check_circle</mat-icon>
+              <p>All caught up! No pending tasks.</p>
+            </div>
+          } @else {
+            @for (item of data.actionable_inbox; track item.id) {
+              <div class="inbox-item" [class.urgent]="item.urgency === 'high'">
+                <div class="inbox-left">
+                  <mat-icon
+                    class="inbox-type-icon"
+                    [style.color]="item.urgency === 'high' ? 'var(--mnara-danger)' : item.urgency === 'medium' ? 'var(--mnara-warning)' : 'var(--mnara-text-secondary)'"
+                  >rate_review</mat-icon>
+                  <div class="inbox-info">
+                    <span class="inbox-title">{{ item.title }}</span>
+                    <span class="inbox-meta">{{ item.subject }}</span>
+                  </div>
+                </div>
+                <div class="inbox-right">
+                  <span class="inbox-count">{{ item.completed }}/{{ item.total }}</span>
+                  <button mat-stroked-button color="primary" size="small" [routerLink]="item.action_route">
+                    {{ item.action_label }}
+                  </button>
+                </div>
+              </div>
+              @let pct = item.total > 0 ? (item.completed / item.total * 100) : 0;
+              <div class="progress-track">
+                <div class="progress-fill" [style.width.%]="pct"></div>
+              </div>
+            }
+          }
+        </div>
+      </section>
+
+      <section class="grid-column column-radar">
+        <div class="radar-block">
+          <div class="section-header">
+            <mat-icon class="section-icon" style="color: var(--mnara-danger)">radar</mat-icon>
+            <h2 class="section-title">At-Risk Radar</h2>
+            @let criticalCount = data.at_risk_radar.filter(s => s.trend === 'critical').length;
+            @if (criticalCount) {
+              <span class="critical-badge">{{ criticalCount }} critical</span>
+            }
+          </div>
+          <mat-divider></mat-divider>
+
+          @if (data.at_risk_radar.length === 0) {
+            <div class="empty-state">
+              <mat-icon>verified</mat-icon>
+              <p>No students at risk right now.</p>
+            </div>
+          } @else {
+            @for (student of data.at_risk_radar; track student.id) {
+              <div class="risk-card" [class.critical]="student.trend === 'critical'">
+                <div class="risk-header">
+                  <div class="risk-avatar">{{ student.student_name.charAt(0) }}{{ student.student_name.split(' ').pop()?.charAt(0) }}</div>
+                  <div class="risk-info">
+                    <span class="risk-name">{{ student.student_name }}</span>
+                    <span class="risk-class">{{ student.class_name }}</span>
+                  </div>
+                  <mat-icon
+                    class="risk-warning"
+                    [style.color]="student.trend === 'critical' ? 'var(--mnara-danger)' : 'var(--mnara-warning)'"
+                  >{{ student.trend === 'critical' ? 'error' : 'warning' }}</mat-icon>
+                </div>
+
+                <div class="risk-details">
+                  @if (student.risk_type === 'grade_drop' || student.risk_type === 'both') {
+                    <div class="risk-detail">
+                      <span class="detail-label">Grade</span>
+                      <span class="detail-value grade-drop">
+                        <span class="old-grade">{{ student.previous_grade }}</span>
+                        <mat-icon>arrow_forward</mat-icon>
+                        <span class="new-grade">{{ student.current_grade }}</span>
+                      </span>
+                    </div>
+                  }
+                  @if (student.risk_type === 'attendance' || student.risk_type === 'both') {
+                    <div class="risk-detail">
+                      <span class="detail-label">Attendance</span>
+                      <span class="detail-value missing">{{ student.missed_classes }} classes missed</span>
+                    </div>
+                  }
+                  @if (student.subject) {
+                    <div class="risk-detail">
+                      <span class="detail-label">Subject</span>
+                      <span class="detail-value">{{ student.subject }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="risk-actions">
+                  <button mat-stroked-button size="small" routerLink="/teacher/students/{{ student.id }}">
+                    <mat-icon>visibility</mat-icon> View Profile
+                  </button>
+                  <button mat-stroked-button size="small" routerLink="/teacher/messages">
+                    <mat-icon>mail</mat-icon> Contact
+                  </button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </section>
+    </main>
+  </div>
+}

@@ -65,6 +65,12 @@ import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
         loadChildren: () =>
           import('../features/rbac/rbac.routes').then((m) => m.rbacRoutes),
       },
+      // Timetable
+      {
+        path: 'timetable',
+        loadChildren: () =>
+          import('../features/timetable/timetable.routes').then((m) => m.timetableRoutes),
+      },
       // LMS Module
       {
         path: 'lms',
@@ -82,6 +88,12 @@ import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
         path: 'system-access',
         loadComponent: () =>
           import('../features/system-access/system-access.component').then((m) => m.SystemAccessComponent),
+      },
+      // Live Campus Monitor
+      {
+        path: 'monitoring',
+        loadChildren: () =>
+          import('../features/monitoring/monitoring.routes').then((m) => m.monitoringRoutes),
       },
       // Reports & Analytics
       {

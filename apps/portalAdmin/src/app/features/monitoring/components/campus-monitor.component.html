@@ -1,0 +1,85 @@
+<div class="monitor-page">
+  <header class="monitor-header">
+    <h1>
+      <mat-icon>security</mat-icon>
+      Live Campus Monitor
+      <span class="badge">SOC DASHBOARD</span>
+    </h1>
+    <span class="ticker-count">{{ liveEvents().length }} events</span>
+  </header>
+
+  @if (statsLoading() && !stats()) {
+    <div class="loading-state"><mat-icon>hourglass_top</mat-icon> Loading campus status...</div>
+  } @else if (stats(); as s) {
+    <div class="gauges">
+      <div class="gauge">
+        <div class="gauge-label">
+          <mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle">group</mat-icon>
+          Students on Campus
+        </div>
+        <div class="gauge-bar">
+          <div class="gauge-fill students" [style.width.%]="s.student_capacity ? (s.students_on_campus / s.student_capacity * 100) : 0"></div>
+        </div>
+        <div class="gauge-value">{{ s.students_on_campus | number }}</div>
+        <div class="gauge-sub">/ {{ s.student_capacity | number }} capacity</div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-label">
+          <mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle">badge</mat-icon>
+          Staff on Campus
+        </div>
+        <div class="gauge-bar">
+          <div class="gauge-fill staff" [style.width.%]="s.staff_capacity ? (s.staff_on_campus / s.staff_capacity * 100) : 0"></div>
+        </div>
+        <div class="gauge-value">{{ s.staff_on_campus | number }}</div>
+        <div class="gauge-sub">/ {{ s.staff_capacity | number }} capacity</div>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="ticker-panel">
+        <div class="ticker-header">
+          <span><mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle">timeline</mat-icon> Live Feed</span>
+          <span class="ticker-count">{{ liveEvents().length }} events</span>
+        </div>
+        <div class="ticker-list">
+          @if (liveEvents().length === 0) {
+            <div class="empty-ticker">
+              <mat-icon>radar</mat-icon>
+              <span>Waiting for live events...</span>
+            </div>
+          }
+          @for (ev of liveEvents(); track ev.id) {
+            <div class="ticker-row" [class]="roleClass(ev.role)">
+              <span class="ticker-time">{{ ev.timestamp }}</span>
+              <span class="ticker-role" [class]="roleClass(ev.role)">{{ ev.role }}</span>
+              <span class="ticker-name">{{ ev.name }}</span>
+              <span class="ticker-location">at {{ ev.location }}</span>
+              @if (ev.direction) {
+                <span class="ticker-direction" [class.in]="ev.direction === 'IN'" [class.out]="ev.direction === 'OUT'">{{ ev.direction }}</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="zones-panel">
+        <div class="zones-header">
+          <mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle">map</mat-icon>
+          Active Zones
+        </div>
+        <div class="zones-grid">
+          @for (zone of s.active_zones; track zone.name) {
+            <div class="zone-card">
+              <div class="zone-name">{{ zone.name }}</div>
+              <div class="zone-bar">
+                <div class="zone-fill" [style.width.%]="zone.capacity ? (zone.present / zone.capacity * 100) : 0"></div>
+              </div>
+              <div class="zone-stats"><strong>{{ zone.present }}</strong> / {{ zone.capacity }} Present</div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

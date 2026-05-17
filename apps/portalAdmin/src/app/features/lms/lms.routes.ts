@@ -11,6 +11,10 @@ export const lmsRoutes: Routes = [
     loadComponent: () => import('./components/scheduling-hub/scheduling-hub.component').then(m => m.SchedulingHubComponent)
   },
   {
+    path: 'assignments',
+    loadComponent: () => import('./components/assignments-list/assignments-list.component').then(m => m.AssignmentsListComponent)
+  },
+  {
     path: 'examinations',
     loadComponent: () => import('./components/examinations-hub/examinations-hub.component').then(m => m.ExaminationsHubComponent)
   },

@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { FormsModule } from '@angular/forms';
+import { TeacherSettingsService } from '../../core/services/teacher-settings.service';
 
 @Component({
   selector: 'app-teacher-settings',
@@ -202,12 +203,16 @@ import { FormsModule } from '@angular/forms';
   `,
 })
 export class SettingsComponent {
-  profile = signal({
-    name: 'Mr. Johnson Kamau',
-    email: 'johnson.kamau@mnaraschool.ac.ke',
-    phone: '+254 712 345 678',
-    department: 'Mathematics & Science',
-  });
+  private settingsService = inject(TeacherSettingsService);
+
+  readonly profile = computed(() =>
+    this.settingsService.profile() ?? {
+      name: 'Loading...',
+      email: '',
+      phone: '',
+      department: '',
+    }
+  );
 
   passwordModel = {
     current: '',
@@ -223,11 +228,19 @@ export class SettingsComponent {
     gradeAlerts: true,
   };
 
+  constructor() {
+    this.settingsService.fetchProfile();
+  }
+
   editProfile(): void {
     console.log('Edit profile clicked');
   }
 
   updatePassword(): void {
-    console.log('Password update requested');
+    this.settingsService.changePassword({
+      current_password: this.passwordModel.current,
+      new_password: this.passwordModel.newPassword,
+      confirm_password: this.passwordModel.confirm,
+    });
   }
 }

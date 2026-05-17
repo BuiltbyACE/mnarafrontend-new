@@ -1,5 +1,5 @@
-import { Component, signal, computed } from '@angular/core';
-import { DatePipe, NgClass } from '@angular/common';
+import { Component, signal, computed, inject } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,27 +7,13 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
-type BehaviourType = 'COMMENDATION' | 'INCIDENT';
-type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-type Status = 'OPEN' | 'RESOLVED' | 'FOLLOW_UP';
-
-interface BehaviourRecord {
-  id: string;
-  studentName: string;
-  type: BehaviourType;
-  severity: Severity;
-  description: string;
-  date: string;
-  status: Status;
-  reportedBy: string;
-}
+import { TeacherBehaviourService, BehaviourRecordData } from '../../core/services/teacher-behaviour.service';
 
 @Component({
   selector: 'app-teacher-behaviour',
   standalone: true,
   imports: [
-    DatePipe, NgClass,
+    DatePipe,
     MatCardModule, MatIconModule, MatButtonModule, MatChipsModule,
     MatTableModule, MatTabsModule, MatTooltipModule
   ],
@@ -365,22 +351,14 @@ interface BehaviourRecord {
   `]
 })
 export class BehaviourComponent {
+  private behaviourService = inject(TeacherBehaviourService);
+
   readonly displayedColumns = ['studentName', 'type', 'severity', 'description', 'date', 'status', 'reportedBy'];
 
   readonly activeTabIndex = signal(0);
 
-  readonly allRecords = signal<BehaviourRecord[]>([
-    { id: 'B1', studentName: 'Amara Okafor', type: 'COMMENDATION', severity: 'LOW', description: 'Excellent participation in class debate', date: '2026-05-12', status: 'RESOLVED', reportedBy: 'Mr. Johnson' },
-    { id: 'B2', studentName: 'Brian Kamau', type: 'INCIDENT', severity: 'MEDIUM', description: 'Disruptive behaviour during Mathematics lesson', date: '2026-05-10', status: 'OPEN', reportedBy: 'Mrs. Wanjiku' },
-    { id: 'B3', studentName: 'Grace Nyambura', type: 'COMMENDATION', severity: 'LOW', description: 'Volunteered to tutor struggling classmates after school', date: '2026-05-08', status: 'RESOLVED', reportedBy: 'Mr. Johnson' },
-    { id: 'B4', studentName: 'Lawrence Otieno', type: 'INCIDENT', severity: 'HIGH', description: 'Verbal altercation with a fellow student during break', date: '2026-05-07', status: 'FOLLOW_UP', reportedBy: 'Mrs. Wanjiku' },
-    { id: 'B5', studentName: 'Mary Wambui', type: 'COMMENDATION', severity: 'LOW', description: 'Won first place in the school science fair', date: '2026-05-05', status: 'RESOLVED', reportedBy: 'Mr. Kamau' },
-    { id: 'B6', studentName: 'James Kiprop', type: 'INCIDENT', severity: 'CRITICAL', description: 'Bullying incident reported by multiple students', date: '2026-05-04', status: 'OPEN', reportedBy: 'Mr. Johnson' },
-    { id: 'B7', studentName: 'Esther Akinyi', type: 'COMMENDATION', severity: 'LOW', description: 'Consistently submits homework on time with high quality', date: '2026-05-02', status: 'RESOLVED', reportedBy: 'Mrs. Wanjiku' },
-    { id: 'B8', studentName: 'Hassan Ali', type: 'INCIDENT', severity: 'LOW', description: 'Late to class three times this week without valid reason', date: '2026-04-30', status: 'FOLLOW_UP', reportedBy: 'Mr. Kamau' },
-    { id: 'B9', studentName: 'Katherine Njoki', type: 'COMMENDATION', severity: 'LOW', description: 'Outstanding leadership as class prefect during sports day', date: '2026-04-28', status: 'RESOLVED', reportedBy: 'Mr. Johnson' },
-    { id: 'B10', studentName: 'Nicholas Mutua', type: 'INCIDENT', severity: 'MEDIUM', description: 'Caught using mobile phone during examination', date: '2026-04-25', status: 'OPEN', reportedBy: 'Mrs. Wanjiku' }
-  ]);
+  readonly allRecords = this.behaviourService.records;
+  readonly stats = this.behaviourService.stats;
 
   readonly totalRecords = computed(() => this.allRecords().length);
   readonly commendationsCount = computed(() => this.allRecords().filter(r => r.type === 'COMMENDATION').length);
@@ -393,6 +371,11 @@ export class BehaviourComponent {
     if (tab === 2) return this.allRecords().filter(r => r.type === 'INCIDENT');
     return this.allRecords();
   });
+
+  constructor() {
+    this.behaviourService.fetchRecords();
+    this.behaviourService.fetchStats();
+  }
 
   onTabChange(index: number) {
     this.activeTabIndex.set(index);
