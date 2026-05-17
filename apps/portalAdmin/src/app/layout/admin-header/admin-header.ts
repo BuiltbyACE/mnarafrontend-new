@@ -358,6 +358,7 @@ export class AdminHeaderComponent implements OnInit, OnDestroy {
           console.error('Search failed', err);
         }
       });
+
   }
 
   ngOnDestroy() {

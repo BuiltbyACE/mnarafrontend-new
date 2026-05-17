@@ -1,0 +1,34 @@
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { TeacherSidebarComponent } from './teacher-sidebar.component';
+import { TeacherNavbarComponent } from './teacher-navbar.component';
+import { TeacherFooterComponent } from './teacher-footer.component';
+
+@Component({
+  selector: 'app-teacher-layout',
+  imports: [RouterOutlet, TeacherSidebarComponent, TeacherNavbarComponent, TeacherFooterComponent],
+  template: `
+    <div class="layout">
+      <app-teacher-sidebar class="sidebar" />
+      <div class="main-area">
+        <app-teacher-navbar />
+        <div class="content-wrapper">
+          <main class="content page-fade-in">
+            <router-outlet />
+          </main>
+          <app-teacher-footer />
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    :host { display: block; height: 100vh; }
+    .layout { display: flex; height: 100vh; }
+    .sidebar { width: 260px; flex-shrink: 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; }
+    .main-area { flex: 1; margin-left: 260px; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .content-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .content { flex: 1; overflow-y: auto; background: #f8fafc; padding: 32px; }
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class TeacherLayoutComponent {}
