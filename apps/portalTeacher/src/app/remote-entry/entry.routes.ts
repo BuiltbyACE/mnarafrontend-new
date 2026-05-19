@@ -20,6 +20,11 @@ export const remoteRoutes: Route[] = [
           import('../features/classes/components/classes-list.component').then(m => m.ClassesListComponent),
       },
       {
+        path: 'workspace/:id',
+        loadComponent: () =>
+          import('../features/classes/components/workspace-detail.component').then(m => m.WorkspaceDetailComponent),
+      },
+      {
         path: 'timetable',
         loadComponent: () =>
           import('../features/timetable/timetable.component').then(m => m.TimetableComponent),

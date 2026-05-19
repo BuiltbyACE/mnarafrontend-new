@@ -1,0 +1,237 @@
+<div class="command-canvas">
+  <header class="canvas-header">
+    <div class="header-left">
+      <h1 class="canvas-title">School Calendar</h1>
+      <p class="canvas-subtitle">Annual Academic Calendar — Click any date to paint an event</p>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="goToToday()" class="today-btn">
+        <mat-icon>today</mat-icon>
+        Today
+      </button>
+    </div>
+  </header>
+
+  <div class="canvas-layout">
+    <mat-card class="canvas-grid-card" appearance="outlined">
+      <mat-card-content>
+        <div class="month-nav">
+          <button mat-icon-button (click)="prevMonth()" class="nav-btn">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <h2 class="month-label">{{ monthLabel() }}</h2>
+          <button mat-icon-button (click)="nextMonth()" class="nav-btn">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+
+        <div class="cal-grid-wrapper">
+          <div class="cal-weekday-header">
+            @for (day of weekDays; track day) {
+              <span class="cal-weekday-cell">{{ day }}</span>
+            }
+          </div>
+
+          <div class="cal-days-grid">
+            @for (day of calendarDays(); track $index) {
+              @if (day.day === null) {
+                <div class="cal-day-cell cal-day-cell--empty">
+                  <span class="cal-day-number"></span>
+                </div>
+              } @else {
+                @let highlight = getHighlightEvent(day);
+                @let dotEvents = getDotEvents(day);
+                @let overflowCount = getOverflowCount(day);
+
+                <div
+                  class="cal-day-cell"
+                  [class.cal-day-cell--today]="day.isToday"
+                  [class.cal-day-cell--highlighted]="highlight !== null"
+                  [style.background-color]="highlight ? getCellBgStyle(highlight)['background-color'] : ''"
+                  [style.border-color]="highlight ? getCellBgStyle(highlight)['border-color'] : ''"
+                  [style.border-width]="highlight ? '2px' : ''"
+                  (click)="onDayClicked(day)"
+                >
+                  <span class="cal-day-number" [class.cal-day-number--today]="day.isToday">
+                    {{ day.day }}
+                  </span>
+
+                  @if (highlight) {
+                    <span class="cal-highlight-bar" [style.background-color]="highlight.hexColor" [title]="highlight.title"></span>
+                  }
+
+                  @if (dotEvents.length > 0) {
+                    <div class="cal-event-dots">
+                      @for (evt of dotEvents; track evt.id) {
+                        <span
+                          class="cal-event-dot"
+                          [style.background-color]="evt.hexColor"
+                          [title]="evt.title + (evt.time ? ' · ' + evt.time : '')"
+                        ></span>
+                      }
+                      @if (overflowCount > 0) {
+                        <span class="cal-overflow-badge">+{{ overflowCount }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="legend-row">
+          <span class="legend-item"><span class="legend-dot" style="background:#2563eb"></span>Term</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Holiday</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#10b981"></span>SDL</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Exam</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#8b5cf6"></span>Meeting</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  @if (showPanel()) {
+    <div class="panel-overlay" (click)="closePanel()"></div>
+
+    <div class="event-panel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <mat-icon class="panel-title-icon">edit_calendar</mat-icon>
+          <h2 class="panel-title">Paint Event</h2>
+        </div>
+        <button mat-icon-button (click)="closePanel()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="eventForm" (ngSubmit)="submitEvent()" class="event-form">
+        <div class="form-section">
+          <label class="form-label">Event Title *</label>
+          <mat-form-field appearance="outline" class="full-width">
+            <input matInput formControlName="title" placeholder="e.g. Mid-Term Break" />
+            @if (eventForm.get('title')?.hasError('required')) {
+              <mat-error>Title is required</mat-error>
+            }
+            @if (eventForm.get('title')?.hasError('minlength')) {
+              <mat-error>At least 3 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">Event Type *</label>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-select formControlName="event_type" (selectionChange)="onTypeChange($event.value)">
+              <mat-option value="TERM">Term Date</mat-option>
+              <mat-option value="HOLIDAY">Holiday / Break</mat-option>
+              <mat-option value="SDL">SDL Week</mat-option>
+              <mat-option value="EXAM">Exam Period</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <div class="form-section half">
+            <label class="form-label">Start Date *</label>
+            <mat-form-field appearance="outline" class="full-width">
+              <input matInput [matDatepicker]="startPicker" formControlName="start_date" />
+              <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+          <div class="form-section half">
+            <label class="form-label">End Date *</label>
+            <mat-form-field appearance="outline" class="full-width">
+              <input matInput [matDatepicker]="endPicker" formControlName="end_date" />
+              <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">Visual Style</label>
+          <div class="style-options">
+            <label class="style-option" [class.active]="eventForm.get('isFullDayHighlight')?.value === true">
+              <input type="radio" formControlName="isFullDayHighlight" [value]="true" />
+              <div class="style-preview style-preview--highlight">
+                <span class="preview-cell highlight-cell"></span>
+              </div>
+              <span class="style-label">Highlight Full Day</span>
+            </label>
+            <label class="style-option" [class.active]="eventForm.get('isFullDayHighlight')?.value === false">
+              <input type="radio" formControlName="isFullDayHighlight" [value]="false" />
+              <div class="style-preview style-preview--dot">
+                <span class="preview-cell dot-cell"></span>
+              </div>
+              <span class="style-label">Small Dot</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">Brand Color</label>
+          <div class="color-picker-row">
+            @for (color of presetColors; track color.hex) {
+              <button
+                type="button"
+                class="color-swatch"
+                [class.selected]="eventForm.get('hexColor')?.value === color.hex"
+                [style.background-color]="color.hex"
+                [title]="color.label"
+                (click)="selectColor(color.hex)"
+              >
+                @if (eventForm.get('hexColor')?.value === color.hex) {
+                  <mat-icon class="swatch-check">check</mat-icon>
+                }
+              </button>
+            }
+          </div>
+          <div class="custom-color-row">
+            <span class="custom-color-label">Custom:</span>
+            <input
+              type="color"
+              class="color-input"
+              formControlName="hexColor"
+              [value]="eventForm.get('hexColor')?.value"
+            />
+            <span class="color-value">{{ eventForm.get('hexColor')?.value }}</span>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <mat-slide-toggle formControlName="is_non_learning_day" color="warn">
+            Non-Learning Day
+          </mat-slide-toggle>
+          <span class="toggle-hint">No classes or attendance required</span>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">Description (Optional)</label>
+          <mat-form-field appearance="outline" class="full-width">
+            <textarea matInput formControlName="description" rows="2" placeholder="Additional notes..."></textarea>
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <button mat-stroked-button type="button" (click)="closePanel()">Cancel</button>
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="eventForm.invalid || isSubmitting()"
+            class="submit-btn"
+          >
+            @if (isSubmitting()) {
+              <mat-spinner diameter="18"></mat-spinner>
+            } @else {
+              <mat-icon>save</mat-icon>
+            }
+            Save Event
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+</div>

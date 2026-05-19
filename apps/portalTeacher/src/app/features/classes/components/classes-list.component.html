@@ -4,27 +4,29 @@
       <h1 class="page-title">My Classes</h1>
       <p class="page-subtitle">Select a workspace to manage assignments, resources, and grades.</p>
     </div>
-    <div class="header-right">
-      <span class="stat-badge">
-        <mat-icon>school</mat-icon>
-        {{ workspaces().length }} classes
-      </span>
-      <span class="stat-badge">
-        <mat-icon>people</mat-icon>
-        {{ totalStudents() }} students
-      </span>
-    </div>
+    @if (!isLoading() && !errorMessage()) {
+      <div class="header-right">
+        <span class="stat-badge">
+          <mat-icon>school</mat-icon>
+          {{ workspaces().length }} classes
+        </span>
+        <span class="stat-badge">
+          <mat-icon>people</mat-icon>
+          {{ totalStudents() }} students
+        </span>
+      </div>
+    }
   </header>
 
-  @if (isLoading() && workspaces().length === 0) {
+  @if (isLoading()) {
     <div class="loading-state">
       <mat-icon class="spin">sync</mat-icon>
       <p>Loading your workspaces&hellip;</p>
     </div>
-  } @else if (hasError() && workspaces().length === 0) {
+  } @else if (errorMessage()) {
     <div class="error-state">
       <mat-icon>error_outline</mat-icon>
-      <p>Could not load workspaces. Try again later.</p>
+      <p>{{ errorMessage() }}</p>
     </div>
   } @else {
     <div class="workspace-grid">
@@ -45,15 +47,13 @@
           </div>
 
           <div class="card-stats-row">
-            @if (ws.student_count !== undefined) {
-              <span class="stat-pill">
-                <mat-icon>people</mat-icon>
-                {{ ws.student_count }} enrolled
-              </span>
-            }
-            <span class="stat-pill pending">
+            <span class="stat-pill">
+              <mat-icon>people</mat-icon>
+              {{ ws.student_count }} Students
+            </span>
+            <span class="stat-pill" [class.pending]="ws.pending_tasks > 0">
               <mat-icon>rate_review</mat-icon>
-              Pending Grading
+              {{ ws.pending_tasks }} Pending
             </span>
           </div>
 
@@ -66,6 +66,11 @@
               <mat-icon>arrow_forward</mat-icon>
             </button>
           </div>
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <mat-icon>school</mat-icon>
+          <p>You are not currently assigned as a Primary or Co-Teacher to any active classes.</p>
         </div>
       }
     </div>

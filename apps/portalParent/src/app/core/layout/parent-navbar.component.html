@@ -1,0 +1,71 @@
+<header class="navbar">
+  <div class="navbar-left">
+    <span class="greeting">{{ greeting }}</span>
+
+    <div class="sibling-switcher">
+      <span class="switcher-label">Viewing:</span>
+      <mat-select
+        [value]="siblingState.activeSiblingId()"
+        (selectionChange)="selectSibling($event.value)"
+        class="sibling-select"
+      >
+        @for (sibling of siblingState.siblings(); track sibling.id) {
+          <mat-option [value]="sibling.id">
+            <span class="sibling-option">
+              <span class="sibling-avatar">{{ sibling.initials }}</span>
+              <span class="sibling-info">
+                <span class="sibling-name">{{ sibling.name }}</span>
+                <span class="sibling-form">{{ sibling.form }}</span>
+              </span>
+            </span>
+          </mat-option>
+        }
+      </mat-select>
+    </div>
+  </div>
+
+  <div class="navbar-right">
+    <button class="icon-btn" aria-label="Notifications">
+      <mat-icon>notifications</mat-icon>
+    </button>
+
+    <button class="icon-btn" aria-label="Messages">
+      <mat-icon>chat</mat-icon>
+    </button>
+
+    <div class="divider"></div>
+
+    <button class="user-block" [matMenuTriggerFor]="userMenu" aria-label="User menu">
+      <div class="avatar">{{ initials }}</div>
+      <div class="user-info">
+        <span class="user-name">{{ fullName() }}</span>
+        <span class="user-meta">Parent Portal</span>
+      </div>
+      <mat-icon class="chevron">expand_more</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu" xPosition="before">
+      <div class="menu-header">
+        <div class="menu-avatar">{{ initials }}</div>
+        <div class="menu-details">
+          <span class="menu-name">{{ fullName() }}</span>
+          <span class="menu-email">{{ email }}</span>
+        </div>
+      </div>
+      <mat-divider />
+      <button mat-menu-item (click)="goToProfile()">
+        <mat-icon>person</mat-icon>
+        <span>My Profile</span>
+      </button>
+      <button mat-menu-item>
+        <mat-icon>settings</mat-icon>
+        <span>Settings</span>
+      </button>
+      <mat-divider />
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
+  </div>
+</header>

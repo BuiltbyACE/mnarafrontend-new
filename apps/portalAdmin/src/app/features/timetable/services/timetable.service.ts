@@ -4,12 +4,29 @@ import { finalize } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 
 export interface TimetableEntry {
-  subject: string;
-  classroom: string;
-  teacher?: string;
+  id?: number;
+  subject_name: string;
+  classroom_name: string;
+  teacher_name: string;
+  time: string;
+  duration: number;
+  day: string;
+  color?: string;
+}
+
+export interface TimetableSlot {
+  id: number;
+  subject_name: string;
+  classroom_name: string;
+  teacher_name: string;
+  time: string;
+  end_time: string;
+  day: string;
+  color: string;
 }
 
 export type Weekday = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
+export type DayCode = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
 
 export interface TimetableData {
   [day: string]: { [time: string]: TimetableEntry };
@@ -21,6 +38,8 @@ export class TimetableService {
   readonly data = signal<TimetableData | null>(null);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly masterSlots = signal<TimetableSlot[]>([]);
+  readonly masterLoading = signal(false);
 
   fetchTimetable(): void {
     this.isLoading.set(true);
@@ -31,5 +50,20 @@ export class TimetableService {
         next: (res) => this.data.set(res),
         error: () => this.error.set('Failed to load timetable'),
       });
+  }
+
+  fetchMasterTimetable(filterType: 'teacher' | 'classroom', filterId: number): void {
+    this.masterLoading.set(true);
+    const params = `${filterType}_id=${filterId}`;
+    this.http.get<TimetableSlot[]>(getApiUrl(`/lms/timetable/master/?${params}`))
+      .pipe(finalize(() => this.masterLoading.set(false)))
+      .subscribe({
+        next: (slots) => this.masterSlots.set(slots),
+        error: () => this.masterSlots.set([]),
+      });
+  }
+
+  clearMasterTimetable(): void {
+    this.masterSlots.set([]);
   }
 }

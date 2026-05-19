@@ -5,3 +5,4 @@
 
 export * from './lib/auth.models';
 export * from './lib/portal-types';
+export * from './lib/calendar.models';

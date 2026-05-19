@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { DatePipe, LowerCasePipe, NgClass, NgStyle } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -202,7 +202,7 @@ import { TeacherCalendarService } from '../../core/services/teacher-calendar.ser
     .type-chip.type-deadline { background: #fef3c7 !important; color: #92400e !important; }
   `,
 })
-export class CalendarComponent {
+export class CalendarComponent implements OnInit {
   private calendarService = inject(TeacherCalendarService);
 
   weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -210,6 +210,10 @@ export class CalendarComponent {
   currentDate = this.calendarService.currentDate;
   calendarDays = this.calendarService.calendarDays;
   upcomingEvents = this.calendarService.upcomingEvents;
+
+  ngOnInit(): void {
+    this.calendarService.fetchCurrentMonth();
+  }
 
   isToday(day: number): boolean {
     return this.calendarService.isToday(day);
@@ -221,9 +225,11 @@ export class CalendarComponent {
 
   previousMonth(): void {
     this.calendarService.previousMonth();
+    this.calendarService.fetchCurrentMonth();
   }
 
   nextMonth(): void {
     this.calendarService.nextMonth();
+    this.calendarService.fetchCurrentMonth();
   }
 }

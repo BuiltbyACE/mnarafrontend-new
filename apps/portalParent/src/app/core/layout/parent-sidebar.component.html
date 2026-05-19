@@ -1,0 +1,29 @@
+<aside class="sidebar">
+  <div class="logo-section">
+    <mat-icon class="logo-icon">family_restroom</mat-icon>
+    <div class="logo-text-group">
+      <span class="logo-text">Mnara ERP</span>
+      <span class="logo-sub">Parent Portal</span>
+    </div>
+  </div>
+
+  <nav class="nav-section" aria-label="Parent navigation">
+    @for (item of navItems; track item.label) {
+      <a
+        class="nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+      >
+        <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+        <span class="nav-label">{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="support-section">
+      <mat-icon class="support-icon">support_agent</mat-icon>
+      <span class="support-text">Need help? Contact school support</span>
+    </div>
+  </div>
+</aside>

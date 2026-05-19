@@ -1,0 +1,222 @@
+<div class="workspace-silo">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <mat-icon class="spin">sync</mat-icon>
+      <p>Loading workspace&hellip;</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="error-state">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ errorMessage() }}</p>
+    </div>
+  } @else if (workspace(); as ws) {
+    <div class="hero-banner">
+      <div class="hero-content">
+        <div class="hero-badges">
+          <span class="hero-badge">
+            <mat-icon>school</mat-icon>
+            {{ ws.classroom_name }}
+          </span>
+          @if (ws.term_name) {
+            <span class="hero-badge">
+              <mat-icon>date_range</mat-icon>
+              {{ ws.term_name }}
+            </span>
+          }
+        </div>
+        <h1 class="hero-title">{{ ws.subject_name }}</h1>
+        <p class="hero-subtitle">
+          {{ ws.student_count }} Students &bull; {{ ws.pending_tasks }} Pending Tasks
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button mat-stroked-button class="hero-action-btn">
+          <mat-icon>settings</mat-icon>
+          Settings
+        </button>
+      </div>
+    </div>
+
+    <nav class="ws-tab-bar">
+      <button class="ws-tab" [class.active]="activeTab() === 'assignments'" (click)="setActiveTab('assignments')">
+        <mat-icon>assignment</mat-icon>
+        Assignments
+      </button>
+      <button class="ws-tab" [class.active]="activeTab() === 'resources'" (click)="setActiveTab('resources')">
+        <mat-icon>folder_open</mat-icon>
+        Lesson Resources
+      </button>
+      <button class="ws-tab" [class.active]="activeTab() === 'gradebook'" (click)="setActiveTab('gradebook')">
+        <mat-icon>grade</mat-icon>
+        Gradebook
+      </button>
+      <button class="ws-tab" [class.active]="activeTab() === 'attendance'" (click)="setActiveTab('attendance')">
+        <mat-icon>how_to_reg</mat-icon>
+        Attendance
+      </button>
+      <button class="ws-tab" [class.active]="activeTab() === 'roster'" (click)="setActiveTab('roster')">
+        <mat-icon>people</mat-icon>
+        Student Roster
+      </button>
+    </nav>
+
+    <div class="ws-content">
+      @if (activeTab() === 'assignments') {
+        @if (isTabLoading()) {
+          <div class="tab-loading">
+            <mat-icon class="spin">sync</mat-icon>
+            <p>Loading assignments&hellip;</p>
+          </div>
+        } @else if (assignments().length === 0) {
+          <div class="empty-state-card">
+            <mat-icon class="empty-icon">assignment_turned_in</mat-icon>
+            <h3>No assignments yet</h3>
+            <p>You have not created any assignments for this class.</p>
+            <button mat-flat-button color="primary" class="create-btn">
+              <mat-icon>add</mat-icon>
+              Create Assignment
+            </button>
+          </div>
+        } @else {
+          <div class="assignments-table-card">
+            <div class="table-header">
+              <h2 class="table-title">Assignments</h2>
+              <button mat-flat-button color="primary" class="create-btn">
+                <mat-icon>add</mat-icon>
+                New Assignment
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="assignments-table">
+                <thead>
+                  <tr>
+                    <th>Task Name</th>
+                    <th>Due Date</th>
+                    <th>Submissions</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (assignment of assignments(); track assignment.id) {
+                    <tr>
+                      <td>
+                        <div class="task-cell">
+                          <mat-icon class="task-icon">assignment</mat-icon>
+                          <span class="task-title">{{ assignment.title }}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="due-date" [class.overdue]="isOverdue(assignment.due_date)" [class.due-soon]="isDueSoon(assignment.due_date)">
+                          {{ formatDueDate(assignment.due_date) }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="submission-count">
+                          {{ assignment.submission_count }} / {{ ws.student_count }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="status-pill" [class]="getStatusClass(assignment.status)">
+                          {{ assignment.status | titlecase }}
+                        </span>
+                      </td>
+                      <td>
+                        <div class="action-buttons">
+                          <button mat-icon-button class="action-btn view-btn" title="View Submissions">
+                            <mat-icon>visibility</mat-icon>
+                          </button>
+                          <button mat-icon-button class="action-btn edit-btn" title="Edit">
+                            <mat-icon>edit</mat-icon>
+                          </button>
+                          <button mat-icon-button class="action-btn more-btn" title="More">
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      }
+
+      @if (activeTab() === 'resources') {
+        @if (isTabLoading()) {
+          <div class="tab-loading">
+            <mat-icon class="spin">sync</mat-icon>
+            <p>Loading resources&hellip;</p>
+          </div>
+        } @else if (resources().length === 0) {
+          <div class="empty-state-card">
+            <mat-icon class="empty-icon">folder_open</mat-icon>
+            <h3>No resources uploaded</h3>
+            <p>Upload lesson plans, slides, or reference materials.</p>
+            <button mat-flat-button color="primary" class="create-btn">
+              <mat-icon>upload</mat-icon>
+              Upload Resource
+            </button>
+          </div>
+        } @else {
+          <div class="resources-grid">
+            <div class="resources-header">
+              <h2 class="table-title">Lesson Resources</h2>
+              <button mat-flat-button color="primary" class="create-btn">
+                <mat-icon>add</mat-icon>
+                Add Resource
+              </button>
+            </div>
+            <div class="resource-cards">
+              @for (resource of resources(); track resource.id) {
+                <div class="resource-card">
+                  <div class="resource-icon-wrapper">
+                    <mat-icon class="resource-icon">{{ getFileIcon(resource.file_type) }}</mat-icon>
+                  </div>
+                  <div class="resource-info">
+                    <h4 class="resource-title">{{ resource.title }}</h4>
+                    <span class="resource-meta">{{ resource.file_type | titlecase }} &bull; {{ resource.uploaded_at | date:'d MMM y' }}</span>
+                  </div>
+                  <div class="resource-actions">
+                    <button mat-icon-button class="action-btn view-btn" title="View">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button mat-icon-button class="action-btn edit-btn" title="Edit">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      @if (activeTab() === 'gradebook') {
+        <div class="placeholder-card">
+          <mat-icon>grade</mat-icon>
+          <h3>Gradebook</h3>
+          <p>Gradebook view will load here.</p>
+        </div>
+      }
+
+      @if (activeTab() === 'attendance') {
+        <div class="placeholder-card">
+          <mat-icon>how_to_reg</mat-icon>
+          <h3>Attendance</h3>
+          <p>Attendance tracking will load here.</p>
+        </div>
+      }
+
+      @if (activeTab() === 'roster') {
+        <div class="placeholder-card">
+          <mat-icon>people</mat-icon>
+          <h3>Student Roster</h3>
+          <p>Student list will load here.</p>
+        </div>
+      }
+    </div>
+  }
+</div>

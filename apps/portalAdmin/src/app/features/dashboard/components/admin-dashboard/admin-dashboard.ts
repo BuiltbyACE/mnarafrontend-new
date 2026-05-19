@@ -1,15 +1,22 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  inject,
+  OnInit,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { DatePipe, DecimalPipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatDividerModule } from '@angular/material/divider';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
-import { DashboardService, AdminDashboardData } from '../../services/dashboard.service';
+import { PrincipalDashboardService, PrincipalDashboardPayload } from '../../services/principal-dashboard.service';
 
 Chart.register(...registerables);
 
@@ -17,710 +24,662 @@ Chart.register(...registerables);
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [
-    CommonModule,
     RouterLink,
+    DatePipe,
+    DecimalPipe,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
+    MatDividerModule,
     BaseChartDirective,
   ],
   template: `
-    <div class="dashboard-container">
-      @if (isLoading()) {
-        <div class="loading-spinner">
-          <mat-spinner diameter="40"></mat-spinner>
-          <span>Loading dashboard...</span>
-        </div>
-      } @else {
-        <div class="hero-section">
-          <div class="hero-content">
-            <h1>Welcome back, {{ dashboardData()?.adminName || 'Admin' }}!</h1>
-            <p>{{ currentDate() }}</p>
+    @if (isLoading()) {
+      <div class="p-10 text-center">
+        <mat-spinner diameter="48"></mat-spinner>
+        <span class="mt-4 block text-gray-500">Loading Command Center...</span>
+      </div>
+    } @else if (dashboardData(); as data) {
+      <div class="command-center">
+        <!-- Header -->
+        <header class="command-header">
+          <div class="header-left">
+            <h1 class="header-title">Principal's Command Center</h1>
+            <p class="header-subtitle">Overview of Institutional Health</p>
           </div>
-        </div>
+          <div class="header-right">
+            <div class="last-refresh">
+              <mat-icon class="refresh-icon">update</mat-icon>
+              <span>Last refresh: {{ data.lastRefresh | date:'short' }}</span>
+            </div>
+          </div>
+        </header>
 
-        <div class="grid-12 stats-row">
-          @for (card of statCards(); track card.label) {
-            <mat-card class="grid-col-3 stat-card">
-              <div class="stat-icon" [class]="card.color">
-                <mat-icon>{{ card.icon }}</mat-icon>
-              </div>
-              <div class="stat-body">
-                <span class="stat-label">{{ card.label }}</span>
-                <span class="stat-value">{{ card.value }}</span>
-                <div class="stat-delta" [class.positive]="card.deltaPositive" [class.negative]="!card.deltaPositive">
-                  <mat-icon>{{ card.deltaPositive ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
-                  {{ card.delta >= 0 ? '+' : '' }}{{ card.delta }}%
+        <!-- The 4 Pillars - KPI Cards -->
+        <section class="kpi-row">
+          @for (card of kpiCards(); track card.label) {
+            <mat-card class="kpi-card" [class]="card.colorClass">
+              <mat-card-content>
+                <div class="kpi-icon">
+                  <mat-icon>{{ card.icon }}</mat-icon>
                 </div>
-              </div>
+                <div class="kpi-body">
+                  <span class="kpi-label">{{ card.label }}</span>
+                  <span class="kpi-value">{{ card.value }}</span>
+                  <span class="kpi-change" [class.positive]="card.changeType === 'positive'" [class.negative]="card.changeType === 'negative'">
+                    {{ card.change }}
+                  </span>
+                </div>
+              </mat-card-content>
             </mat-card>
           }
-        </div>
+        </section>
 
-        <div class="grid-12 charts-row">
-          <mat-card class="grid-col-4 fee-card">
+        <!-- Middle Grid - Financial Pulse + Action Queue -->
+        <section class="middle-grid">
+          <mat-card class="financial-card">
             <mat-card-header>
-              <mat-card-title>Fee Collection</mat-card-title>
+              <mat-icon mat-card-avatar class="section-icon">pie_chart</mat-icon>
+              <mat-card-title>Term Revenue Breakdown</mat-card-title>
+              <mat-card-subtitle>Financial health snapshot</mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
-              <div class="chart-container">
-                @if (feeChartConfig(); as config) {
-                  <canvas baseChart
-                    [type]="config.type"
-                    [data]="config.data"
-                    [options]="config.options">
-                  </canvas>
-                }
-              </div>
-              <div class="fee-summary">
-                <div class="fee-item">
-                  <span class="fee-dot collected"></span>
-                  <span>Collected: {{ dashboardData()?.feeCollected || 0 }}</span>
+              <div class="doughnut-wrapper">
+                <div class="chart-container">
+                  @if (feeChartConfig(); as config) {
+                    <canvas baseChart
+                      [type]="config.type"
+                      [data]="config.data"
+                      [options]="config.options">
+                    </canvas>
+                  }
                 </div>
-                <div class="fee-item">
-                  <span class="fee-dot pending"></span>
-                  <span>Pending: {{ dashboardData()?.feePending || 0 }}</span>
-                </div>
-                <div class="fee-item">
-                  <span class="fee-dot overdue"></span>
-                  <span>Overdue: {{ dashboardData()?.feeOverdue || 0 }}</span>
+                <div class="doughnut-center">
+                  <span class="center-label">Total</span>
+                  <span class="center-value">{{ formatCurrency(financialTotal()) }}</span>
                 </div>
               </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card class="grid-col-8 attendance-card">
+          <mat-card class="approvals-card">
             <mat-card-header>
-              <mat-card-title>Attendance Overview</mat-card-title>
+              <mat-icon mat-card-avatar class="section-icon">fact_check</mat-icon>
+              <mat-card-title>Action Queue</mat-card-title>
+              <mat-card-subtitle>Pending Approvals</mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
-              <div class="chart-container bar-chart">
-                @if (attendanceChartConfig(); as config) {
-                  <canvas baseChart
-                    [type]="config.type"
-                    [data]="config.data"
-                    [options]="config.options">
-                  </canvas>
-                }
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
-
-        <div class="grid-12 bottom-row">
-          <!-- Column 1: Calendar -->
-          <mat-card class="grid-col-4 calendar-card">
-            <mat-card-header>
-              <mat-card-title>Calendar</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <mat-calendar [selected]="selectedDate()" [dateClass]="dateClass()"
-                (selectedChange)="onDateSelected($event)"></mat-calendar>
-              <div class="selected-date-events">
-                <h4>Events on {{ selectedDate().toLocaleDateString() }}</h4>
-                @for (event of selectedDateEvents(); track event.id) {
-                  <div class="event-item">
-                    <div class="event-dot" [class]="event.type"></div>
-                    <div class="event-info">
-                      <span class="event-title">{{ event.title }}</span>
-                      <span class="event-type">{{ event.type }}</span>
+              <div class="approvals-list">
+                @for (approval of data.pendingApprovals; track approval.id) {
+                  <div class="approval-item">
+                    <div class="approval-header">
+                      <span class="approval-type">{{ approval.type }}</span>
+                      <span class="approval-priority" [class]="getPriorityClass(approval.priority)">
+                        {{ approval.priority }}
+                      </span>
+                    </div>
+                    <div class="approval-body">
+                      <span class="approval-requester">{{ approval.requester }}</span>
+                      <span class="approval-desc">{{ approval.description }}</span>
+                    </div>
+                    <div class="approval-actions">
+                      <button mat-stroked-button class="action-btn review-btn">
+                        <mat-icon>visibility</mat-icon>
+                        Review
+                      </button>
+                      <button mat-flat-button color="primary" class="action-btn approve-btn">
+                        <mat-icon>check</mat-icon>
+                        Approve
+                      </button>
                     </div>
                   </div>
-                } @empty {
-                  <p class="no-data-text">No events on this date</p>
                 }
               </div>
             </mat-card-content>
           </mat-card>
+        </section>
 
-          <!-- Column 2: Operations -->
-          <div class="grid-col-4 operations-column">
-            <mat-card class="staff-absences-card">
-              <mat-card-header>
-                <mat-card-title>Staff Absences Today</mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                <div class="staff-list">
-                  @for (staff of staffAbsences(); track staff.name) {
-                    <div class="staff-item">
-                      <div class="staff-avatar">
-                        <mat-icon>person</mat-icon>
-                      </div>
-                      <div class="staff-info">
-                        <span class="staff-name">{{ staff.name }}</span>
-                        <span class="staff-department">{{ staff.department }}</span>
-                      </div>
-                    </div>
-                  } @empty {
-                    <p class="no-data-text">No staff absences today</p>
-                  }
-                </div>
-              </mat-card-content>
-            </mat-card>
-
-            <mat-card class="alerts-card">
-              <mat-card-header>
-                <mat-card-title>System Alerts</mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                <div class="alerts-list">
-                  @for (alert of alerts(); track alert.id) {
-                    <div class="alert-item" [class.warning]="alert.type === 'warning'" [class.error]="alert.type === 'error'">
-                      <mat-icon [class.orange]="alert.type === 'warning'" [class.red]="alert.type === 'error'">
-                        {{ alert.type === 'warning' ? 'warning' : alert.type === 'error' ? 'error' : 'info' }}
-                      </mat-icon>
-                      <span>{{ alert.message }}</span>
-                    </div>
-                  } @empty {
-                    <p class="no-data-text">No active alerts</p>
-                  }
-                </div>
-              </mat-card-content>
-            </mat-card>
-          </div>
-
-          <!-- Column 3: Activity & Actions -->
-          <div class="grid-col-4 activity-column">
-            <mat-card class="quick-actions-card">
-              <mat-card-header>
-                <mat-card-title>Quick Actions</mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                <div class="quick-actions-grid">
-                  @for (action of quickActions(); track action.label) {
-                    <button mat-stroked-button [routerLink]="action.route">
-                      <mat-icon>{{ action.icon }}</mat-icon>
-                      {{ action.label }}
-                    </button>
-                  }
-                </div>
-              </mat-card-content>
-            </mat-card>
-
-            <mat-card class="recent-activities-card">
-              <mat-card-header>
-                <mat-card-title>Recent Activities</mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                <div class="activities-list">
-                  @for (activity of recentActivities(); track activity.time) {
-                    <div class="activity-item">
-                      <div class="activity-dot"></div>
-                      <div class="activity-info">
-                        <span class="activity-message">{{ activity.message }}</span>
-                        <span class="activity-time">{{ activity.time }}</span>
-                      </div>
-                    </div>
-                  } @empty {
-                    <p class="no-data-text">No recent activities</p>
-                  }
-                </div>
-              </mat-card-content>
-            </mat-card>
-          </div>
-        </div>
-      }
-    </div>
+        <!-- Bottom Section - Operations Radar -->
+        <section class="operations-section">
+          <mat-card class="operations-card">
+            <mat-card-header>
+              <mat-icon mat-card-avatar class="section-icon">radar</mat-icon>
+              <mat-card-title>Operations Radar</mat-card-title>
+              <mat-card-subtitle>Live monitoring feed</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="operations-log">
+                @for (op of data.liveOperations; track op.id) {
+                  <div class="operation-entry" [class]="getOperationColor(op.type)">
+                    <span class="op-time">[{{ formatTime(op.timestamp) }}]</span>
+                    <mat-icon class="op-icon">{{ getOperationIcon(op.type) }}</mat-icon>
+                    <span class="op-message">{{ op.message }}</span>
+                    <span class="op-location">
+                      <mat-icon class="loc-icon">place</mat-icon>
+                      {{ op.location }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </section>
+      </div>
+    } @else {
+      <div class="p-10 text-center">
+        <span class="text-gray-500">No data available</span>
+      </div>
+    }
   `,
   styles: [`
-    .dashboard-container {
-      padding: 0 0 32px;
+    :host {
+      display: block;
+    }
+
+    .command-center {
+      padding: 0 0 40px;
       font-family: 'Inter', sans-serif;
       max-width: 1400px;
       margin: 0 auto;
     }
 
-    .loading-spinner {
+    .command-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 28px 32px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border-radius: 16px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .header-left {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 80px 0;
-      gap: 16px;
-      color: #64748b;
-      font-size: 0.875rem;
     }
 
-    .hero-section {
-      background: linear-gradient(135deg, #f0f4ff 0%, #fafbff 55%, #f5f0ff 100%);
-      border-radius: 16px;
-      padding: 36px;
-      margin-bottom: 32px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
-
-    .hero-content h1 {
+    .header-title {
       font-size: 1.625rem;
       font-weight: 700;
-      color: #1e293b;
-      margin: 0 0 8px;
+      color: white;
+      margin: 0 0 6px;
     }
 
-    .hero-content p {
-      font-size: 0.9rem;
-      color: #64748b;
+    .header-subtitle {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.7);
       margin: 0;
     }
 
-    .grid-12 {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 24px;
-      margin-bottom: 24px;
-    }
-
-    .grid-col-3 {
-      grid-column: span 3;
-    }
-
-    .grid-col-4 {
-      grid-column: span 4;
-    }
-
-    .grid-col-8 {
-      grid-column: span 8;
-    }
-
-    .stat-card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
+    .header-right {
       display: flex;
       align-items: center;
-      gap: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
     }
 
-    .stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+    .last-refresh {
       display: flex;
       align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .stat-icon mat-icon {
-      color: white;
-      font-size: 22px;
-    }
-
-    .stat-icon.blue { background: #2563eb; }
-    .stat-icon.indigo { background: #4f46e5; }
-    .stat-icon.green { background: #10b981; }
-    .stat-icon.amber { background: #f59e0b; }
-
-    .stat-body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .stat-label {
+      gap: 8px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.9);
       font-size: 0.75rem;
-      color: #64748b;
     }
 
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #1e293b;
-      line-height: 1.2;
-    }
-
-    .stat-delta {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.7rem;
-    }
-
-    .stat-delta mat-icon {
+    .refresh-icon {
       font-size: 16px;
       width: 16px;
       height: 16px;
+      color: rgba(255, 255, 255, 0.7);
     }
 
-    .stat-delta.positive { color: #10b981; }
-    .stat-delta.negative { color: #ef4444; }
-
-    .charts-row {
-      align-items: start;
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
     }
 
-    .fee-card,
-    .attendance-card {
+    .kpi-card {
       border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      }
+
+      mat-card-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+      }
     }
 
-    mat-card-header {
-      padding: 20px 20px 0;
+    .kpi-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      mat-icon {
+        font-size: 26px;
+        width: 26px;
+        height: 26px;
+        color: white;
+      }
     }
 
-    mat-card-title {
-      font-size: 0.9375rem;
+    .kpi-blue .kpi-icon { background: #2563eb; }
+    .kpi-indigo .kpi-icon { background: #4f46e5; }
+    .kpi-green .kpi-icon { background: #10b981; }
+    .kpi-red-pulse .kpi-icon {
+      background: #ef4444;
+      animation: pulse-border 2s infinite;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    }
+
+    .kpi-body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .kpi-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.2;
+      margin: 4px 0;
+    }
+
+    .kpi-change {
+      font-size: 0.75rem;
       font-weight: 600;
-      color: #1e293b;
     }
 
-    mat-card-content {
-      padding: 20px;
+    .kpi-change.positive { color: #10b981; }
+    .kpi-change.negative { color: #ef4444; }
+
+    .middle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .financial-card,
+    .approvals-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .section-icon {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .doughnut-wrapper {
+      position: relative;
+      margin-top: 16px;
     }
 
     .chart-container {
-      height: 250px;
-      position: relative;
-      margin-bottom: 16px;
-    }
-
-    .bar-chart {
-      height: 250px;
-    }
-
-    .fee-summary {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .fee-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.8rem;
-      color: #475569;
-    }
-
-    .fee-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .fee-dot.collected { background: #10b981; }
-    .fee-dot.pending { background: #f59e0b; }
-    .fee-dot.overdue { background: #ef4444; }
-
-    .bottom-row {
-      align-items: start;
-    }
-
-    .quick-actions-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    .quick-actions-grid button {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px;
-      justify-content: center;
-    }
-
-    .quick-actions-grid button mat-icon {
-      font-size: 18px;
-    }
-
-    .events-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .event-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .event-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #2563eb;
-      margin-top: 6px;
-      flex-shrink: 0;
-    }
-
-    .event-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .event-title {
-      font-size: 0.875rem;
-      color: #334155;
-      font-weight: 500;
-    }
-
-    .event-date {
-      font-size: 0.75rem;
-      color: #94a3b8;
-    }
-
-    .alerts-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .alert-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid #f1f5f9;
-      font-size: 0.875rem;
-      color: #334155;
-    }
-
-    .alert-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    .alert-item mat-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-    }
-
-    .alert-item mat-icon.orange { color: #f59e0b; }
-    .alert-item mat-icon.red { color: #ef4444; }
-
-    .no-data-text {
-      font-size: 0.875rem;
-      color: #94a3b8;
-      text-align: center;
-      padding: 16px 0;
-      margin: 0;
-    }
-
-    .event-day {
+      height: 240px;
       position: relative;
     }
 
-    .event-day::after {
-      content: '';
+    .doughnut-center {
       position: absolute;
-      bottom: 2px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #2563eb;
-    }
-
-    .calendar-card {
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
-    }
-
-    .calendar-card mat-calendar {
-      margin-bottom: 16px;
-    }
-
-    .selected-date-events {
-      padding: 0 8px;
-    }
-
-    .selected-date-events h4 {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #1e293b;
-      margin: 0 0 12px;
-    }
-
-    .event-type {
-      font-size: 0.7rem;
-      color: #64748b;
-      text-transform: capitalize;
-    }
-
-    .operations-column,
-    .activity-column {
+      transform: translate(-50%, -60%);
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      align-items: center;
+      text-align: center;
     }
 
-    .staff-absences-card,
-    .alerts-card,
-    .quick-actions-card,
-    .recent-activities-card {
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
-      flex: 1;
+    .center-label {
+      font-size: 0.6875rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
     }
 
-    .staff-list {
+    .center-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 4px;
+    }
+
+    .approvals-list {
       display: flex;
       flex-direction: column;
       gap: 12px;
+      margin-top: 16px;
     }
 
-    .staff-item {
+    .approval-item {
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      transition: border-color 0.2s;
+
+      &:hover {
+        border-color: #2563eb;
+      }
+    }
+
+    .approval-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 8px 0;
+      justify-content: space-between;
+      margin-bottom: 8px;
     }
 
-    .staff-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #f1f5f9;
+    .approval-type {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .approval-priority {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .priority-high {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .priority-medium {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .priority-low {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .approval-body {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+    }
+
+    .approval-requester {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #334155;
+    }
+
+    .approval-desc {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .approval-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
     }
 
-    .staff-avatar mat-icon {
+    .review-btn {
+      border-color: #2563eb;
+      color: #2563eb;
+    }
+
+    .approve-btn {
+      background: #2563eb;
+      color: white;
+    }
+
+    .operations-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .operations-log {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .operation-entry {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border-left: 3px solid transparent;
+      font-size: 0.875rem;
+    }
+
+    .op-time {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+      min-width: 80px;
+    }
+
+    .op-icon {
       font-size: 18px;
       width: 18px;
       height: 18px;
-      color: #64748b;
-    }
-
-    .staff-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .staff-name {
-      font-size: 0.875rem;
-      color: #334155;
-      font-weight: 500;
-    }
-
-    .staff-department {
-      font-size: 0.75rem;
-      color: #94a3b8;
-    }
-
-    .activities-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .activity-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 8px 0;
-    }
-
-    .activity-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10b981;
-      margin-top: 6px;
       flex-shrink: 0;
     }
 
-    .activity-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .activity-message {
-      font-size: 0.875rem;
-      color: #334155;
+    .op-message {
+      flex: 1;
       font-weight: 500;
+      color: #0f172a;
     }
 
-    .activity-time {
+    .op-location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       font-size: 0.75rem;
-      color: #94a3b8;
+      color: #64748b;
+      background: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .loc-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+
+    .op-info {
+      border-left-color: #2563eb;
+
+      .op-icon { color: #2563eb; }
+    }
+
+    .op-warning {
+      border-left-color: #f59e0b;
+      background: #fffbeb;
+
+      .op-icon { color: #f59e0b; }
+    }
+
+    .op-alert {
+      border-left-color: #ef4444;
+      background: #fef2f2;
+
+      .op-icon { color: #ef4444; }
+    }
+
+    .op-success {
+      border-left-color: #10b981;
+      background: #f0fdf4;
+
+      .op-icon { color: #10b981; }
     }
 
     @media (max-width: 1200px) {
-      .grid-col-3 {
-        grid-column: span 6;
-      }
-
-      .grid-col-4 {
-        grid-column: span 12;
-      }
-
-      .grid-col-8 {
-        grid-column: span 12;
-      }
-
-      .stats-row {
+      .kpi-row {
         grid-template-columns: repeat(2, 1fr);
+      }
+
+      .middle-grid {
+        grid-template-columns: 1fr;
       }
     }
 
     @media (max-width: 768px) {
-      .grid-col-3 {
-        grid-column: span 12;
+      .kpi-row {
+        grid-template-columns: 1fr;
       }
 
-      .grid-12 {
-        grid-template-columns: 1fr;
+      .command-header {
+        flex-direction: column;
         gap: 16px;
+        padding: 20px;
       }
 
-      .stats-row {
-        grid-template-columns: 1fr;
+      .kpi-card mat-card-content {
+        padding: 16px;
       }
 
-      .quick-actions-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .operations-column,
-      .activity-column {
-        grid-column: span 12;
+      .approval-actions {
+        flex-direction: column;
       }
     }
   `],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminDashboardComponent implements OnInit {
-  private dashboardService = inject(DashboardService);
-  dashboardData = signal<AdminDashboardData | null>(null);
-  isLoading = signal(false);
-  selectedDate = signal<Date>(new Date());
+  private readonly dashboardService = inject(PrincipalDashboardService);
+  private readonly http = inject(HttpClient);
+
+  readonly dashboardData = signal<PrincipalDashboardPayload | null>(null);
+  readonly isLoading = signal(true);
+
+  private readonly mockData: PrincipalDashboardPayload = {
+    adminName: 'Dr. Margaret Wanjiku',
+    lastRefresh: new Date().toISOString(),
+    kpis: {
+      totalStudents: 847,
+      totalStaff: 62,
+      totalClasses: 28,
+      feeCollection: 12.4,
+      activeIncidents: 3,
+      attendanceRate: 94.7,
+    },
+    financialHealth: {
+      collected: 8450000,
+      pending: 2130000,
+      overdue: 450000,
+      total: 10635000,
+    },
+    pendingApprovals: [
+      { id: 1, type: 'Leave Request', requester: 'Mr. James Ouma', description: 'Annual leave - 5 days', submittedAt: '2026-05-18T08:00:00Z', priority: 'medium' },
+      { id: 2, type: 'Expense Claim', requester: 'Ms. Grace Mwende', description: 'Teaching supplies - KES 15,000', submittedAt: '2026-05-18T09:30:00Z', priority: 'low' },
+      { id: 3, type: 'Event Request', requester: 'Sports Department', description: 'Inter-school athletics permit', submittedAt: '2026-05-18T10:15:00Z', priority: 'high' },
+      { id: 4, type: 'Curriculum Change', requester: 'Mr. Peter Kimani', description: 'Add coding elective - Form 2', submittedAt: '2026-05-17T14:00:00Z', priority: 'medium' },
+    ],
+    liveOperations: [
+      { id: 1, timestamp: '2026-05-18T08:15:00Z', type: 'warning', message: 'Form 3A Math is unsupervised', location: 'Room 104' },
+      { id: 2, timestamp: '2026-05-18T08:30:00Z', type: 'info', message: 'Bus Route 3 departed', location: 'Main Gate' },
+      { id: 3, timestamp: '2026-05-18T07:45:00Z', type: 'success', message: 'Fire drill completed - all clear', location: 'Playground' },
+      { id: 4, timestamp: '2026-05-18T09:00:00Z', type: 'alert', message: 'Lab 2 - Chemical spill reported', location: 'Science Block' },
+    ],
+    quickStats: [
+      { label: 'Fee Collection (M)', value: 12.4, change: 8.2, unit: 'KES' },
+      { label: 'Active Incidents', value: 3, change: -2, unit: '' },
+      { label: 'Attendance Rate', value: 94.7, change: 1.5, unit: '%' },
+      { label: 'Pending Approvals', value: 12, change: 4, unit: '' },
+    ],
+  };
 
   ngOnInit(): void {
-    this.loadDashboardData();
+    console.log('AdminDashboardComponent: Initializing...');
+    this.loadDashboard();
+
+    setTimeout(() => {
+      if (this.isLoading()) {
+        console.log('AdminDashboardComponent: Timeout - falling back to mock data');
+        this.dashboardData.set(this.mockData);
+        this.isLoading.set(false);
+      }
+    }, 5000);
   }
 
-  loadDashboardData(): void {
+  private loadDashboard(): void {
+    console.log('AdminDashboardComponent: Loading dashboard from API');
     this.isLoading.set(true);
-    this.dashboardService.getAdminDashboardData().subscribe({
+    this.dashboardService.getPrincipalSummary().subscribe({
       next: (data) => {
+        console.log('AdminDashboardComponent: API success');
         this.dashboardData.set(data);
         this.isLoading.set(false);
       },
-      error: () => {
+      error: (err) => {
+        console.error('AdminDashboardComponent: API error, using mock data:', err);
+        this.dashboardData.set(this.mockData);
         this.isLoading.set(false);
       },
     });
   }
 
-  readonly statCards = computed(() => {
+  readonly kpiCards = computed(() => {
     const data = this.dashboardData();
     if (!data) return [];
-    const m = data.metrics;
+    const k = data.kpis;
     return [
-      { label: 'Students', value: m.students.total, delta: m.students.changePct, deltaPositive: m.students.changePct >= 0, icon: 'groups', color: 'blue' },
-      { label: 'Staff', value: m.staff.total, delta: m.staff.changePct, deltaPositive: m.staff.changePct >= 0, icon: 'badge', color: 'indigo' },
-      { label: 'Classes', value: m.classes.total, delta: m.classes.changePct, deltaPositive: m.classes.changePct >= 0, icon: 'class', color: 'green' },
-      { label: 'Subjects', value: m.subjects.total, delta: m.subjects.changePct, deltaPositive: m.subjects.changePct >= 0, icon: 'menu_book', color: 'amber' },
+      { label: 'Total Students', value: k.totalStudents.toLocaleString(), icon: 'groups', colorClass: 'kpi-blue', change: '+12', changeType: 'positive' },
+      { label: 'Total Staff', value: k.totalStaff.toString(), icon: 'badge', colorClass: 'kpi-indigo', change: '+3', changeType: 'positive' },
+      { label: 'Fee Collection', value: `KES ${k.feeCollection}M`, icon: 'account_balance', colorClass: 'kpi-green', change: '+8.2%', changeType: 'positive' },
+      { label: 'Active Incidents', value: k.activeIncidents.toString(), icon: 'warning', colorClass: k.activeIncidents > 0 ? 'kpi-red-pulse' : 'kpi-green', change: k.activeIncidents > 0 ? 'Needs attention' : 'All clear', changeType: k.activeIncidents > 0 ? 'negative' : 'positive' },
     ];
   });
 
@@ -731,95 +690,50 @@ export class AdminDashboardComponent implements OnInit {
       type: 'doughnut',
       data: {
         labels: ['Collected', 'Pending', 'Overdue'],
-        datasets: [
-          {
-            data: [data.feeCollected, data.feePending, data.feeOverdue],
-            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-            borderWidth: 0,
-          },
-        ],
+        datasets: [{
+          data: [data.financialHealth.collected, data.financialHealth.pending, data.financialHealth.overdue],
+          backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+          borderWidth: 0,
+          hoverOffset: 4,
+        }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '70%',
+        cutout: '75%',
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
+          legend: { position: 'bottom', labels: { color: '#64748b', padding: 16, font: { size: 12, family: 'Inter' }, boxWidth: 12 } },
         },
       },
     };
   });
 
-  readonly attendanceChartConfig = computed<ChartConfiguration<'bar'> | null>(() => {
+  readonly financialTotal = computed(() => {
     const data = this.dashboardData();
-    if (!data) return null;
-    return {
-      type: 'bar',
-      data: {
-        labels: data.attendanceLabels || [],
-        datasets: [
-          {
-            data: data.attendanceData || [],
-            backgroundColor: '#2563eb',
-            borderRadius: 4,
-            maxBarThickness: 32,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-        },
-        scales: {
-          x: { grid: { display: false } },
-          y: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%', font: { size: 10 } }, grid: { color: '#f1f5f9' } },
-        },
-      },
-    };
+    return data?.financialHealth.total ?? 0;
   });
 
-  readonly attendancePercentage = computed(() => this.dashboardData()?.attendancePercentage || 0);
-  readonly alerts = computed(() => this.dashboardData()?.alerts || []);
-  readonly upcomingEvents = computed(() => this.dashboardData()?.upcomingEvents || []);
-  readonly quickActions = computed(() => this.dashboardData()?.quickActions || [
-    { label: 'Add Student', route: '/portalAdmin/students/admissions', icon: 'person_add' },
-    { label: 'Add Staff', route: '/portalAdmin/staff', icon: 'group_add' },
-    { label: 'Create Notice', route: '/portalAdmin/communication', icon: 'campaign' },
-    { label: 'Assign Class', route: '/portalAdmin/academics', icon: 'assignment_ind' },
-  ]);
-  readonly staffAbsences = computed(() => this.dashboardData()?.staffAbsences || []);
-  readonly recentActivities = computed(() => this.dashboardData()?.recentActivities || []);
+  formatCurrency(value: number): string {
+    if (value >= 1000000) return `KES ${(value / 1000000).toFixed(1)}M`;
+    return `KES ${value.toLocaleString()}`;
+  }
 
-  readonly selectedDateEvents = computed(() => {
-    const events = this.upcomingEvents();
-    const selected = this.selectedDate();
-    const selectedStr = selected.toISOString().split('T')[0];
-    return events.filter(e => e.date === selectedStr);
-  });
+  getOperationIcon(type: string): string {
+    const icons: Record<string, string> = { info: 'info', warning: 'warning', alert: 'error', success: 'check_circle' };
+    return icons[type] || 'info';
+  }
 
-  readonly dateClass = computed(() => {
-    const events = this.upcomingEvents();
-    const eventDates = new Set(events.map(e => e.date));
-    return (date: Date): string => {
-      const dateStr = date.toISOString().split('T')[0];
-      return eventDates.has(dateStr) ? 'event-day' : '';
-    };
-  });
+  getOperationColor(type: string): string {
+    const colors: Record<string, string> = { info: 'op-info', warning: 'op-warning', alert: 'op-alert', success: 'op-success' };
+    return colors[type] || 'op-info';
+  }
 
-  readonly currentDate = computed(() =>
-    new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-  );
+  getPriorityClass(priority: string): string {
+    const classes: Record<string, string> = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
+    return classes[priority] || 'priority-low';
+  }
 
-  onDateSelected(date: Date | null): void {
-    if (date) {
-      this.selectedDate.set(date);
-    }
+  formatTime(timestamp: string): string {
+    return new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   }
 }

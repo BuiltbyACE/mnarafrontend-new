@@ -4,6 +4,8 @@ export const dashboardRoutes: Route[] = [
   {
     path: '',
     loadComponent: () =>
-      import('./components/admin-dashboard/admin-dashboard').then((m) => m.AdminDashboardComponent),
+      import('./components/principal-dashboard/principal-dashboard.component').then(
+        (m) => m.PrincipalDashboardComponent
+      ),
   },
 ];

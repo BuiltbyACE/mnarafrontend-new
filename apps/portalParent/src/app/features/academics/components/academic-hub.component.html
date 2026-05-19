@@ -1,0 +1,114 @@
+<div class="hub">
+  <header class="hub-header">
+    <mat-icon class="header-icon">school</mat-icon>
+    <div class="header-text">
+      <h1 class="header-title">Academic Progress & Timetable</h1>
+      <p class="header-sub">Track your child's educational journey</p>
+    </div>
+  </header>
+
+  <div class="hub-content">
+    <section class="grid-3">
+      <mat-card class="feature-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="card-icon">description</mat-icon>
+          <mat-card-title>Latest Report Card</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="card-body">
+            <div class="grade-display">
+              <span class="grade">A</span>
+              <span class="grade-label">Overall Grade</span>
+            </div>
+            <p class="card-meta">Term 1, 2026</p>
+            <p class="card-desc">View and download the complete academic report with detailed subject grades and teacher comments.</p>
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-flat-button color="primary">
+            <mat-icon>download</mat-icon>
+            Download PDF
+          </button>
+        </mat-card-actions>
+      </mat-card>
+
+      <mat-card class="feature-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="card-icon">assignment</mat-icon>
+          <mat-card-title>Upcoming Assignments</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="assignments-list">
+            <div class="assignment-item">
+              <div class="assignment-info">
+                <span class="assignment-title">Mathematics - Chapter 5 Quiz</span>
+                <span class="assignment-due">Due: Mar 20, 2026</span>
+              </div>
+              <span class="assignment-status status-pending">Pending</span>
+            </div>
+            <div class="assignment-item">
+              <div class="assignment-info">
+                <span class="assignment-title">English Essay - 500 words</span>
+                <span class="assignment-due">Due: Mar 22, 2026</span>
+              </div>
+              <span class="assignment-status status-pending">Pending</span>
+            </div>
+            <div class="assignment-item">
+              <div class="assignment-info">
+                <span class="assignment-title">Science Project - Poster</span>
+                <span class="assignment-due">Due: Mar 25, 2026</span>
+              </div>
+              <span class="assignment-status status-soon">Due Soon</span>
+            </div>
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button color="primary" routerLink="assignments">View All Assignments</button>
+        </mat-card-actions>
+      </mat-card>
+
+      <mat-card class="feature-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="card-icon">calendar_month</mat-icon>
+          <mat-card-title>Today's Timetable</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="timetable-list">
+            <div class="timetable-item">
+              <span class="time">08:00 - 09:00</span>
+              <span class="subject">Mathematics</span>
+              <span class="room">Room 101</span>
+            </div>
+            <div class="timetable-item">
+              <span class="time">09:00 - 10:00</span>
+              <span class="subject">English</span>
+              <span class="room">Room 203</span>
+            </div>
+            <div class="timetable-item">
+              <span class="time">10:00 - 11:00</span>
+              <span class="subject">Break</span>
+              <span class="room">-</span>
+            </div>
+            <div class="timetable-item">
+              <span class="time">11:00 - 12:00</span>
+              <span class="subject">Science</span>
+              <span class="room">Lab 2</span>
+            </div>
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button color="primary" routerLink="timetable">Full Timetable</button>
+        </mat-card-actions>
+      </mat-card>
+    </section>
+
+    <section class="quick-links">
+      <a routerLink="report-cards" class="quick-link">
+        <mat-icon>assessment</mat-icon>
+        <span>View All Report Cards</span>
+      </a>
+    </section>
+
+    <router-outlet />
+  </div>
+</div>

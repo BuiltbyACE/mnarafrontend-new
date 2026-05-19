@@ -1,0 +1,124 @@
+@if (isLoading()) {
+  <div class="loading-state">
+    <mat-spinner diameter="48"></mat-spinner>
+    <span class="loading-text">Loading dashboard...</span>
+  </div>
+} @else if (error()) {
+  <div class="error-state">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <span class="error-text">{{ error() }}</span>
+  </div>
+} @else if (dashboardData(); as data) {
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="student-info">
+        <h1 class="student-name">Overview for {{ data.student_name }}</h1>
+        <span class="student-form">{{ data.student_form }}</span>
+      </div>
+    </header>
+
+    <div class="cards-row">
+      <mat-card class="status-card safety-card" [class]="'safety-' + data.safety_status.color_code">
+        <mat-card-content>
+          <div class="card-header">
+            <mat-icon class="card-icon">verified_user</mat-icon>
+            <span class="card-label">Safety Status</span>
+          </div>
+          <div class="card-body">
+            <p class="status-message">{{ data.safety_status.message }}</p>
+            <span class="status-time">
+              <mat-icon class="time-icon">schedule</mat-icon>
+              {{ data.safety_status.timestamp | date:'short' }}
+            </span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="status-card finance-card" [class.balance-warning]="data.term_balance > 0" [class.balance-paid]="data.term_balance === 0">
+        <mat-card-content>
+          <div class="card-header">
+            <mat-icon class="card-icon">account_balance_wallet</mat-icon>
+            <span class="card-label">Term Balance</span>
+          </div>
+          <div class="card-body">
+            @if (data.term_balance > 0) {
+              <p class="balance-amount">{{ formatBalance(data.term_balance) }}</p>
+              <span class="balance-due">Payment due by March 15, 2026</span>
+              <a routerLink="finance/pay-now" class="pay-btn">
+                <mat-icon>send</mat-icon>
+                Pay via M-Pesa
+              </a>
+            } @else {
+              <div class="paid-badge">
+                <mat-icon>check_circle</mat-icon>
+                <span>Fully Paid</span>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="details-grid">
+      <mat-card class="details-card academics-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">school</mat-icon>
+          <mat-card-title>Recent Grades</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="grades-list">
+            @for (grade of data.recent_grades; track grade.subject) {
+              <div class="grade-item">
+                <span class="grade-subject">{{ grade.subject }}</span>
+                <span class="grade-term">{{ grade.term }}</span>
+                <span class="grade-badge" [style.background]="getGradeBgColor(grade.grade)" [style.color]="getGradeTextColor(grade.grade)">
+                  {{ grade.grade }}
+                </span>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <a routerLink="academics/report-cards" class="view-link">
+            View Full Report Card
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </mat-card-actions>
+      </mat-card>
+
+      <mat-card class="details-card notices-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">campaign</mat-icon>
+          <mat-card-title>School Notices</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="notices-list">
+            @for (notice of data.urgent_notices; track notice.id) {
+              <div class="notice-item" [class.urgent]="notice.is_urgent">
+                @if (notice.is_urgent) {
+                  <mat-icon class="urgent-icon">priority_high</mat-icon>
+                }
+                <div class="notice-content">
+                  <span class="notice-title">{{ notice.title }}</span>
+                  <span class="notice-date">{{ notice.created_at | date:'mediumDate' }}</span>
+                </div>
+              </div>
+            }
+            @if (data.urgent_notices.length === 0) {
+              <div class="no-notices">
+                <mat-icon>check_circle</mat-icon>
+                <span>No urgent notices</span>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <a routerLink="communication/broadcasts" class="view-link">
+            View All Notices
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+}

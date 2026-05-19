@@ -368,6 +368,7 @@ export class AdminSidebarComponent {
       ],
     },
     { name: 'timetable', label: 'Timetable', icon: 'calendar_month', route: '/portalAdmin/timetable' },
+    { name: 'calendar', label: 'School Calendar', icon: 'event_note', route: '/portalAdmin/calendar' },
     { name: 'staff', label: 'HR', icon: 'person_outline', route: '/portalAdmin/staff' },
     { name: 'finance', label: 'Finance', icon: 'account_balance', route: '/portalAdmin/finance' },
     { name: 'transport', label: 'Transport', icon: 'directions_bus', route: '/portalAdmin/transport' },

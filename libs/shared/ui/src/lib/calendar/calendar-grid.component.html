@@ -1,0 +1,69 @@
+<div class="cal-grid-wrapper">
+  <div class="cal-weekday-header">
+    @for (day of weekDays(); track day) {
+      <div class="cal-weekday-cell">{{ day }}</div>
+    }
+  </div>
+
+  <div class="cal-days-grid">
+    @for (day of calendarDays(); track $index) {
+      @if (day.day === null) {
+        <div class="cal-day-cell cal-day-cell--empty">
+          <span class="cal-day-number"></span>
+        </div>
+      } @else {
+        @let highlight = getHighlightEvent(day);
+        @let dotEvents = getDotEvents(day);
+
+        <div
+          class="cal-day-cell"
+          [class.cal-day-cell--today]="day.isToday"
+          [class.cal-day-cell--highlighted]="highlight !== null"
+          [class.cal-day-cell--has-highlight]="highlight !== null"
+          (click)="onDayClick(day)"
+        >
+          @if (highlight) {
+            <div
+              class="cal-highlight-overlay"
+              [style.background-color]="highlight.hexColor + '22'"
+            ></div>
+            <div
+              class="cal-highlight-border"
+              [style.border-left-color]="highlight.hexColor"
+            ></div>
+            <span
+              class="cal-highlight-label"
+              [style.color]="highlight.hexColor"
+              [title]="highlight.title"
+            >
+              {{ highlight.title }}
+            </span>
+          }
+
+          <span
+            class="cal-day-number"
+            [class.cal-day-number--today]="day.isToday"
+          >
+            {{ day.day }}
+          </span>
+
+          @if (dotEvents.length > 0) {
+            <div class="cal-event-dots">
+              @for (evt of dotEvents; track evt.id) {
+                <span
+                  class="cal-event-dot"
+                  [style.background-color]="evt.hexColor"
+                  [title]="evt.title + (evt.time ? ' · ' + evt.time : '')"
+                  (click)="onEventClick($event, day)"
+                ></span>
+              }
+              @if (getOverflowCount(day) > 0) {
+                <span class="cal-overflow-badge">+{{ getOverflowCount(day) }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

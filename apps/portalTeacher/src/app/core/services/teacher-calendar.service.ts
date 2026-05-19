@@ -1,9 +1,16 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, tap } from 'rxjs';
 import { CalendarEvent } from '../../shared/models/teacher.models';
 
 @Injectable({ providedIn: 'root' })
 export class TeacherCalendarService {
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = '/api/v1/lms/calendar/events';
+
   readonly currentDate = signal(new Date());
+  readonly events = signal<CalendarEvent[]>([]);
+  readonly isLoading = signal(false);
 
   private readonly eventsData: CalendarEvent[] = [
     { id: 'e1', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 5), title: 'Mathematics Quiz', type: 'EXAM', time: '09:00' },
@@ -18,8 +25,6 @@ export class TeacherCalendarService {
     { id: 'e10', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 25), title: 'Final Exam Schedules Due', type: 'DEADLINE' },
     { id: 'e11', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 28), title: 'Board Meeting', type: 'MEETING', time: '10:00' },
   ];
-
-  readonly events = signal(this.eventsData);
 
   readonly calendarDays = computed(() => {
     const d = this.currentDate();
@@ -39,10 +44,35 @@ export class TeacherCalendarService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return this.events()
-      .filter(evt => new Date(evt.date) >= today)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .filter((evt: CalendarEvent) => new Date(evt.date) >= today)
+      .sort((a: CalendarEvent, b: CalendarEvent) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, 5);
   });
+
+  fetchEvents(month: number, year: number): Observable<CalendarEvent[]> {
+    this.isLoading.set(true);
+    const params = new HttpParams()
+      .set('month', String(month + 1))
+      .set('year', String(year));
+
+    return this.http.get<CalendarEvent[]>(this.baseUrl, { params }).pipe(
+      tap({
+        next: (events: CalendarEvent[]) => {
+          this.events.set(events);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.events.set(this.eventsData);
+          this.isLoading.set(false);
+        },
+      })
+    );
+  }
+
+  fetchCurrentMonth(): void {
+    const d = this.currentDate();
+    this.fetchEvents(d.getMonth(), d.getFullYear()).subscribe();
+  }
 
   isToday(day: number): boolean {
     const d = this.currentDate();
@@ -55,7 +85,7 @@ export class TeacherCalendarService {
   getEventsForDay(day: number): CalendarEvent[] {
     const d = this.currentDate();
     const target = this.formatDate(d.getFullYear(), d.getMonth(), day);
-    return this.events().filter(evt => evt.date === target);
+    return this.events().filter((evt: CalendarEvent) => evt.date === target);
   }
 
   previousMonth(): void {

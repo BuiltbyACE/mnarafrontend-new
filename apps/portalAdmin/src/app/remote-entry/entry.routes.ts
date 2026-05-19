@@ -71,6 +71,12 @@ import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
         loadChildren: () =>
           import('../features/timetable/timetable.routes').then((m) => m.timetableRoutes),
       },
+      // School Calendar
+      {
+        path: 'calendar',
+        loadChildren: () =>
+          import('../features/calendar/calendar.routes').then((m) => m.calendarRoutes),
+      },
       // LMS Module
       {
         path: 'lms',

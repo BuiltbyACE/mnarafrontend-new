@@ -3,11 +3,8 @@ import { ModuleFederationConfig } from '@nx/module-federation';
 const config: ModuleFederationConfig = {
   name: 'portalParent',
   exposes: {
-    './Routes': 'apps/portalParent/src/app/remote-entry/entry.routes.ts',
+    './Routes': 'apps/portalParent/src/app/portal-parent.routes.ts',
   },
 };
 
-/**
- * Nx requires a default export of the config to allow correct resolution of the module federation graph.
- **/
 export default config;

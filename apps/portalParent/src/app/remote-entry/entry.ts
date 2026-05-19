@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
-import { NxWelcome } from './nx-welcome';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { ParentLayoutComponent } from '../core/layout/parent-layout.component';
 
 @Component({
-  imports: [NxWelcome],
+  imports: [ParentLayoutComponent],
   selector: 'app-portalParent-entry',
-  template: `<app-nx-welcome></app-nx-welcome>`,
+  template: `<app-parent-layout />`,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RemoteEntry {}

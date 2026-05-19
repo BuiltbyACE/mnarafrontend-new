@@ -1,0 +1,140 @@
+@if (isLoading()) {
+  <div class="loading-state">
+    <mat-spinner diameter="48"></mat-spinner>
+    <span class="loading-text">Loading Command Center...</span>
+  </div>
+} @else if (error()) {
+  <div class="error-state">
+    <mat-icon class="error-icon">cloud_off</mat-icon>
+    <span class="error-text">{{ error() }}</span>
+    <button mat-stroked-button (click)="refresh()">Retry</button>
+  </div>
+} @else if (dashboardData(); as data) {
+  <div class="command-center">
+    <!-- Header -->
+    <header class="command-header">
+      <div class="header-left">
+        <h1 class="header-title">Principal's Command Center</h1>
+        <p class="header-subtitle">Overview of Institutional Health</p>
+      </div>
+      <div class="header-right">
+        <div class="last-refresh">
+          <mat-icon class="refresh-icon">update</mat-icon>
+          <span>Last refresh: {{ data.lastRefresh | date:'short' }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- The 4 Pillars - KPI Cards -->
+    <section class="kpi-row">
+      @for (card of kpiCards(); track card.label) {
+        <mat-card class="kpi-card" [class]="card.colorClass">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>{{ card.icon }}</mat-icon>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">{{ card.label }}</span>
+              <span class="kpi-value">{{ card.value }}</span>
+              <span class="kpi-change" [class.positive]="card.changeType === 'positive'" [class.negative]="card.changeType === 'negative'">
+                {{ card.change }}
+              </span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </section>
+
+    <!-- Middle Grid - Financial Pulse + Action Queue -->
+    <section class="middle-grid">
+      <!-- Financial Pulse - Doughnut Chart -->
+      <mat-card class="financial-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">pie_chart</mat-icon>
+          <mat-card-title>Term Revenue Breakdown</mat-card-title>
+          <mat-card-subtitle>Financial health snapshot</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="doughnut-wrapper">
+            <div class="chart-container">
+              @if (feeChartConfig(); as config) {
+                <canvas baseChart
+                  [type]="config.type"
+                  [data]="config.data"
+                  [options]="config.options">
+                </canvas>
+              }
+            </div>
+            <div class="doughnut-center">
+              <span class="center-label">Total</span>
+              <span class="center-value">{{ formatCurrency(financialTotal()) }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Action Queue - Pending Approvals -->
+      <mat-card class="approvals-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">fact_check</mat-icon>
+          <mat-card-title>Action Queue</mat-card-title>
+          <mat-card-subtitle>Pending Approvals</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="approvals-list">
+            @for (approval of data.pendingApprovals; track approval.id) {
+              <div class="approval-item">
+                <div class="approval-header">
+                  <span class="approval-type">{{ approval.type }}</span>
+                  <span class="approval-priority" [class]="getPriorityClass(approval.priority)">
+                    {{ approval.priority }}
+                  </span>
+                </div>
+                <div class="approval-body">
+                  <span class="approval-requester">{{ approval.requester }}</span>
+                  <span class="approval-desc">{{ approval.description }}</span>
+                </div>
+                <div class="approval-actions">
+                  <button mat-stroked-button color="primary" class="action-btn review-btn">
+                    <mat-icon>visibility</mat-icon>
+                    Review
+                  </button>
+                  <button mat-flat-button color="primary" class="action-btn approve-btn">
+                    <mat-icon>check</mat-icon>
+                    Approve
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </section>
+
+    <!-- Bottom Section - Operations Radar -->
+    <section class="operations-section">
+      <mat-card class="operations-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">radar</mat-icon>
+          <mat-card-title>Operations Radar</mat-card-title>
+          <mat-card-subtitle>Live monitoring feed</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="operations-log">
+            @for (op of data.liveOperations; track op.id) {
+              <div class="operation-entry" [class]="getOperationColor(op.type)">
+                <span class="op-time">[{{ formatTime(op.timestamp) }}]</span>
+                <mat-icon class="op-icon">{{ getOperationIcon(op.type) }}</mat-icon>
+                <span class="op-message">{{ op.message }}</span>
+                <span class="op-location">
+                  <mat-icon class="loc-icon">place</mat-icon>
+                  {{ op.location }}
+                </span>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </section>
+  </div>
+}
