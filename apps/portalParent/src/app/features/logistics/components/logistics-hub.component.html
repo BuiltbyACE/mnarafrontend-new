@@ -69,26 +69,48 @@
           <mat-card-subtitle>Real-time GPS tracking</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="bus-map-placeholder">
-            <mat-icon class="map-icon">map</mat-icon>
-            <span class="map-text">Live map unavailable</span>
-            <span class="map-subtext">Track school bus in real-time</span>
+          <div class="bus-map-container">
+            @if (transport.loading()) {
+              <div class="bus-map-placeholder">
+                <mat-spinner diameter="32" />
+                <span class="map-text">Loading routes...</span>
+              </div>
+            } @else {
+              <app-parent-bus-map
+                [routesData]="transport.allRoutes()"
+                [routeData]="transport.route()"
+                [telemetry]="transport.telemetry()"
+                [wsConnected]="transport.wsConnected()"
+                [showReconnecting]="transport.wsReconnecting()"
+              />
+            }
           </div>
 
-          <div class="bus-info">
-            <div class="bus-details">
-              <span class="bus-label">Bus Route</span>
-              <span class="bus-value">Route 3 - Westlands</span>
+          @if (transport.activeTrip(); as trip) {
+            <div class="bus-info">
+              <div class="bus-details">
+                <span class="bus-label">Bus Route</span>
+                <span class="bus-value">{{ transport.route()?.name || trip.route_name }}</span>
+              </div>
+              <div class="bus-details">
+                <span class="bus-label">Driver</span>
+                <span class="bus-value">{{ trip.driver_name }}</span>
+              </div>
+              @if (transport.telemetry(); as tel) {
+                <div class="bus-details">
+                  <span class="bus-label">Speed</span>
+                  <span class="bus-value">{{ tel.speed_kmh }} km/h</span>
+                </div>
+              }
             </div>
-            <div class="bus-details">
-              <span class="bus-label">Driver</span>
-              <span class="bus-value">John Kamau</span>
+          } @else {
+            <div class="bus-info no-trip">
+              <div class="bus-info-message">
+                <mat-icon>info</mat-icon>
+                <span>No active trip right now — routes shown on map</span>
+              </div>
             </div>
-            <div class="bus-details">
-              <span class="bus-label">Contact</span>
-              <span class="bus-value">+254 712 345 678</span>
-            </div>
-          </div>
+          }
         </mat-card-content>
         <mat-card-actions>
           <button mat-flat-button color="primary" routerLink="bus-tracking">

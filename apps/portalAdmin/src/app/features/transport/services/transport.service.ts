@@ -69,6 +69,24 @@ export class TransportService {
     return this.http.get<FleetVehicle>(getApiUrl(`/transport/vehicles/${id}/`));
   }
 
+  createVehicle(data: Partial<FleetVehicle>): Observable<FleetVehicle> {
+    return this.http.post<FleetVehicle>(getApiUrl('/transport/vehicles/'), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to create vehicle')))
+    );
+  }
+
+  updateVehicle(id: number, data: Partial<FleetVehicle>): Observable<FleetVehicle> {
+    return this.http.patch<FleetVehicle>(getApiUrl(`/transport/vehicles/${id}/`), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to update vehicle')))
+    );
+  }
+
+  deleteVehicle(id: number): Observable<void> {
+    return this.http.delete<void>(getApiUrl(`/transport/vehicles/${id}/`)).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to delete vehicle')))
+    );
+  }
+
   getRoutes(): Observable<TransportRoute[]> {
     return this.http.get<TransportRoute[]>(getApiUrl('/transport/routes/')).pipe(
       catchError(() => of([]))
@@ -102,11 +120,29 @@ export class TransportService {
     );
   }
 
+  createTrip(data: Partial<DailyTrip>): Observable<DailyTrip> {
+    return this.http.post<DailyTrip>(getApiUrl('/transport/daily-trips/'), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to create trip')))
+    );
+  }
+
   getManifests(tripId?: string): Observable<TripManifest[]> {
     let params = new HttpParams();
     if (tripId) params = params.set('trip', tripId);
     return this.http.get<TripManifest[]>(getApiUrl('/transport/manifests/'), { params }).pipe(
       catchError(() => of([]))
+    );
+  }
+
+  createManifest(data: { trip: string; student: number; stop_name?: string }): Observable<TripManifest> {
+    return this.http.post<TripManifest>(getApiUrl('/transport/manifests/'), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to assign student')))
+    );
+  }
+
+  deleteManifest(id: number): Observable<void> {
+    return this.http.delete<void>(getApiUrl(`/transport/manifests/${id}/`)).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to remove student')))
     );
   }
 

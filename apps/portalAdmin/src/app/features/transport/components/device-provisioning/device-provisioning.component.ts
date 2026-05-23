@@ -3,9 +3,6 @@ import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +14,6 @@ import type { FleetVehicle } from '../../../../shared/models/transport.models';
   standalone: true,
   imports: [
     CommonModule, MatDialogModule, MatButtonModule, MatIconModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
     MatProgressBarModule, MatSnackBarModule, FormsModule,
   ],
   template: `
@@ -59,24 +55,24 @@ import type { FleetVehicle } from '../../../../shared/models/transport.models';
         </div>
       } @else {
         <div class="form-section">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>PIN Code</mat-label>
-            <input matInput [(ngModel)]="pinCode" placeholder="Enter 4-8 digit PIN" maxlength="8" (input)="sanitizePin()">
-            <mat-hint>Create a numeric PIN for conductor authentication</mat-hint>
-          </mat-form-field>
+          <div class="form-field">
+            <label class="input-label">PIN Code</label>
+            <input [(ngModel)]="pinCode" placeholder="Enter 4-8 digit PIN" maxlength="8" (input)="sanitizePin()">
+            <span class="field-hint">Create a numeric PIN for conductor authentication</span>
+          </div>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Assign Vehicle</mat-label>
-            <mat-select [(ngModel)]="selectedVehicleId">
-              <mat-option [value]="null">— Select Vehicle —</mat-option>
+          <div class="form-field">
+            <label class="input-label">Assign Vehicle</label>
+            <select [(ngModel)]="selectedVehicleId">
+              <option [ngValue]="null">— Select Vehicle —</option>
               @for (v of vehicles(); track v.id) {
-                <mat-option [value]="v.id">{{ v.registration_number }} ({{ v.capacity }} seats)</mat-option>
+                <option [ngValue]="v.id">{{ v.registration_number }} ({{ v.capacity }} seats)</option>
               }
-            </mat-select>
+            </select>
             @if (vehicles().length === 0) {
-              <mat-hint>Loading vehicles...</mat-hint>
+              <span class="field-hint">Loading vehicles...</span>
             }
-          </mat-form-field>
+          </div>
         </div>
       }
     </mat-dialog-content>
@@ -111,6 +107,47 @@ import type { FleetVehicle } from '../../../../shared/models/transport.models';
     .link-copy-row { display: flex; align-items: center; gap: 8px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 8px; padding: 8px 12px; }
     .login-link { flex: 1; font-size: 0.7rem; word-break: break-all; color: #1d4ed8; font-family: monospace; }
     .link-copy-row button { flex-shrink: 0; }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-field input,
+    .form-field select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+    }
+
+    .form-field input:focus,
+    .form-field select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+
+    .form-field select {
+      cursor: pointer;
+    }
+
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .field-hint {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
   `],
 })
 export class DeviceProvisioningComponent {

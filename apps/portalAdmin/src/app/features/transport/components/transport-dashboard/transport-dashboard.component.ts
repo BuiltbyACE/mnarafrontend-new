@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,6 +18,7 @@ import { FleetMapComponent } from '../fleet-map/fleet-map';
 import { TripCardComponent } from '../trip-card/trip-card.component';
 import { ManifestDrawerComponent } from '../manifest-drawer/manifest-drawer.component';
 import { DeviceManagerComponent } from '../device-manager/device-manager.component';
+import { BusFleetComponent } from '../bus-fleet/bus-fleet';
 import { TelemetryGaugeComponent } from '../telemetry-gauge/telemetry-gauge.component';
 import { IncidentTickerComponent } from '../incident-ticker/incident-ticker.component';
 import { RouteStepperComponent } from '../route-stepper/route-stepper.component';
@@ -32,7 +33,7 @@ import type { FleetTelemetry, DailyTrip } from '../../../../shared/models/transp
     MatProgressBarModule, MatProgressSpinnerModule, MatSnackBarModule,
     MatTooltipModule, MatTabsModule, MatFormFieldModule, MatInputModule,
     FleetMapComponent, TripCardComponent, ManifestDrawerComponent,
-    DeviceManagerComponent, TelemetryGaugeComponent, IncidentTickerComponent,
+    DeviceManagerComponent, BusFleetComponent, TelemetryGaugeComponent, IncidentTickerComponent,
     RouteStepperComponent,
   ],
   template: `
@@ -70,11 +71,11 @@ import type { FleetTelemetry, DailyTrip } from '../../../../shared/models/transp
             <mat-card-content>
               <div class="kpi-icon fleet-icon"><mat-icon>directions_bus</mat-icon></div>
               <div class="kpi-body">
-                <span class="kpi-value">{{ data.fleet_summary.total_vehicles }}</span>
+                <span class="kpi-value">{{ data.fleet_summary?.total_vehicles ?? 0 }}</span>
                 <span class="kpi-label">Total Vehicles</span>
                 <div class="kpi-sublabels">
-                  <span class="sublabel active">{{ data.fleet_summary.active_trips }} Active</span>
-                  <span class="sublabel warn">{{ data.fleet_summary.maintenance_due }} Maintenance</span>
+                  <span class="sublabel active">{{ data.fleet_summary?.active_trips ?? 0 }} Active</span>
+                  <span class="sublabel warn">{{ data.fleet_summary?.maintenance_due ?? 0 }} Maintenance</span>
                 </div>
               </div>
             </mat-card-content>
@@ -84,27 +85,27 @@ import type { FleetTelemetry, DailyTrip } from '../../../../shared/models/transp
             <mat-card-content>
               <div class="kpi-icon safety-icon"><mat-icon>school</mat-icon></div>
               <div class="kpi-body">
-                <span class="kpi-value">{{ data.student_safety.students_in_transit }}</span>
+                <span class="kpi-value">{{ data.student_safety?.students_in_transit ?? 0 }}</span>
                 <span class="kpi-label">Students in Transit</span>
                 <div class="kpi-sublabels">
                   <span class="sublabel"
-                       [class.text-success]="data.student_safety.manifest_completion_pct >= 90"
-                       [class.text-warning]="data.student_safety.manifest_completion_pct < 90">
-                    {{ data.student_safety.manifest_completion_pct }}% Manifest Complete
+                       [class.text-success]="(data.student_safety?.manifest_completion_pct ?? 0) >= 90"
+                       [class.text-warning]="(data.student_safety?.manifest_completion_pct ?? 0) < 90">
+                    {{ data.student_safety?.manifest_completion_pct ?? 0 }}% Manifest Complete
                   </span>
                 </div>
               </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card class="kpi-card" [class.alert-card]="data.compliance_alerts > 0">
+          <mat-card class="kpi-card" [class.alert-card]="(data.compliance_alerts ?? 0) > 0">
             <mat-card-content>
               <div class="kpi-icon compliance-icon"><mat-icon>gavel</mat-icon></div>
               <div class="kpi-body">
-                <span class="kpi-value" [class.text-danger]="data.compliance_alerts > 0">{{ data.compliance_alerts }}</span>
+                <span class="kpi-value" [class.text-danger]="(data.compliance_alerts ?? 0) > 0">{{ data.compliance_alerts ?? 0 }}</span>
                 <span class="kpi-label">Compliance Alerts</span>
                 <div class="kpi-sublabels">
-                  @if (data.compliance_alerts > 0) {
+                  @if ((data.compliance_alerts ?? 0) > 0) {
                     <span class="sublabel danger">Expiring permits/insurance</span>
                   } @else {
                     <span class="sublabel">All compliant</span>
@@ -119,19 +120,20 @@ import type { FleetTelemetry, DailyTrip } from '../../../../shared/models/transp
               <div class="kpi-icon punctuality-icon"><mat-icon>schedule</mat-icon></div>
               <div class="kpi-body">
                 <span class="kpi-value"
-                     [class.text-success]="data.punctuality.on_time_pct >= 85"
-                     [class.text-warning]="data.punctuality.on_time_pct >= 60 && data.punctuality.on_time_pct < 85"
-                     [class.text-danger]="data.punctuality.on_time_pct < 60">
-                  {{ data.punctuality.on_time_pct }}%
+                     [class.text-success]="(data.punctuality?.on_time_pct ?? 0) >= 85"
+                     [class.text-warning]="(data.punctuality?.on_time_pct ?? 0) >= 60 && (data.punctuality?.on_time_pct ?? 0) < 85"
+                     [class.text-danger]="(data.punctuality?.on_time_pct ?? 0) < 60">
+                  {{ data.punctuality?.on_time_pct ?? 0 }}%
                 </span>
                 <span class="kpi-label">On-Time Performance</span>
                 <div class="kpi-sublabels">
-                  <span class="sublabel">{{ data.punctuality.delayed_trips }} delayed of {{ data.punctuality.total_trips }} trips</span>
+                  <span class="sublabel">{{ data.punctuality?.delayed_trips ?? 0 }} delayed of {{ data.punctuality?.total_trips ?? 0 }} trips</span>
                 </div>
               </div>
             </mat-card-content>
           </mat-card>
         </div>
+      }
 
         <div class="war-room">
           <aside class="left-sidebar">
@@ -188,26 +190,27 @@ import type { FleetTelemetry, DailyTrip } from '../../../../shared/models/transp
           </aside>
 
           <main class="center-panel">
-            <div class="map-container">
-              @if (fleetTelemetry().length > 0) {
-                <app-fleet-map
-                  [telemetryData]="fleetTelemetry()"
-                  [showReconnecting]="service.wsReconnecting()"
-                  [focusTripId]="focusedTripId()"
-                  (markerClick)="onMarkerClick($event)"
-                />
-                <app-telemetry-gauge [telemetryData]="fleetTelemetry()" />
-              } @else {
-                <div class="map-placeholder">
-                  <mat-icon>map</mat-icon>
-                  <p>Waiting for GPS telemetry...</p>
+            <mat-tab-group class="nav-tabs" [(selectedIndex)]="selectedTabIndex">
+              <mat-tab label="Dashboard">
+                <div class="map-container">
+                  <app-fleet-map
+                    [telemetryData]="fleetTelemetry()"
+                    [showReconnecting]="service.wsReconnecting()"
+                    [focusTripId]="focusedTripId()"
+                    [routeCoordinates]="routeCoordinates()"
+                    [routesData]="service.routes()"
+                    (markerClick)="onMarkerClick($event)"
+                  />
+                  @if (fleetTelemetry().length > 0) {
+                    <app-telemetry-gauge [telemetryData]="fleetTelemetry()" />
+                  }
                 </div>
-              }
-            </div>
-
-            <mat-tab-group class="bottom-tabs" dynamicHeight>
+              </mat-tab>
               <mat-tab label="Device Management">
                 <app-device-manager />
+              </mat-tab>
+              <mat-tab label="Bus Fleet">
+                <app-bus-fleet />
               </mat-tab>
               <mat-tab label="Reports">
                 <div class="reports-tab">
@@ -237,7 +240,7 @@ import type { FleetTelemetry, DailyTrip } from '../../../../shared/models/transp
             @if (canViewIncidents()) {
               <mat-card class="sidebar-card incidents-card">
                 <mat-card-content class="no-padding">
-                  <app-incident-ticker [incidents]="data.incidents" />
+                  <app-incident-ticker [incidents]="service.incidents()" />
                 </mat-card-content>
               </mat-card>
             } @else {
@@ -287,15 +290,6 @@ import type { FleetTelemetry, DailyTrip } from '../../../../shared/models/transp
             </mat-card>
           </aside>
         </div>
-      }
-
-      @if (!dashboardData() && !isLoading() && !error()) {
-        <div class="initial-load">
-          <button mat-raised-button color="primary" (click)="loadData()">
-            <mat-icon>directions_bus</mat-icon> Load Transport Dashboard
-          </button>
-        </div>
-      }
 
       <app-manifest-drawer
         [trip]="manifestTrip()"
@@ -375,16 +369,12 @@ import type { FleetTelemetry, DailyTrip } from '../../../../shared/models/transp
     .no-selection mat-icon { font-size: 24px; width: 24px; height: 24px; opacity: 0.5; }
     .no-selection p { margin: 0; font-size: 0.75rem; }
 
-    .center-panel { display: flex; flex-direction: column; gap: 12px; }
+    .center-panel { display: flex; flex-direction: column; min-height: 0; }
     .map-container { position: relative; height: 480px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
-    .map-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: #94a3b8; background: #f8fafc; }
-    .map-placeholder mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: 0.5; }
-    .map-placeholder p { margin: 0; font-size: 0.875rem; }
-
-    .bottom-tabs { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
-    .bottom-tabs ::ng-deep .mat-mdc-tab-header { border-bottom: 1px solid #e2e8f0; }
-    .bottom-tabs ::ng-deep .mat-mdc-tab { font-size: 0.8rem; font-weight: 500; min-width: 120px; }
-    .bottom-tabs ::ng-deep .mat-mdc-tab-body-content { padding: 16px; }
+    .nav-tabs { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+    .nav-tabs ::ng-deep .mat-mdc-tab-header { border-bottom: 1px solid #e2e8f0; }
+    .nav-tabs ::ng-deep .mat-mdc-tab { font-size: 0.8rem; font-weight: 500; min-width: 120px; }
+    .nav-tabs ::ng-deep .mat-mdc-tab-body-content { padding: 16px; }
 
     .reports-tab { padding: 8px 0; }
     .report-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -436,10 +426,14 @@ export class TransportDashboardComponent implements OnInit, OnDestroy {
   readonly dashboardData = this.service.dashboardData;
   readonly isLoading = this.service.isLoading;
   readonly error = this.service.error;
-  readonly fleetTelemetry = this.service.telemetryUpdates;
+  readonly fleetTelemetry = computed(() => {
+    const data = this.service.telemetryUpdates();
+    return Array.isArray(data) ? data : [];
+  });
   readonly activeTrips = this.service.activeTrips;
   readonly incidents = this.service.incidents;
 
+  readonly selectedTabIndex = signal(0);
   readonly searchQuery = signal('');
   readonly reportLoading = signal(false);
   readonly reportError = signal<string | null>(null);
@@ -456,6 +450,7 @@ export class TransportDashboardComponent implements OnInit, OnDestroy {
 
   readonly activeTripCards = computed(() => {
     const trips = this.activeTrips();
+    if (!Array.isArray(trips)) return [];
     const q = this.searchQuery().toLowerCase();
     if (!q) return trips;
     return trips.filter(t =>
@@ -472,6 +467,14 @@ export class TransportDashboardComponent implements OnInit, OnDestroy {
     return this.service.getVehicleTelemetry(trip.vehicle);
   });
 
+  readonly routeCoordinates = computed(() => {
+    const trip = this.selectedTrip();
+    if (!trip?.route_details?.stops?.length) return [];
+    return trip.route_details.stops
+      .filter((s) => s.longitude && s.latitude)
+      .map((s) => [Number(s.longitude), Number(s.latitude)] as [number, number]);
+  });
+
   readonly onlineVehicles = computed(() =>
     this.fleetTelemetry().filter(t => t.status === 'ON_ROUTE' || t.status === 'IN_TRANSIT').length
   );
@@ -485,7 +488,7 @@ export class TransportDashboardComponent implements OnInit, OnDestroy {
 
   readonly avgOccupancyPct = computed(() => {
     const trips = this.activeTrips();
-    if (!trips.length) return 0;
+    if (!Array.isArray(trips) || !trips.length) return 0;
     const total = trips.reduce((sum, t) => {
       const cap = t.vehicle_details?.capacity || 1;
       return sum + Math.min(100, ((t.passenger_count ?? 0) / cap) * 100);
@@ -499,6 +502,8 @@ export class TransportDashboardComponent implements OnInit, OnDestroy {
     if (pct >= 70) return 'amber';
     return 'green';
   });
+
+  private readonly fleetMap = viewChild(FleetMapComponent);
 
   ngOnInit(): void {
     this.loadData();
@@ -522,6 +527,9 @@ export class TransportDashboardComponent implements OnInit, OnDestroy {
     this.service.getDailyTrips({ status: 'ON_ROUTE' }).subscribe({
       next: (trips) => this.service.activeTrips.set(trips),
     });
+    this.service.getRoutes().subscribe({
+      next: (routes) => this.service.routes.set(routes),
+    });
   }
 
   refreshDashboard(): void {
@@ -540,10 +548,7 @@ export class TransportDashboardComponent implements OnInit, OnDestroy {
       this.selectedTrip.set(trip);
       const telemetry = this.service.getVehicleTelemetry(trip.vehicle);
       if (telemetry) {
-        const mapComponent = document.querySelector('app-fleet-map') as unknown as { flyTo?: (lat: number, lng: number, zoom?: number) => void };
-        if (mapComponent?.flyTo) {
-          mapComponent.flyTo(Number(telemetry.latitude), Number(telemetry.longitude));
-        }
+        this.fleetMap()?.flyTo(Number(telemetry.latitude), Number(telemetry.longitude));
       }
     }
   }
