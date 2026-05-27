@@ -54,7 +54,7 @@
                   class="cal-event-dot"
                   [style.background-color]="evt.hexColor"
                   [title]="evt.title + (evt.time ? ' · ' + evt.time : '')"
-                  (click)="onEventClick($event, day)"
+                  (click)="onEventClick(evt, day, $event)"
                 ></span>
               }
               @if (getOverflowCount(day) > 0) {

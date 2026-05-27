@@ -1,1 +1,2 @@
-export * from './calendar/calendar-grid.component';
+export * from './lib/calendar/calendar-grid.component';
+export * from './lib/calendar/school-calendar-view.component';

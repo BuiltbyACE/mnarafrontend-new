@@ -123,6 +123,9 @@ export class LoginPage {
             case 'TRANSPORT':
               this.router.navigate(['/transport']);
               break;
+            case 'FINANCE':
+              this.router.navigate(['/finance']);
+              break;
             default:
               console.error('No routing rule for portal type:', portalType);
               setTimeout(() => {

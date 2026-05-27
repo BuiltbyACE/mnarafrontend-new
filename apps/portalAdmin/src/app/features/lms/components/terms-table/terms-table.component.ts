@@ -6,8 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SchedulingService, AcademicTerm } from '../../services/scheduling.service';
@@ -23,20 +21,17 @@ import { TermDialogComponent } from '../term-dialog/term-dialog.component';
     MatButtonModule,
     MatIconModule,
     MatCardModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatChipsModule,
+     MatDialogModule,
+     MatChipsModule,
     MatProgressSpinnerModule,
   ],
   template: `
     <div class="table-container">
-      <div class="table-header">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-icon matPrefix>search</mat-icon>
-          <input matInput placeholder="Search terms..." [(ngModel)]="searchQuery" />
-        </mat-form-field>
-        <button mat-flat-button color="primary" (click)="openCreateDialog()">
+       <div class="table-header">
+         <div class="search-field">
+           <input placeholder="Search terms..." [(ngModel)]="searchQuery" />
+         </div>
+         <button mat-flat-button color="primary" (click)="openCreateDialog()">
           <mat-icon>add</mat-icon>
           Add Term
         </button>
@@ -104,9 +99,26 @@ import { TermDialogComponent } from '../term-dialog/term-dialog.component';
       margin-bottom: 16px;
       gap: 16px;
     }
-    .search-field { flex: 1; max-width: 400px; }
-    .full-width-table { width: 100%; }
-    mat-chip.active { background: #dcfce7; color: #166534; }
+     .search-field { flex: 1; max-width: 400px; }
+     .search-field input {
+       width: 100%;
+       max-width: 400px;
+       padding: 10px 14px;
+       border: 1px solid #d1d5db;
+       border-radius: 8px;
+       font-size: 14px;
+       color: #1f2937;
+       background: #fff;
+       transition: border-color 0.15s;
+       box-sizing: border-box;
+     }
+     .search-field input:focus {
+       outline: none;
+       border-color: #3b82f6;
+       box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+     }
+     .full-width-table { width: 100%; }
+     mat-chip.active { background: #dcfce7; color: #166534; }
     mat-chip.inactive { background: #fee2e2; color: #991b1b; }
     @media (max-width: 768px) {
       .table-header { flex-direction: column; align-items: stretch; }

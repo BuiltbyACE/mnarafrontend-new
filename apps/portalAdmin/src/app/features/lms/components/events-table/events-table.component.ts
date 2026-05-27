@@ -166,9 +166,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { OperationsService, SchoolEvent } from '../../services/operations.service';
+import { EventDialogComponent, EventDialogData } from '../event-dialog/event-dialog.component';
 
 @Component({
   selector: 'app-events-table',
@@ -178,21 +178,19 @@ import { OperationsService, SchoolEvent } from '../../services/operations.servic
     FormsModule, 
     MatTableModule, 
     MatChipsModule, 
-    MatButtonModule, 
-    MatIconModule,
-    MatInputModule,
-    MatFormFieldModule
-  ],
+     MatButtonModule, 
+     MatIconModule,
+     MatDialogModule
+   ],
   template: `
     <div class="table-container">
-      <div class="table-header">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-icon matPrefix>search</mat-icon>
-          <input matInput placeholder="Search events..." 
-                 [ngModel]="searchQuery()" 
-                 (ngModelChange)="searchQuery.set($event)" />
-        </mat-form-field>
-        <button mat-flat-button color="primary" (click)="openCreateDialog()">
+       <div class="table-header">
+         <div class="search-field">
+           <input placeholder="Search events..." 
+                  [ngModel]="searchQuery()" 
+                  (ngModelChange)="searchQuery.set($event)" />
+         </div>
+         <button mat-flat-button color="primary" (click)="openCreateDialog()">
           <mat-icon>add</mat-icon>
           Add Event
         </button>
@@ -280,10 +278,27 @@ import { OperationsService, SchoolEvent } from '../../services/operations.servic
       margin-bottom: 16px;
       gap: 16px;
     }
-    .search-field { flex: 1; max-width: 400px; }
-    .full-width-table { width: 100%; }
-    
-    @media (max-width: 768px) {
+     .search-field { flex: 1; max-width: 400px; }
+     .search-field input {
+       width: 100%;
+       max-width: 400px;
+       padding: 10px 14px;
+       border: 1px solid #d1d5db;
+       border-radius: 8px;
+       font-size: 14px;
+       color: #1f2937;
+       background: #fff;
+       transition: border-color 0.15s;
+       box-sizing: border-box;
+     }
+     .search-field input:focus {
+       outline: none;
+       border-color: #3b82f6;
+       box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+     }
+     .full-width-table { width: 100%; }
+     
+     @media (max-width: 768px) {
       .table-header { flex-direction: column; align-items: stretch; }
       .search-field { max-width: 100%; }
     }
@@ -291,6 +306,7 @@ import { OperationsService, SchoolEvent } from '../../services/operations.servic
 })
 export class EventsTableComponent {
   operationsService = inject(OperationsService);
+  private dialog = inject(MatDialog);
 
   displayedColumns: string[] = [
     'title', 
@@ -319,14 +335,28 @@ export class EventsTableComponent {
   });
 
   openCreateDialog() {
-    console.log('Opening Create Dialog...');
+    const data: EventDialogData = { isEdit: false };
+    const ref = this.dialog.open(EventDialogComponent, { data, width: '600px' });
+    ref.afterClosed().subscribe(result => {
+      if (result) {
+        this.operationsService.createEvent(result).subscribe();
+      }
+    });
   }
 
   openEditDialog(row: SchoolEvent) {
-    console.log('Opening Edit Dialog for:', row.title);
+    const data: EventDialogData = { isEdit: true, event: row };
+    const ref = this.dialog.open(EventDialogComponent, { data, width: '600px' });
+    ref.afterClosed().subscribe(result => {
+      if (result) {
+        this.operationsService.updateEvent(row.id, result).subscribe();
+      }
+    });
   }
 
   deleteItem(row: SchoolEvent) {
-    console.log('Triggering delete for:', row.id);
+    if (confirm(`Delete event "${row.title}"?`)) {
+      this.operationsService.deleteEvent(row.id).subscribe();
+    }
   }
 }

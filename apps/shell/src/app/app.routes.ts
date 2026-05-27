@@ -66,6 +66,16 @@ export const appRoutes: Route[] = [
     loadChildren: loadPortal('portalTransport/Routes'),
   },
   {
+    path: 'finance',
+    canActivate: [authGuard],
+    loadChildren: loadPortal('portalFinance/Routes'),
+  },
+  {
+    path: 'portalFinance',
+    canActivate: [authGuard],
+    loadChildren: loadPortal('portalFinance/Routes'),
+  },
+  {
     path: '',
     redirectTo: '/login',
     pathMatch: 'full',

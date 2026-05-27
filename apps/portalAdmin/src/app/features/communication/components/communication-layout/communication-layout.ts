@@ -18,14 +18,11 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     <div class="comm-layout-container">
       <nav class="sub-navigation" aria-label="Communication section navigation">
-        <a routerLink="dashboard"     routerLinkActive="active" class="nav-link"><mat-icon>dashboard</mat-icon>Dashboard</a>
-        <a routerLink="broadcasts"    routerLinkActive="active" class="nav-link"><mat-icon>campaign</mat-icon>Broadcasts</a>
-        <a routerLink="conversations" routerLinkActive="active" class="nav-link"><mat-icon>chat</mat-icon>Conversations</a>
-        <a routerLink="engagement"    routerLinkActive="active" class="nav-link"><mat-icon>trending_up</mat-icon>Engagement</a>
-        <a routerLink="meetings"      routerLinkActive="active" class="nav-link"><mat-icon>groups</mat-icon>Meetings</a>
-        <a routerLink="support"       routerLinkActive="active" class="nav-link"><mat-icon>support_agent</mat-icon>Support</a>
-        <a routerLink="analytics"     routerLinkActive="active" class="nav-link"><mat-icon>analytics</mat-icon>Analytics</a>
-        <a routerLink="settings"      routerLinkActive="active" class="nav-link"><mat-icon>settings</mat-icon>Settings</a>
+        <a routerLink="chat"     routerLinkActive="active" class="nav-link"><mat-icon>chat</mat-icon>Chat</a>
+        <a routerLink="meetings" routerLinkActive="active" class="nav-link"><mat-icon>groups</mat-icon>Meetings</a>
+        <a routerLink="support"  routerLinkActive="active" class="nav-link"><mat-icon>support_agent</mat-icon>Support</a>
+        <a routerLink="analytics" routerLinkActive="active" class="nav-link"><mat-icon>analytics</mat-icon>Analytics</a>
+        <a routerLink="settings" routerLinkActive="active" class="nav-link"><mat-icon>settings</mat-icon>Settings</a>
       </nav>
 
       <div class="outlet-wrapper">

@@ -9,11 +9,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
@@ -46,11 +41,6 @@ interface AdminCalendarDay {
     ReactiveFormsModule,
     MatIconModule,
     MatButtonModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatInputModule,
-    MatFormFieldModule,
     MatSlideToggleModule,
     MatProgressSpinnerModule,
     MatCardModule,
@@ -115,8 +105,8 @@ export class AdminCalendarManagerComponent {
   readonly eventForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     event_type: ['TERM' as AdminEventType, Validators.required],
-    start_date: [new Date(), Validators.required],
-    end_date: [new Date(), Validators.required],
+    start_date: [this.formatDate(new Date()), Validators.required],
+    end_date: [this.formatDate(new Date()), Validators.required],
     is_non_learning_day: [false],
     description: [''],
     isFullDayHighlight: [true],
@@ -151,13 +141,10 @@ export class AdminCalendarManagerComponent {
   onDayClicked(day: AdminCalendarDay): void {
     if (day.day === null || !day.dateStr) return;
 
-    const [year, month, dayNum] = day.dateStr.split('-').map(Number);
-    const clickedDate = new Date(year, month - 1, dayNum);
-
-    this.selectedDate.set(clickedDate);
+    this.selectedDate.set(new Date(day.dateStr));
     this.eventForm.patchValue({
-      start_date: clickedDate,
-      end_date: clickedDate,
+      start_date: day.dateStr,
+      end_date: day.dateStr,
       hexColor: this.calendarService.getDefaultColor(this.eventForm.value.event_type as AdminEventType),
     });
     this.showPanel.set(true);
@@ -170,8 +157,8 @@ export class AdminCalendarManagerComponent {
       is_non_learning_day: false,
       isFullDayHighlight: true,
       hexColor: '#2563eb',
-      start_date: new Date(),
-      end_date: new Date(),
+      start_date: this.formatDate(new Date()),
+      end_date: this.formatDate(new Date()),
     });
   }
 
@@ -210,8 +197,8 @@ export class AdminCalendarManagerComponent {
 
     this.isSubmitting.set(true);
     const formValue = this.eventForm.value;
-    const startDate = formValue.start_date as Date;
-    const endDate = formValue.end_date as Date;
+    const startDate = new Date(formValue.start_date as string);
+    const endDate = new Date(formValue.end_date as string);
 
     const payload: CreateEventPayload = {
       title: formValue.title!,

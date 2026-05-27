@@ -288,7 +288,7 @@ npx nx serve shell --devRemotes=portalAdmin
 
 npx nx run-many --target=build --all
 
-npx nx serve shell --devRemotes=portalAdmin,portalStudent,portalTeacher,portalParent,portalFinance
+npx nx serve shell --devRemotes=portalAdmin,portalStudent,portalTeacher,portalParent
 
 
 STU-2026-001

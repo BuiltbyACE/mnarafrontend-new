@@ -2,11 +2,8 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
 import { Observable } from 'rxjs';
 import { AcademicsService, Department, KeyStage, YearLevel, Subject, Classroom, SubjectOffering } from '../../services/academics.service';
 
@@ -22,11 +19,8 @@ export interface DialogData {
     CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatSelectModule,
   ],
   template: `
     <div class="dialog-container">
@@ -43,163 +37,163 @@ export interface DialogData {
       <mat-dialog-content>
         <form [formGroup]="entityForm" class="dialog-form">
           @if (entityType === 'departments') {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="name" placeholder="e.g., Sciences" />
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Name</label>
+              <input formControlName="name" placeholder="e.g., Sciences" />
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" rows="3" placeholder="Department description"></textarea>
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Description</label>
+              <textarea formControlName="description" rows="3" placeholder="Department description"></textarea>
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Status</mat-label>
-              <mat-select formControlName="is_active">
-                <mat-option [value]="true">Active</mat-option>
-                <mat-option [value]="false">Inactive</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Status</label>
+              <select formControlName="is_active">
+                <option [value]="true">Active</option>
+                <option [value]="false">Inactive</option>
+              </select>
+            </div>
           }
 
           @if (entityType === 'key-stages') {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="name" placeholder="e.g., Key Stage 1" />
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Name</label>
+              <input formControlName="name" placeholder="e.g., Key Stage 1" />
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Order</mat-label>
-              <input matInput type="number" formControlName="order" placeholder="e.g., 1" />
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Order</label>
+              <input type="number" formControlName="order" placeholder="e.g., 1" />
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" rows="3" placeholder="Key stage description"></textarea>
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Description</label>
+              <textarea formControlName="description" rows="3" placeholder="Key stage description"></textarea>
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Status</mat-label>
-              <mat-select formControlName="is_active">
-                <mat-option [value]="true">Active</mat-option>
-                <mat-option [value]="false">Inactive</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Status</label>
+              <select formControlName="is_active">
+                <option [value]="true">Active</option>
+                <option [value]="false">Inactive</option>
+              </select>
+            </div>
           }
 
           @if (entityType === 'year-levels') {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="name" placeholder="e.g., Year 1" />
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Name</label>
+              <input formControlName="name" placeholder="e.g., Year 1" />
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Key Stage</mat-label>
-              <mat-select formControlName="key_stage_id">
+            <div class="form-field">
+              <label class="input-label">Key Stage</label>
+              <select formControlName="key_stage_id">
                 @for (stage of keyStages(); track stage.id) {
-                  <mat-option [value]="stage.id">{{ stage.name }}</mat-option>
+                  <option [value]="stage.id">{{ stage.name }}</option>
                 }
-              </mat-select>
-            </mat-form-field>
+              </select>
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Status</mat-label>
-              <mat-select formControlName="is_active">
-                <mat-option [value]="true">Active</mat-option>
-                <mat-option [value]="false">Inactive</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Status</label>
+              <select formControlName="is_active">
+                <option [value]="true">Active</option>
+                <option [value]="false">Inactive</option>
+              </select>
+            </div>
           }
 
           @if (entityType === 'subjects') {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="name" placeholder="e.g., Mathematics" />
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Name</label>
+              <input formControlName="name" placeholder="e.g., Mathematics" />
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Code</mat-label>
-              <input matInput formControlName="code" placeholder="e.g., MATH101" />
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Code</label>
+              <input formControlName="code" placeholder="e.g., MATH101" />
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Department</mat-label>
-              <mat-select formControlName="department_id">
+            <div class="form-field">
+              <label class="input-label">Department</label>
+              <select formControlName="department_id">
                 @for (dept of departments(); track dept.id) {
-                  <mat-option [value]="dept.id">{{ dept.name }}</mat-option>
+                  <option [value]="dept.id">{{ dept.name }}</option>
                 }
-              </mat-select>
-            </mat-form-field>
+              </select>
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Status</mat-label>
-              <mat-select formControlName="is_active">
-                <mat-option [value]="true">Active</mat-option>
-                <mat-option [value]="false">Inactive</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Status</label>
+              <select formControlName="is_active">
+                <option [value]="true">Active</option>
+                <option [value]="false">Inactive</option>
+              </select>
+            </div>
           }
 
           @if (entityType === 'classrooms') {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="name" placeholder="e.g., Room A101" />
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Name</label>
+              <input formControlName="name" placeholder="e.g., Room A101" />
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Building</mat-label>
-              <input matInput formControlName="building" placeholder="e.g., Main Block" />
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Building</label>
+              <input formControlName="building" placeholder="e.g., Main Block" />
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Capacity</mat-label>
-              <input matInput type="number" formControlName="capacity" placeholder="e.g., 30" />
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Capacity</label>
+              <input type="number" formControlName="capacity" placeholder="e.g., 30" />
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Status</mat-label>
-              <mat-select formControlName="is_active">
-                <mat-option [value]="true">Active</mat-option>
-                <mat-option [value]="false">Inactive</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Status</label>
+              <select formControlName="is_active">
+                <option [value]="true">Active</option>
+                <option [value]="false">Inactive</option>
+              </select>
+            </div>
           }
 
           @if (entityType === 'subject-offerings') {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Subject</mat-label>
-              <mat-select formControlName="subject_id">
+            <div class="form-field">
+              <label class="input-label">Subject</label>
+              <select formControlName="subject_id">
                 @for (subject of subjects(); track subject.id) {
-                  <mat-option [value]="subject.id">{{ subject.name }}</mat-option>
+                  <option [value]="subject.id">{{ subject.name }}</option>
                 }
-              </mat-select>
-            </mat-form-field>
+              </select>
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Year Level</mat-label>
-              <mat-select formControlName="year_level_id">
+            <div class="form-field">
+              <label class="input-label">Year Level</label>
+              <select formControlName="year_level_id">
                 @for (level of yearLevels(); track level.id) {
-                  <mat-option [value]="level.id">{{ level.name }}</mat-option>
+                  <option [value]="level.id">{{ level.name }}</option>
                 }
-              </mat-select>
-            </mat-form-field>
+              </select>
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Key Stage</mat-label>
-              <mat-select formControlName="key_stage_id">
+            <div class="form-field">
+              <label class="input-label">Key Stage</label>
+              <select formControlName="key_stage_id">
                 @for (stage of keyStages(); track stage.id) {
-                  <mat-option [value]="stage.id">{{ stage.name }}</mat-option>
+                  <option [value]="stage.id">{{ stage.name }}</option>
                 }
-              </mat-select>
-            </mat-form-field>
+              </select>
+            </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Status</mat-label>
-              <mat-select formControlName="is_active">
-                <mat-option [value]="true">Active</mat-option>
-                <mat-option [value]="false">Inactive</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Status</label>
+              <select formControlName="is_active">
+                <option [value]="true">Active</option>
+                <option [value]="false">Inactive</option>
+              </select>
+            </div>
           }
         </form>
       </mat-dialog-content>
@@ -265,6 +259,48 @@ export interface DialogData {
 
     mat-dialog-actions button[mat-raised-button] {
       min-width: 100px;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 4px;
     }
   `],
 })

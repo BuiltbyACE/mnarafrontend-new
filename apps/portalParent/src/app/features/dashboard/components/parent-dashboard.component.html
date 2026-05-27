@@ -13,12 +13,11 @@
     <header class="dashboard-header">
       <div class="student-info">
         <h1 class="student-name">Overview for {{ data.student_name }}</h1>
-        <span class="student-form">{{ data.student_form }}</span>
       </div>
     </header>
 
     <div class="cards-row">
-      <mat-card class="status-card safety-card" [class]="'safety-' + data.safety_status.color_code">
+      <mat-card class="status-card safety-card" [class.safety-on-campus]="data.safety_status.status === 'ON_CAMPUS'" [class.safety-off-campus]="data.safety_status.status === 'OFF_CAMPUS'">
         <mat-card-content>
           <div class="card-header">
             <mat-icon class="card-icon">verified_user</mat-icon>
@@ -28,22 +27,27 @@
             <p class="status-message">{{ data.safety_status.message }}</p>
             <span class="status-time">
               <mat-icon class="time-icon">schedule</mat-icon>
-              {{ data.safety_status.timestamp | date:'short' }}
+              {{ data.safety_status.timestamp }}
             </span>
           </div>
         </mat-card-content>
       </mat-card>
 
-      <mat-card class="status-card finance-card" [class.balance-warning]="data.term_balance > 0" [class.balance-paid]="data.term_balance === 0">
+      <mat-card class="status-card finance-card" [class.balance-warning]="data.financial_snapshot.term_balance > 0" [class.balance-paid]="data.financial_snapshot.term_balance === 0">
         <mat-card-content>
           <div class="card-header">
             <mat-icon class="card-icon">account_balance_wallet</mat-icon>
             <span class="card-label">Term Balance</span>
           </div>
           <div class="card-body">
-            @if (data.term_balance > 0) {
-              <p class="balance-amount">{{ formatBalance(data.term_balance) }}</p>
-              <span class="balance-due">Payment due by March 15, 2026</span>
+            @if (data.financial_snapshot.term_balance > 0) {
+              <p class="balance-amount">{{ formatCurrency(data.financial_snapshot.term_balance) }}</p>
+              <span class="balance-due" *ngIf="data.financial_snapshot.next_due_date">
+                Due by {{ data.financial_snapshot.next_due_date }}
+              </span>
+              <span class="balance-status" [style.color]="STATUS_COLORS[data.financial_snapshot.status]">
+                {{ data.financial_snapshot.status }}
+              </span>
               <a routerLink="finance/pay-now" class="pay-btn">
                 <mat-icon>send</mat-icon>
                 Pay via M-Pesa
@@ -63,18 +67,22 @@
       <mat-card class="details-card academics-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="section-icon">school</mat-icon>
-          <mat-card-title>Recent Grades</mat-card-title>
+          <mat-card-title>Recent Academics</mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <div class="grades-list">
-            @for (grade of data.recent_grades; track grade.subject) {
+            @for (academic of data.recent_academics; track academic.subject) {
               <div class="grade-item">
-                <span class="grade-subject">{{ grade.subject }}</span>
-                <span class="grade-term">{{ grade.term }}</span>
-                <span class="grade-badge" [style.background]="getGradeBgColor(grade.grade)" [style.color]="getGradeTextColor(grade.grade)">
-                  {{ grade.grade }}
+                <span class="grade-subject">{{ academic.subject }}</span>
+                <span class="grade-term">{{ academic.assessment }}</span>
+                <span class="grade-score">{{ academic.score }}</span>
+                <span class="grade-badge" [style.background]="getGradeBgColor(academic.grade)" [style.color]="getGradeTextColor(academic.grade)">
+                  {{ academic.grade }}
                 </span>
               </div>
+            }
+            @if (data.recent_academics.length === 0) {
+              <div class="no-data">No recent academics available</div>
             }
           </div>
         </mat-card-content>
@@ -100,7 +108,7 @@
                 }
                 <div class="notice-content">
                   <span class="notice-title">{{ notice.title }}</span>
-                  <span class="notice-date">{{ notice.created_at | date:'mediumDate' }}</span>
+                  <span class="notice-date">{{ notice.date }}</span>
                 </div>
               </div>
             }
@@ -113,7 +121,7 @@
           </div>
         </mat-card-content>
         <mat-card-actions>
-          <a routerLink="communication/broadcasts" class="view-link">
+          <a routerLink="announcements" class="view-link">
             View All Notices
             <mat-icon>arrow_forward</mat-icon>
           </a>

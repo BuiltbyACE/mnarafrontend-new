@@ -152,10 +152,10 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { OperationsService, IncidentLog } from '../../services/operations.service';
+import { IncidentDialogComponent, IncidentDialogData } from '../incident-dialog/incident-dialog.component';
 
 @Component({
   selector: 'app-incidents-table',
@@ -165,22 +165,20 @@ import { OperationsService, IncidentLog } from '../../services/operations.servic
     FormsModule, 
     MatTableModule, 
     MatChipsModule, 
-    MatButtonModule, 
-    MatIconModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatTooltipModule
-  ],
+     MatButtonModule, 
+     MatIconModule,
+     MatTooltipModule,
+     MatDialogModule
+   ],
   template: `
     <div class="table-container">
-      <div class="table-header">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-icon matPrefix>search</mat-icon>
-          <input matInput placeholder="Search incidents..." 
-                 [ngModel]="searchQuery()" 
-                 (ngModelChange)="searchQuery.set($event)" />
-        </mat-form-field>
-        <button mat-flat-button color="warn" (click)="openCreateDialog()">
+       <div class="table-header">
+         <div class="search-field">
+           <input placeholder="Search incidents..." 
+                  [ngModel]="searchQuery()" 
+                  (ngModelChange)="searchQuery.set($event)" />
+         </div>
+         <button mat-flat-button color="warn" (click)="openCreateDialog()">
           <mat-icon>report_problem</mat-icon>
           Report Incident
         </button>
@@ -252,10 +250,27 @@ import { OperationsService, IncidentLog } from '../../services/operations.servic
   styles: [`
     .table-container { padding: 16px; }
     .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 16px; }
-    .search-field { flex: 1; max-width: 400px; }
-    .full-width-table { width: 100%; }
-    
-    .incident-cell, .report-cell { display: flex; flex-direction: column; padding: 8px 0; }
+     .search-field { flex: 1; max-width: 400px; }
+     .search-field input {
+       width: 100%;
+       max-width: 400px;
+       padding: 10px 14px;
+       border: 1px solid #d1d5db;
+       border-radius: 8px;
+       font-size: 14px;
+       color: #1f2937;
+       background: #fff;
+       transition: border-color 0.15s;
+       box-sizing: border-box;
+     }
+     .search-field input:focus {
+       outline: none;
+       border-color: #3b82f6;
+       box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+     }
+     .full-width-table { width: 100%; }
+     
+     .incident-cell, .report-cell { display: flex; flex-direction: column; padding: 8px 0; }
     .incident-title { font-weight: 600; color: #1e293b; }
     .incident-desc { font-size: 0.8rem; color: #64748b; line-height: 1.2; }
     .date-sub { font-size: 0.75rem; color: #94a3b8; }
@@ -274,6 +289,7 @@ import { OperationsService, IncidentLog } from '../../services/operations.servic
 })
 export class IncidentsTableComponent {
   operationsService = inject(OperationsService);
+  private dialog = inject(MatDialog);
 
   displayedColumns: string[] = [
     'details', 
@@ -297,6 +313,23 @@ export class IncidentsTableComponent {
     );
   });
 
-  openCreateDialog() { console.log('Opening Incident Form...'); }
-  openEditDialog(row: IncidentLog) { console.log('Editing Incident:', row.id); }
+  openCreateDialog() {
+    const data: IncidentDialogData = { isEdit: false };
+    const ref = this.dialog.open(IncidentDialogComponent, { data, width: '600px' });
+    ref.afterClosed().subscribe(result => {
+      if (result) {
+        this.operationsService.createIncident(result).subscribe();
+      }
+    });
+  }
+
+  openEditDialog(row: IncidentLog) {
+    const data: IncidentDialogData = { isEdit: true, incident: row };
+    const ref = this.dialog.open(IncidentDialogComponent, { data, width: '600px' });
+    ref.afterClosed().subscribe(result => {
+      if (result) {
+        this.operationsService.updateIncident(row.id, result).subscribe();
+      }
+    });
+  }
 }

@@ -12,46 +12,44 @@
       <mat-card class="gate-taps-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="card-icon">pin_drop</mat-icon>
-          <mat-card-title>Gate Taps</mat-card-title>
-          <mat-card-subtitle>Today's check-in/out records</mat-card-subtitle>
+          <mat-card-title>Today's Attendance</mat-card-title>
+          <mat-card-subtitle>Check-in / check-out records</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="tap-records">
-            <div class="tap-record">
-              <div class="tap-icon-wrapper tap-arrived">
-                <mat-icon>login</mat-icon>
-              </div>
-              <div class="tap-details">
-                <span class="tap-event">Arrived at School</span>
-                <span class="tap-time">07:42 AM</span>
-              </div>
-              <span class="tap-status status-on-time">On Time</span>
+          @if (attendanceLoading()) {
+            <div class="loading-wrap"><mat-spinner diameter="24"></mat-spinner></div>
+          } @else if (attendanceToday().length > 0) {
+            <div class="tap-records">
+              @for (rec of attendanceToday(); track rec.date + rec.student) {
+                <div class="tap-record">
+                  <div class="tap-icon-wrapper" [class.tap-present]="rec.status === 'PRESENT'" [class.tap-absent]="rec.status === 'ABSENT'" [class.tap-late]="rec.status === 'LATE'">
+                    <mat-icon>{{ rec.status === 'PRESENT' ? 'login' : rec.status === 'ABSENT' ? 'block' : 'schedule' }}</mat-icon>
+                  </div>
+                  <div class="tap-details">
+                    <span class="tap-event">{{ rec.status === 'PRESENT' ? 'Present' : rec.status === 'ABSENT' ? 'Absent' : 'Late' }}</span>
+                    <span class="tap-time">{{ rec.date | date:'shortTime' }}</span>
+                  </div>
+                  <span class="tap-status" [style.color]="STATUS_COLORS[rec.status]">{{ rec.status }}</span>
+                </div>
+              }
             </div>
-            <div class="tap-record">
-              <div class="tap-icon-wrapper tap-departed">
-                <mat-icon>logout</mat-icon>
-              </div>
-              <div class="tap-details">
-                <span class="tap-event">Departed School</span>
-                <span class="tap-time">--:-- PM</span>
-              </div>
-              <span class="tap-status status-pending">Pending</span>
-            </div>
-          </div>
+          } @else {
+            <div class="no-data-sm">No attendance records for today</div>
+          }
 
           <div class="attendance-summary">
             <h3 class="summary-title">This Month's Attendance</h3>
             <div class="attendance-stats">
               <div class="stat">
-                <span class="stat-value">22</span>
+                <span class="stat-value">{{ presentCount }}</span>
                 <span class="stat-label">Days Present</span>
               </div>
               <div class="stat">
-                <span class="stat-value">0</span>
+                <span class="stat-value">{{ absentCount }}</span>
                 <span class="stat-label">Days Absent</span>
               </div>
               <div class="stat">
-                <span class="stat-value">98%</span>
+                <span class="stat-value">{{ attendanceRate }}%</span>
                 <span class="stat-label">Attendance Rate</span>
               </div>
             </div>

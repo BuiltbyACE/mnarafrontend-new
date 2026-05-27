@@ -5,9 +5,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { OperationsService, Announcement } from '../../services/operations.service';
+import { AnnouncementDialogComponent, AnnouncementDialogData } from '../announcement-dialog/announcement-dialog.component';
 
 @Component({
   selector: 'app-announcements-table',
@@ -17,21 +17,19 @@ import { OperationsService, Announcement } from '../../services/operations.servi
     FormsModule, 
     MatTableModule, 
     MatChipsModule, 
-    MatButtonModule, 
-    MatIconModule,
-    MatInputModule,
-    MatFormFieldModule
-  ],
+     MatButtonModule, 
+     MatIconModule,
+     MatDialogModule
+   ],
   template: `
     <div class="table-container">
-      <div class="table-header">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-icon matPrefix>search</mat-icon>
-          <input matInput placeholder="Search announcements..." 
-                 [ngModel]="searchQuery()" 
-                 (ngModelChange)="searchQuery.set($event)" />
-        </mat-form-field>
-        <button mat-flat-button color="primary" (click)="openCreateDialog()">
+       <div class="table-header">
+         <div class="search-field">
+           <input placeholder="Search announcements..." 
+                  [ngModel]="searchQuery()" 
+                  (ngModelChange)="searchQuery.set($event)" />
+         </div>
+         <button mat-flat-button color="primary" (click)="openCreateDialog()">
           <mat-icon>add</mat-icon>
           Add Announcement
         </button>
@@ -112,10 +110,27 @@ import { OperationsService, Announcement } from '../../services/operations.servi
       margin-bottom: 16px;
       gap: 16px;
     }
-    .search-field { flex: 1; max-width: 400px; }
-    .full-width-table { width: 100%; }
-    
-    @media (max-width: 768px) {
+     .search-field { flex: 1; max-width: 400px; }
+     .search-field input {
+       width: 100%;
+       max-width: 400px;
+       padding: 10px 14px;
+       border: 1px solid #d1d5db;
+       border-radius: 8px;
+       font-size: 14px;
+       color: #1f2937;
+       background: #fff;
+       transition: border-color 0.15s;
+       box-sizing: border-box;
+     }
+     .search-field input:focus {
+       outline: none;
+       border-color: #3b82f6;
+       box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+     }
+     .full-width-table { width: 100%; }
+     
+     @media (max-width: 768px) {
       .table-header { flex-direction: column; align-items: stretch; }
       .search-field { max-width: 100%; }
     }
@@ -123,6 +138,7 @@ import { OperationsService, Announcement } from '../../services/operations.servi
 })
 export class AnnouncementsTableComponent implements OnInit {
   operationsService = inject(OperationsService);
+  private dialog = inject(MatDialog);
 
   // Mapped exactly to your HTML ng-containers
   displayedColumns: string[] = [
@@ -162,17 +178,28 @@ export class AnnouncementsTableComponent implements OnInit {
   }
 
   openCreateDialog() {
-    console.log('Opening Create Dialog...');
-    // Add MatDialog open logic here later
+    const data: AnnouncementDialogData = { isEdit: false };
+    const ref = this.dialog.open(AnnouncementDialogComponent, { data, width: '600px' });
+    ref.afterClosed().subscribe(result => {
+      if (result) {
+        this.operationsService.createAnnouncement(result).subscribe();
+      }
+    });
   }
 
   openEditDialog(row: Announcement) {
-    console.log('Opening Edit Dialog for:', row.title);
-    // Add MatDialog edit logic here later
+    const data: AnnouncementDialogData = { isEdit: true, announcement: row };
+    const ref = this.dialog.open(AnnouncementDialogComponent, { data, width: '600px' });
+    ref.afterClosed().subscribe(result => {
+      if (result) {
+        this.operationsService.updateAnnouncement(row.id, result).subscribe();
+      }
+    });
   }
 
   deleteItem(row: Announcement) {
-    console.log('Triggering delete for:', row.id);
-    // Add service delete call here later
+    if (confirm(`Delete announcement "${row.title}"?`)) {
+      this.operationsService.deleteAnnouncement(row.id).subscribe();
+    }
   }
 }

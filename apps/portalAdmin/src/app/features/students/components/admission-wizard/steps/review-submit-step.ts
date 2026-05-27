@@ -1,0 +1,150 @@
+import { Component, input, output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AdmissionCreatePayload, CONDITION_LABELS, MedicalConditionKey } from '../../../../../shared/models/students.models';
+
+@Component({
+  selector: 'app-review-submit-step',
+  standalone: true,
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  template: `
+    <div class="step-container">
+      <h2>Review & Submit</h2>
+      <p class="step-description">Please review all information before submitting the admission</p>
+
+      <div class="review-sections">
+        <div class="review-section">
+          <h3>Student Information</h3>
+          <div class="review-grid">
+            <div><span class="rlabel">Name</span><span class="rvalue">{{ data().first_name }} {{ data().last_name }}</span></div>
+            <div><span class="rlabel">DOB</span><span class="rvalue">{{ data().date_of_birth }}</span></div>
+            <div><span class="rlabel">Gender</span><span class="rvalue">{{ data().gender }}</span></div>
+            <div><span class="rlabel">Religion</span><span class="rvalue">{{ data().religion || '—' }}</span></div>
+            <div><span class="rlabel">Nationality</span><span class="rvalue">{{ data().nationality }}</span></div>
+            <div><span class="rlabel">Residence</span><span class="rvalue">{{ data().residence || '—' }}</span></div>
+          </div>
+        </div>
+
+        <div class="review-section">
+          <h3>Class Selection</h3>
+          <div class="review-grid">
+            <div><span class="rlabel">Year Level</span><span class="rvalue">{{ data().year_level_id }}</span></div>
+            <div><span class="rlabel">Admission Date</span><span class="rvalue">{{ data().date_of_admission }}</span></div>
+          </div>
+        </div>
+
+        <div class="review-section">
+          <h3>Pathway</h3>
+          <div class="review-grid">
+            <div><span class="rlabel">Type</span><span class="rvalue">{{ pathwayLabel }}</span></div>
+          </div>
+        </div>
+
+        @if (data().arabic_quran_data) {
+          <div class="review-section">
+            <h3>Arabic & Quran</h3>
+            <div class="review-grid">
+              <div><span class="rlabel">Proficiency</span><span class="rvalue">{{ data().arabic_quran_data?.arabic_proficiency || '—' }}</span></div>
+              <div><span class="rlabel">Quran Reading</span><span class="rvalue">{{ data().arabic_quran_data?.quran_reading_level || '—' }}</span></div>
+            </div>
+          </div>
+        }
+
+        <div class="review-section">
+          <h3>Medical</h3>
+          <div class="review-grid">
+            <div><span class="rlabel">Blood Group</span><span class="rvalue">{{ data().medical_record?.blood_group || '—' }}</span></div>
+            <div><span class="rlabel">Immunizations</span><span class="rvalue">{{ data().medical_record?.immunization_uptodate ? 'Up to date' : 'Not specified' }}</span></div>
+          </div>
+          @if (hasConditions) {
+            <div class="conditions-summary">
+              <strong>Conditions:</strong>
+              @for (key of activeConditions; track key) {
+                <span class="condition-chip">{{ CONDITION_LABELS[key] }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="review-section">
+          <h3>Carers</h3>
+          @for (carer of data().carers; track carer.first_name + carer.surname) {
+            <div class="carer-summary">
+              <strong>{{ carer.carer_level }}:</strong> {{ carer.first_name }} {{ carer.surname }}
+              ({{ carer.relationship }}) — {{ carer.mobile_1 }}
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (error()) {
+        <div class="error-block">
+          <mat-icon>error</mat-icon>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <div class="submit-area">
+        <button mat-raised-button color="primary" [disabled]="submitting()" (click)="submit.emit()">
+          @if (submitting()) {
+            <mat-spinner diameter="20"></mat-spinner>
+            Submitting...
+          } @else {
+            <mat-icon>check_circle</mat-icon>
+            Submit Admission
+          }
+        </button>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .step-container { padding: 24px; }
+    h2 { margin: 0 0 4px; font-size: 20px; font-weight: 600; color: #1e293b; }
+    .step-description { margin: 0 0 24px; color: #64748b; font-size: 14px; }
+    .review-sections { display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px; }
+    .review-section { padding: 16px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; }
+    .review-section h3 { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #1e293b; }
+    .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .rlabel { font-size: 12px; color: #64748b; display: block; }
+    .rvalue { font-size: 14px; color: #1e293b; font-weight: 500; display: block; }
+    .conditions-summary { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .conditions-summary strong { font-size: 13px; color: #374151; }
+    .condition-chip { padding: 3px 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; font-size: 12px; color: #1d4ed8; }
+    .carer-summary { font-size: 13px; color: #374151; margin-bottom: 4px; }
+    .error-block { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #dc2626; font-size: 14px; margin-bottom: 16px; }
+    .submit-area { text-align: center; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+    .submit-area button { min-width: 200px; display: inline-flex; align-items: center; gap: 8px; }
+  `]
+})
+export class ReviewSubmitStep {
+  data = input.required<AdmissionCreatePayload>();
+  submitting = input(false);
+  error = input<string | null>(null);
+  submit = output<void>();
+
+  readonly CONDITION_LABELS = CONDITION_LABELS;
+
+  get pathwayLabel(): string {
+    const labels: Record<string, string> = {
+      REGULAR_SCHOOL: 'Regular School',
+      REGULAR_SCHOOL_INTERRUPTED: 'Regular School (Interrupted)',
+      HOMESCHOOL: 'Homeschool',
+      NONE: 'No Formal Education',
+    };
+    return labels[this.data().pathway] || this.data().pathway;
+  }
+
+  get hasConditions(): boolean {
+    const cd = this.data().medical_record?.conditions_detail;
+    return !!cd && Object.values(cd).some(v => v);
+  }
+
+  get activeConditions(): MedicalConditionKey[] {
+    const cd = this.data().medical_record?.conditions_detail;
+    if (!cd) return [];
+    return (Object.entries(cd) as [MedicalConditionKey, boolean][])
+      .filter(([, v]) => v).map(([k]) => k);
+  }
+}

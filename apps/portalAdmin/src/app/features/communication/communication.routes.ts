@@ -10,35 +10,14 @@ export const communicationRoutes: Route[] = [
     children: [
       {
         path: '',
-        redirectTo: 'broadcasts',
+        redirectTo: 'chat',
         pathMatch: 'full',
       },
       {
-        path: 'broadcasts',
+        path: 'chat',
         loadComponent: () =>
-          import('./components/broadcast-list/broadcast-list').then(
-            (m) => m.BroadcastListComponent
-          ),
-      },
-      {
-        path: 'dashboard',
-        loadComponent: () =>
-          import('./components/dashboard/communication-dashboard').then(
-            (m) => m.CommunicationDashboardComponent
-          ),
-      },
-      {
-        path: 'conversations',
-        loadComponent: () =>
-          import('./components/conversations/conversation-list').then(
-            (m) => m.ConversationListComponent
-          ),
-      },
-      {
-        path: 'engagement',
-        loadComponent: () =>
-          import('./components/engagement/engagement-metrics').then(
-            (m) => m.EngagementMetricsComponent
+          import('@sms/shared/communication').then(
+            (m) => m.ChatHubComponent
           ),
       },
       {
@@ -71,7 +50,7 @@ export const communicationRoutes: Route[] = [
       },
       {
         path: '**',
-        redirectTo: 'broadcasts',
+        redirectTo: 'chat',
       },
     ],
   },

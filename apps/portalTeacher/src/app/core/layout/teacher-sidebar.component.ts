@@ -154,7 +154,7 @@ export class TeacherSidebarComponent {
     {
       label: 'Communication',
       items: [
-        { label: 'Messages', icon: 'chat', route: '/teacher/messages' },
+        { label: 'Messages', icon: 'chat', route: '/teacher/chat' },
         { label: 'Announcements', icon: 'campaign', route: '/teacher/announcements' },
         { label: 'Meetings', icon: 'groups', route: '/teacher/meetings' },
       ],

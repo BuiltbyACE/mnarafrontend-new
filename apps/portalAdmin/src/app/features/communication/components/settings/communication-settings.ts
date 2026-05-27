@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTableModule } from '@angular/material/table';
@@ -21,8 +19,6 @@ import { CommunicationService } from '../../services/communication.service';
     ReactiveFormsModule,
     MatCardModule,
     MatTabsModule,
-    MatInputModule,
-    MatFormFieldModule,
     MatButtonModule,
     MatSlideToggleModule,
     MatTableModule,
@@ -53,14 +49,14 @@ import { CommunicationService } from '../../services/communication.service';
                 <mat-divider />
                 <mat-card-content>
                   <form [formGroup]="smsForm" class="gateway-form">
-                    <mat-form-field appearance="outline">
-                      <mat-label>Provider</mat-label>
-                      <input matInput formControlName="provider" />
-                    </mat-form-field>
-                    <mat-form-field appearance="outline">
-                      <mat-label>API Key</mat-label>
-                      <input matInput formControlName="apiKey" type="password" />
-                    </mat-form-field>
+                    <div class="form-field">
+                      <label class="input-label">Provider</label>
+                      <input formControlName="provider" />
+                    </div>
+                    <div class="form-field">
+                      <label class="input-label">API Key</label>
+                      <input formControlName="apiKey" type="password" />
+                    </div>
                   </form>
                 </mat-card-content>
                 <mat-divider />
@@ -82,22 +78,22 @@ import { CommunicationService } from '../../services/communication.service';
                 <mat-divider />
                 <mat-card-content>
                   <form [formGroup]="emailForm" class="gateway-form">
-                    <mat-form-field appearance="outline">
-                      <mat-label>SMTP Host</mat-label>
-                      <input matInput formControlName="host" />
-                    </mat-form-field>
-                    <mat-form-field appearance="outline">
-                      <mat-label>SMTP Port</mat-label>
-                      <input matInput formControlName="port" type="number" />
-                    </mat-form-field>
-                    <mat-form-field appearance="outline">
-                      <mat-label>Username</mat-label>
-                      <input matInput formControlName="username" />
-                    </mat-form-field>
-                    <mat-form-field appearance="outline">
-                      <mat-label>Password</mat-label>
-                      <input matInput formControlName="password" type="password" />
-                    </mat-form-field>
+                    <div class="form-field">
+                      <label class="input-label">SMTP Host</label>
+                      <input formControlName="host" />
+                    </div>
+                    <div class="form-field">
+                      <label class="input-label">SMTP Port</label>
+                      <input formControlName="port" type="number" />
+                    </div>
+                    <div class="form-field">
+                      <label class="input-label">Username</label>
+                      <input formControlName="username" />
+                    </div>
+                    <div class="form-field">
+                      <label class="input-label">Password</label>
+                      <input formControlName="password" type="password" />
+                    </div>
                   </form>
                 </mat-card-content>
                 <mat-divider />
@@ -290,6 +286,49 @@ import { CommunicationService } from '../../services/communication.service';
 
     @media (max-width: 800px) {
       .gateways-grid { grid-template-columns: 1fr; }
+    }
+  `,
+  `
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 4px;
     }
   `],
 })

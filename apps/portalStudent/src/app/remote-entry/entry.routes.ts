@@ -65,6 +65,13 @@ export const remoteRoutes: Route[] = [
         loadChildren: () =>
           import('../features/finance/finance.routes').then((m) => m.financeRoutes),
       },
+      {
+        path: 'calendar',
+        loadComponent: () =>
+          import('../features/calendar/calendar.component').then(
+            (m) => m.CalendarComponent
+          ),
+      },
     ],
   },
 ];

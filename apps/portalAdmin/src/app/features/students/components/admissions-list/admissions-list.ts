@@ -265,6 +265,7 @@
 
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
@@ -289,87 +290,120 @@ import { Admission } from 'apps/portalAdmin/src/app/shared/models/students.model
     MatPaginatorModule
   ],
   template: `
-    <div class="admission-container">
-      <table mat-table [dataSource]="admissions() || []" class="full-width-table">
+    <div class="admission-page">
+      <div class="page-header">
+        <div class="title-section">
+          <h1>Admissions</h1>
+          <p class="subtitle">Manage student admission records</p>
+        </div>
+        <button mat-raised-button color="primary" (click)="newAdmission()">
+          <mat-icon>person_add</mat-icon>
+          New Admission
+        </button>
+      </div>
 
-        <ng-container matColumnDef="student">
-          <th mat-header-cell *matHeaderCellDef> Student </th>
-          <td mat-cell *matCellDef="let row">
-            <div class="student-info">
-              <div class="avatar">{{ getInitials(row.student_first_name, row.student_last_name) }}</div>
-              <div class="name-box">
-                <span class="name">{{ row.student_first_name }} {{ row.student_last_name }}</span>
-                <span class="id-badge">{{ row.student_school_id }}</span>
+      <div class="admission-container">
+        <table mat-table [dataSource]="admissions() || []" class="full-width-table">
+
+          <ng-container matColumnDef="student">
+            <th mat-header-cell *matHeaderCellDef> Student </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="student-info">
+                <div class="avatar">{{ getInitials(row.student_first_name, row.student_last_name) }}</div>
+                <div class="name-box">
+                  <span class="name">{{ row.student_first_name }} {{ row.student_last_name }}</span>
+                  <span class="id-badge">{{ row.student_school_id || '—' }}</span>
+                </div>
               </div>
-            </div>
-          </td>
-        </ng-container>
+            </td>
+          </ng-container>
 
-        <ng-container matColumnDef="year_level">
-          <th mat-header-cell *matHeaderCellDef> Year & Class </th>
-          <td mat-cell *matCellDef="let row"> {{ row.class_sought_name }} </td>
-        </ng-container>
+          <ng-container matColumnDef="year_level">
+            <th mat-header-cell *matHeaderCellDef> Year & Class </th>
+            <td mat-cell *matCellDef="let row"> {{ row.class_sought_name }} </td>
+          </ng-container>
 
-        <ng-container matColumnDef="logistics">
-          <th mat-header-cell *matHeaderCellDef> Logistics </th>
-          <td mat-cell *matCellDef="let row">
-            <div class="icon-group">
-              <mat-icon [style.color]="row.transport_options !== 'NONE' ? '#3b82f6' : '#cbd5e1'" 
-                        [matTooltip]="'Transport: ' + row.transport_options">
-                directions_bus
-              </mat-icon>
-              <mat-icon [style.color]="row.lunch_option ? '#10b981' : '#cbd5e1'" 
-                        [matTooltip]="row.lunch_option ? 'Lunch Enrolled' : 'No Lunch'">
-                restaurant
-              </mat-icon>
-            </div>
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="pathway">
+            <th mat-header-cell *matHeaderCellDef> Pathway </th>
+            <td mat-cell *matCellDef="let row">
+              <span class="pathway-badge" [class]="getPathwayClass(row)">{{ getPathwayLabel(row) }}</span>
+            </td>
+          </ng-container>
 
-        <ng-container matColumnDef="medical">
-          <th mat-header-cell *matHeaderCellDef> Medical </th>
-          <td mat-cell *matCellDef="let row">
-            <mat-chip [style.background]="row.medical_record?.status === 'Complete' ? '#dcfce7' : '#fee2e2'"
-                      [style.color]="row.medical_record?.status === 'Complete' ? '#166534' : '#991b1b'">
-              {{ row.medical_record?.status || 'Missing' }}
-            </mat-chip>
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="logistics">
+            <th mat-header-cell *matHeaderCellDef> Logistics </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="icon-group">
+                <mat-icon [style.color]="row.transport_options !== 'NONE' ? '#3b82f6' : '#cbd5e1'" 
+                          [matTooltip]="'Transport: ' + row.transport_options">
+                  directions_bus
+                </mat-icon>
+                <mat-icon [style.color]="row.lunch_option ? '#10b981' : '#cbd5e1'" 
+                          [matTooltip]="row.lunch_option ? 'Lunch Enrolled' : 'No Lunch'">
+                  restaurant
+                </mat-icon>
+              </div>
+            </td>
+          </ng-container>
 
-        <ng-container matColumnDef="applied">
-          <th mat-header-cell *matHeaderCellDef> Applied </th>
-          <td mat-cell *matCellDef="let row">
-            <div class="date-cell">
-              <span>{{ row.date_of_admission | date:'mediumDate' }}</span>
-              <span class="status-sub" [class]="getStatusType(row.status)">{{ row.status }}</span>
-            </div>
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="medical">
+            <th mat-header-cell *matHeaderCellDef> Medical </th>
+            <td mat-cell *matCellDef="let row">
+              <mat-chip [style.background]="row.medical_record?.status === 'Complete' ? '#dcfce7' : '#fee2e2'"
+                        [style.color]="row.medical_record?.status === 'Complete' ? '#166534' : '#991b1b'">
+                {{ row.medical_record?.status || 'Missing' }}
+              </mat-chip>
+            </td>
+          </ng-container>
 
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef> Actions </th>
-          <td mat-cell *matCellDef="let row">
-            <button mat-icon-button (click)="viewAdmission(row)" matTooltip="View Detail">
-              <mat-icon>visibility</mat-icon>
-            </button>
-            <button mat-icon-button color="primary" (click)="approveAdmission(row)" matTooltip="Approve">
-              <mat-icon>how_to_reg</mat-icon>
-            </button>
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="commitment">
+            <th mat-header-cell *matHeaderCellDef> Commitment </th>
+            <td mat-cell *matCellDef="let row">
+              <span class="commitment-badge" [class.submitted]="row.commitment_status === 'SUBMITTED'">
+                {{ row.commitment_status || 'Pending' }}
+              </span>
+            </td>
+          </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      </table>
+          <ng-container matColumnDef="applied">
+            <th mat-header-cell *matHeaderCellDef> Applied </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="date-cell">
+                <span>{{ row.date_of_admission | date:'mediumDate' }}</span>
+                <span class="status-sub" [class]="getStatusType(row.status)">{{ row.status }}</span>
+              </div>
+            </td>
+          </ng-container>
 
-      <mat-paginator [length]="studentsService.totalCount()"
-                     [pageSize]="pageSize"
-                     [pageSizeOptions]="[10, 25, 50]"
-                     (page)="onPageChange($event)">
-      </mat-paginator>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef> Actions </th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button (click)="viewAdmission(row)" matTooltip="View Detail">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button color="primary" (click)="approveAdmission(row)" matTooltip="Approve">
+                <mat-icon>how_to_reg</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <mat-paginator [length]="studentsService.totalCount()"
+                       [pageSize]="pageSize"
+                       [pageSizeOptions]="[10, 25, 50]"
+                       (page)="onPageChange($event)">
+        </mat-paginator>
+      </div>
     </div>
   `,
   styles: [`
+    .admission-page { padding: 24px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    .page-header .title-section h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; color: #1e293b; }
+    .page-header .title-section .subtitle { margin: 0; color: #64748b; font-size: 14px; }
     .admission-container { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
     .full-width-table { width: 100%; }
     .student-info { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
@@ -384,17 +418,24 @@ import { Admission } from 'apps/portalAdmin/src/app/shared/models/students.model
     .pending { color: #f59e0b; }
     .approved { color: #10b981; }
     .rejected { color: #ef4444; }
+    .pathway-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #f1f5f9; color: #475569; }
+    .pathway-badge.regular { background: #dcfce7; color: #166534; }
+    .pathway-badge.interrupted { background: #fef3c7; color: #92400e; }
+    .pathway-badge.homeschool { background: #e0e7ff; color: #3730a3; }
+    .pathway-badge.none { background: #f1f5f9; color: #475569; }
+    .commitment-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #fef3c7; color: #92400e; }
+    .commitment-badge.submitted { background: #dcfce7; color: #166534; }
   `]
 })
 export class AdmissionsListComponent implements OnInit {
   readonly studentsService = inject(StudentsService);
   private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
 
   readonly admissions = this.studentsService.admissions;
   readonly summary = this.studentsService.admissionsSummary;
   
-  // Updated columns to include Logistics and Medical
-  readonly displayedColumns = ['student', 'year_level', 'logistics', 'medical', 'applied', 'actions'];
+  readonly displayedColumns = ['student', 'year_level', 'pathway', 'logistics', 'medical', 'commitment', 'applied', 'actions'];
 
   currentPage = 0;
   pageSize = 25;
@@ -435,8 +476,32 @@ export class AdmissionsListComponent implements OnInit {
     return status?.toLowerCase() || 'pending';
   }
 
+  getPathwayLabel(row: any): string {
+    const labels: Record<string, string> = {
+      REGULAR_SCHOOL: 'Regular',
+      REGULAR_SCHOOL_INTERRUPTED: 'Interrupted',
+      HOMESCHOOL: 'Homeschool',
+      NONE: 'None',
+    };
+    return labels[row.pathway] || '—';
+  }
+
+  getPathwayClass(row: any): string {
+    const map: Record<string, string> = {
+      REGULAR_SCHOOL: 'regular',
+      REGULAR_SCHOOL_INTERRUPTED: 'interrupted',
+      HOMESCHOOL: 'homeschool',
+      NONE: 'none',
+    };
+    return map[row.pathway] || '';
+  }
+
+  newAdmission(): void {
+    this.router.navigate(['/portalAdmin/students/admissions/new']);
+  }
+
   viewAdmission(admission: Admission): void {
-    this.snackBar.open(`Reviewing profile for ${admission.student_first_name}`, 'Close', { duration: 2000 });
+    this.router.navigate(['/portalAdmin/students', admission.id]);
   }
 
   approveAdmission(admission: Admission): void {

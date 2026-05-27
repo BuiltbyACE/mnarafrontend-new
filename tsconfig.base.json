@@ -30,6 +30,9 @@
       "portalTransport/Routes": [
         "apps/portalTransport/src/app/remote-entry/entry.routes.ts"
       ],
+      "portalFinance/Routes": [
+        "apps/portalFinance/src/app/remote-entry/entry.routes.ts"
+      ],
       "@sms/core/auth": ["libs/core/auth/src/index.ts"],
       "@sms/core/http": ["libs/core/http/src/index.ts"],
       "@sms/core/state": ["libs/core/state/src/index.ts"],
@@ -37,7 +40,8 @@
       "@sms/shared/models": ["libs/shared/models/src/index.ts"],
       "@sms/shared/ui": ["libs/shared/ui/src/index.ts"],
       "@sms/shared/utils": ["libs/shared/utils/src/index.ts"],
-      "@sms/shared/services": ["libs/shared/services/src/index.ts"]
+      "@sms/shared/services": ["libs/shared/services/src/index.ts"],
+      "@sms/shared/communication": ["libs/shared/communication/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -2,10 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
 import { AcademicsService, YearLevel } from '../../services/academics.service';
 
 export interface YearLevelDialogData {
@@ -20,43 +17,40 @@ export interface YearLevelDialogData {
     CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
-    MatSelectModule,
   ],
   template: `
     <h2 mat-dialog-title>{{ data.isEdit ? 'Edit' : 'Add' }} Year Level</h2>
     <mat-dialog-content>
       <form [formGroup]="form" class="dialog-form">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Name</mat-label>
-          <input matInput formControlName="name" placeholder="e.g., Year 1" />
+        <div class="form-field">
+          <label for="name">Name</label>
+          <input id="name" formControlName="name" placeholder="e.g., Year 1" />
           @if (form.get('name')?.hasError('required')) {
-            <mat-error>Name is required</mat-error>
+            <span class="error-text">Name is required</span>
           }
-        </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Key Stage</mat-label>
-          <select matNativeControl formControlName="key_stage" class="native-select">
+        <div class="form-field">
+          <label for="key_stage">Key Stage</label>
+          <select id="key_stage" formControlName="key_stage">
             <option value="">Select Key Stage</option>
             @for (ks of keyStages; track ks.id) {
-              <option [value]="ks.id">{{ ks.name }}</option>
+              <option [ngValue]="ks.id">{{ ks.name }}</option>
             }
           </select>
           @if (form.get('key_stage')?.hasError('required')) {
-            <mat-error>Key Stage is required</mat-error>
+            <span class="error-text">Key Stage is required</span>
           }
-        </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="is_active">
-            <mat-option [value]="true">Active</mat-option>
-            <mat-option [value]="false">Inactive</mat-option>
-          </mat-select>
-        </mat-form-field>
+        <div class="form-field">
+          <label for="is_active">Status</label>
+          <select id="is_active" formControlName="is_active">
+            <option [ngValue]="true">Active</option>
+            <option [ngValue]="false">Inactive</option>
+          </select>
+        </div>
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -69,6 +63,20 @@ export interface YearLevelDialogData {
     </mat-dialog-actions>
   `,
   styles: [`
+    .form-field { display: flex; flex-direction: column; gap: 4px; }
+    .form-field label { font-size: 14px; font-weight: 500; color: #374151; }
+    .form-field input,
+    .form-field select {
+      width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 14px; color: #1f2937; background: #fff; transition: border-color 0.15s; box-sizing: border-box;
+    }
+    .form-field input:focus,
+    .form-field select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+    .form-field input.ng-invalid.ng-touched,
+    .form-field select.ng-invalid.ng-touched { border-color: #ef4444; }
+    .error-text { font-size: 12px; color: #ef4444; }
+    .hint-text { font-size: 12px; color: #6b7280; }
+
     .dialog-form {
       display: flex;
       flex-direction: column;
@@ -79,21 +87,6 @@ export interface YearLevelDialogData {
 
     .full-width {
       width: 100%;
-    }
-
-    mat-form-field {
-      margin-bottom: 0;
-    }
-
-    .native-select {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
-      font-size: 0.875rem;
-      color: #334155;
-      background: white;
-      margin-top: 8px;
     }
   `],
 })

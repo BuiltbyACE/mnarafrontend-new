@@ -3,9 +3,9 @@
  * Displays comprehensive student profile with tabs
  */
 
-import { Component, inject, Input, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -15,9 +15,9 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { StudentsService } from '../../services/students.service';
-import { StudentProfile, StudentEnrollment, StudentAdmissionRecord, CarerData } from '../../../../shared/models/students.models';
-import { MedicalRecord } from '../../../../shared/models/students.models';
+import { StudentProfile, CarerData, MedicalRecord, CONDITION_LABELS, MedicalConditionKey } from '../../../../shared/models/students.models';
 
 @Component({
   selector: 'app-student-detail',
@@ -25,6 +25,7 @@ import { MedicalRecord } from '../../../../shared/models/students.models';
   imports: [
     CommonModule,
     DatePipe,
+    RouterModule,
     MatButtonModule,
     MatIconModule,
     MatCardModule,
@@ -34,6 +35,7 @@ import { MedicalRecord } from '../../../../shared/models/students.models';
     MatDividerModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatExpansionModule,
   ],
   template: `
     <div class="detail-container" *ngIf="student(); else loading">
@@ -93,6 +95,10 @@ import { MedicalRecord } from '../../../../shared/models/students.models';
                 <span class="label">Admission Date</span>
                 <span class="value">{{ student()?.admission_record?.date_of_admission | date:'mediumDate' }}</span>
               </div>
+              <div class="info-item">
+                <span class="label">Residence</span>
+                <span class="value">{{ student()?.admission_record?.residence || 'N/A' }}</span>
+              </div>
             </div>
           </div>
         </mat-tab>
@@ -102,24 +108,43 @@ import { MedicalRecord } from '../../../../shared/models/students.models';
           <div class="tab-content">
             @if (medicalRecord(); as medical) {
               <div class="medical-section">
-                <div class="info-item">
-                  <span class="label">Blood Group</span>
-                  <span class="value">{{ getMedicalString('blood_group') }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Emergency Contact</span>
-                  <span class="value">{{ getMedicalString('emergency_contact') }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Doctor Name</span>
-                  <span class="value">{{ getMedicalString('doctor_name') }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Hospital Preference</span>
-                  <span class="value">{{ getMedicalString('hospital_preference') || 'N/A' }}</span>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="label">Blood Group</span>
+                    <span class="value">{{ getMedicalString('blood_group') }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">Emergency Contact</span>
+                    <span class="value">{{ getMedicalString('emergency_contact') }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">Doctor Name</span>
+                    <span class="value">{{ getMedicalString('doctor_name') }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">Doctor Contact</span>
+                    <span class="value">{{ getMedicalString('doctor_contact') }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">Hospital Preference</span>
+                    <span class="value">{{ getMedicalString('hospital_preference') || 'N/A' }}</span>
+                  </div>
                 </div>
 
                 <mat-divider></mat-divider>
+
+                @if (hasConditionsDetail()) {
+                  <div class="checklist-section">
+                    <h3>Medical Conditions</h3>
+                    <div class="conditions-grid">
+                      @for (item of activeConditions(); track item.key) {
+                        <div class="condition-chip" [class.active]="item.active">
+                          {{ item.label }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
 
                 <div class="checklist-section">
                   <h3>Allergies</h3>
@@ -144,9 +169,11 @@ import { MedicalRecord } from '../../../../shared/models/students.models';
                 </div>
 
                 <div class="immunization-status">
-                  <h3>Immunization Status</h3>
                   <mat-icon class="status-icon">check_circle</mat-icon>
-                  <span>Up to date</span>
+                  <div>
+                    <strong>Immunizations</strong>
+                    <span>{{ medical.immunization_uptodate ? 'Up to date' : 'Not specified' }}</span>
+                  </div>
                 </div>
               </div>
             } @else {
@@ -175,6 +202,12 @@ import { MedicalRecord } from '../../../../shared/models/students.models';
                   <div class="carer-contact">
                     <span><mat-icon>email</mat-icon> {{ carer.email }}</span>
                     <span><mat-icon>phone</mat-icon> {{ carer.mobile_1 }}</span>
+                    @if (carer.mobile_2) {
+                      <span><mat-icon>phone</mat-icon> {{ carer.mobile_2 }}</span>
+                    }
+                    @if (carer.id_number) {
+                      <span><mat-icon>badge</mat-icon> {{ carer.id_type }}: {{ carer.id_number }}</span>
+                    }
                   </div>
                 </div>
               } @empty {
@@ -197,6 +230,21 @@ import { MedicalRecord } from '../../../../shared/models/students.models';
               } @empty {
                 <span class="no-data">No siblings recorded</span>
               }
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Commitment Tab -->
+        <mat-tab label="Commitment">
+          <div class="tab-content">
+            <div class="commitment-tab">
+              <mat-icon class="commitment-icon">gavel</mat-icon>
+              <h3>Behaviour Commitment</h3>
+              <p>Review and submit the student's behaviour commitment form to acknowledge school rules and behavioural standards.</p>
+              <button mat-raised-button color="primary" (click)="viewCommitment()">
+                <mat-icon>description</mat-icon>
+                View / Submit Commitment Form
+              </button>
             </div>
           </div>
         </mat-tab>
@@ -466,6 +514,14 @@ import { MedicalRecord } from '../../../../shared/models/students.models';
       }
     }
 
+    .conditions-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .condition-chip { padding: 4px 12px; border-radius: 12px; font-size: 12px; background: #f1f5f9; color: #64748b; }
+    .condition-chip.active { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .commitment-tab { text-align: center; padding: 48px 24px; }
+    .commitment-icon { font-size: 48px; width: 48px; height: 48px; color: #6366f1; margin-bottom: 16px; }
+    .commitment-tab h3 { font-size: 18px; font-weight: 600; color: #1e293b; margin: 0 0 8px; }
+    .commitment-tab p { color: #64748b; margin: 0 0 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
+
     .loading-state {
       display: flex;
       flex-direction: column;
@@ -477,18 +533,12 @@ import { MedicalRecord } from '../../../../shared/models/students.models';
   `],
 })
 export class StudentDetailComponent implements OnInit {
-  @Input() studentId!: number;
-
+  private route = inject(ActivatedRoute);
   private studentsService = inject(StudentsService);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
 
   student = signal<StudentProfile | null>(null);
-  // medicalRecord = computed<Record<string, unknown> | null>(() => {
-  //   const s = this.student();
-  //   return s?.medical_record || null;
-  // });
-
   medicalRecord = computed<MedicalRecord | null>(() => {
     return this.student()?.medical_record || null;
   });
@@ -496,7 +546,6 @@ export class StudentDetailComponent implements OnInit {
   getMedicalString(key: string): string {
     const med = this.medicalRecord();
     if (!med) return 'N/A';
-    // const val = med[key];
     const val = med[key as keyof MedicalRecord];
     return typeof val === 'string' ? val : 'N/A';
   }
@@ -504,15 +553,28 @@ export class StudentDetailComponent implements OnInit {
   getMedicalStringArray(key: string): string[] {
     const med = this.medicalRecord();
     if (!med) return [];
-    // const val = med[key];
     const val = med[key as keyof MedicalRecord];
     return Array.isArray(val) ? val as string[] : [];
   }
 
+  hasConditionsDetail = computed(() => {
+    const med = this.medicalRecord();
+    return !!med?.conditions_detail && Object.values(med.conditions_detail).some(v => v);
+  });
+
+  activeConditions = computed(() => {
+    const med = this.medicalRecord();
+    if (!med?.conditions_detail) return [];
+    return (Object.entries(med.conditions_detail) as [MedicalConditionKey, boolean][])
+      .filter(([, v]) => v)
+      .map(([key]) => ({ key, label: CONDITION_LABELS[key], active: true }));
+  });
+
   ngOnInit(): void {
-    if (this.studentId) {
-      this.studentsService.getStudentDetail(this.studentId).subscribe({
-        next: (data) => this.student.set(data as unknown as StudentProfile),
+    const studentId = Number(this.route.snapshot.paramMap.get('id'));
+    if (studentId) {
+      this.studentsService.getStudentDetail(studentId).subscribe({
+        next: (data) => this.student.set(data),
         error: (err) => console.error('Failed to load student', err),
       });
     }
@@ -555,6 +617,13 @@ export class StudentDetailComponent implements OnInit {
       verticalPosition: 'bottom',
     });
     // TODO: Implement fee statement generation
+  }
+
+  viewCommitment(): void {
+    const id = this.student()?.id;
+    if (id) {
+      this.router.navigate(['/portalAdmin/students', id, 'commitment']);
+    }
   }
 
   viewSibling(sibling: any): void {

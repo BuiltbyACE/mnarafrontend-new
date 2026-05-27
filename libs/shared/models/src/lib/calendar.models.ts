@@ -12,7 +12,7 @@ export interface CalendarEvent {
   date?: string;
   start_date?: string;
   end_date?: string;
-  hex_color: string;
+  hexColor: string;
   isFullDayHighlight: boolean;
   description?: string;
   is_non_learning_day?: boolean;

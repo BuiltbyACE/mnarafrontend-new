@@ -1,11 +1,15 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable, catchError, throwError, map } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 import {
   FeeBalance, Payment, Expense, CreditNote,
   ManualPaymentRequest, ExpenseApprovalRequest, CreditNoteRequest,
-  PrincipalDashboardData,
+  PrincipalDashboardData, InventoryItemFull, StockMovementItem,
+  FeeStructure,
+  ParentDirectorySummary, ParentDirectoryItem, ParentDirectoryParams,
+  ParentDetail, ParentPaymentsResponse, InvoiceCreateRequest,
+  SuggestedInvoicesResponse,
 } from '../../../shared/models/finance.models';
 
 interface PaginatedResponse<T> {
@@ -135,6 +139,16 @@ export class FinanceService {
       );
   }
 
+  getInventory(page = 1, pageSize = 50): Observable<PaginatedResponse<InventoryItemFull>> {
+    let params = new HttpParams().set('page', page.toString()).set('page_size', pageSize.toString());
+    return this.http.get<PaginatedResponse<InventoryItemFull>>(getApiUrl('/finance/inventory/'), { params });
+  }
+
+  getStockMovements(page = 1, pageSize = 50): Observable<PaginatedResponse<StockMovementItem>> {
+    let params = new HttpParams().set('page', page.toString()).set('page_size', pageSize.toString());
+    return this.http.get<PaginatedResponse<StockMovementItem>>(getApiUrl('/finance/stock-movements/'), { params });
+  }
+
   verifyItem(id: number): Observable<{ success: boolean; last_verified: string }> {
     return this.http
       .post<{ success: boolean; last_verified: string }>(getApiUrl(`/finance/inventory/${id}/verify/`), {})
@@ -144,5 +158,50 @@ export class FinanceService {
           return throwError(() => new Error(message));
         })
       );
+  }
+
+  // ─── Parent Directory ────────────────────────────────────────
+  getParentDirectorySummary(): Observable<ParentDirectorySummary> {
+    return this.http.get<ParentDirectorySummary>(getApiUrl('/finance/parents/summary/'));
+  }
+
+  getParentDirectory(params?: ParentDirectoryParams): Observable<ParentDirectoryItem[]> {
+    let httpParams = new HttpParams();
+    if (params?.search) httpParams = httpParams.set('search', params.search);
+    if (params?.student_name) httpParams = httpParams.set('student_name', params.student_name);
+    if (params?.class_id) httpParams = httpParams.set('class_id', params.class_id.toString());
+    return this.http.get<ParentDirectoryItem[] | { results: ParentDirectoryItem[] }>(
+      getApiUrl('/finance/parents/'), { params: httpParams }
+    ).pipe(
+      map(res => Array.isArray(res) ? res : (res.results ?? []))
+    );
+  }
+
+  getParentDetail(id: number): Observable<ParentDetail> {
+    return this.http.get<ParentDetail>(getApiUrl(`/finance/parents/${id}/`));
+  }
+
+  getParentPayments(id: number, page = 1, pageSize = 20): Observable<ParentPaymentsResponse> {
+    const params = new HttpParams().set('page', page.toString()).set('page_size', pageSize.toString());
+    return this.http.get<ParentPaymentsResponse>(getApiUrl(`/finance/parents/${id}/payments/`), { params });
+  }
+
+  // ─── Fee Structures (for invoice generation) ──────────────────
+  getFeeStructures(): Observable<FeeStructure[]> {
+    return this.http.get<FeeStructure[] | { results: FeeStructure[] }>(
+      getApiUrl('/finance/fee-structures/')
+    ).pipe(
+      map(res => Array.isArray(res) ? res : (res.results ?? []))
+    );
+  }
+
+  // ─── Suggested Invoices ──────────────────────────────────────
+  getSuggestedInvoices(studentId: number): Observable<SuggestedInvoicesResponse> {
+    return this.http.get<SuggestedInvoicesResponse>(getApiUrl(`/finance/students/${studentId}/suggested-invoices/`));
+  }
+
+  // ─── Invoice Generation ───────────────────────────────────────
+  createInvoice(data: InvoiceCreateRequest): Observable<any> {
+    return this.http.post(getApiUrl('/finance/invoices/'), data);
   }
 }

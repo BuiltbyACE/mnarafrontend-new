@@ -2,9 +2,6 @@ import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -17,9 +14,6 @@ import { CommunicationService, ChatUser, ConversationThread } from '../../servic
     CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
@@ -32,33 +26,33 @@ import { CommunicationService, ChatUser, ConversationThread } from '../../servic
       </div>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="compose-form">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Recipients</mat-label>
-          <mat-select formControlName="participants" multiple>
+        <div class="form-field full-width">
+          <label class="input-label">Recipients</label>
+          <select formControlName="participants" multiple size="3">
             @for (user of availableUsers(); track user.id) {
-              <mat-option [value]="user.id">
+              <option [value]="user.id">
                 {{ user.name }}
                 <span class="user-role">— {{ user.role }}</span>
-              </mat-option>
+              </option>
             }
-          </mat-select>
+          </select>
           @if (form.get('participants')?.hasError('required') && form.get('participants')?.touched) {
-            <mat-error>Select at least one recipient</mat-error>
+            <span class="error-text">Select at least one recipient</span>
           }
-        </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Subject (optional)</mat-label>
-          <input matInput formControlName="subject" placeholder="e.g. Staff Meeting Reminder">
-        </mat-form-field>
+        <div class="form-field full-width">
+          <label class="input-label">Subject (optional)</label>
+          <input formControlName="subject" placeholder="e.g. Staff Meeting Reminder">
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Message</mat-label>
-          <textarea matInput formControlName="message" rows="4" placeholder="Type your message..."></textarea>
+        <div class="form-field full-width">
+          <label class="input-label">Message</label>
+          <textarea formControlName="message" rows="4" placeholder="Type your message..."></textarea>
           @if (form.get('message')?.hasError('required') && form.get('message')?.touched) {
-            <mat-error>Message is required</mat-error>
+            <span class="error-text">Message is required</span>
           }
-        </mat-form-field>
+        </div>
 
         @if (error()) {
           <div class="error-msg">
@@ -99,6 +93,49 @@ import { CommunicationService, ChatUser, ConversationThread } from '../../servic
     }
     .error-msg mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .dialog-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 4px; }
+  `,
+  `
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 4px;
+    }
   `],
 })
 export class ComposeDialogComponent {

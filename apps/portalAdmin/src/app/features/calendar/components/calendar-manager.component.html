@@ -108,45 +108,41 @@
       <form [formGroup]="eventForm" (ngSubmit)="submitEvent()" class="event-form">
         <div class="form-section">
           <label class="form-label">Event Title *</label>
-          <mat-form-field appearance="outline" class="full-width">
-            <input matInput formControlName="title" placeholder="e.g. Mid-Term Break" />
+          <div class="form-field">
+            <input formControlName="title" placeholder="e.g. Mid-Term Break" />
             @if (eventForm.get('title')?.hasError('required')) {
-              <mat-error>Title is required</mat-error>
+              <span class="error-text">Title is required</span>
             }
             @if (eventForm.get('title')?.hasError('minlength')) {
-              <mat-error>At least 3 characters</mat-error>
+              <span class="error-text">At least 3 characters</span>
             }
-          </mat-form-field>
+          </div>
         </div>
 
         <div class="form-section">
           <label class="form-label">Event Type *</label>
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-select formControlName="event_type" (selectionChange)="onTypeChange($event.value)">
-              <mat-option value="TERM">Term Date</mat-option>
-              <mat-option value="HOLIDAY">Holiday / Break</mat-option>
-              <mat-option value="SDL">SDL Week</mat-option>
-              <mat-option value="EXAM">Exam Period</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="form-field">
+            <select formControlName="event_type" (change)="onTypeChange($any($event.target).value)">
+              <option value="TERM">Term Date</option>
+              <option value="HOLIDAY">Holiday / Break</option>
+              <option value="SDL">SDL Week</option>
+              <option value="EXAM">Exam Period</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-row">
           <div class="form-section half">
             <label class="form-label">Start Date *</label>
-            <mat-form-field appearance="outline" class="full-width">
-              <input matInput [matDatepicker]="startPicker" formControlName="start_date" />
-              <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
-              <mat-datepicker #startPicker></mat-datepicker>
-            </mat-form-field>
+            <div class="form-field">
+              <input type="date" formControlName="start_date" />
+            </div>
           </div>
           <div class="form-section half">
             <label class="form-label">End Date *</label>
-            <mat-form-field appearance="outline" class="full-width">
-              <input matInput [matDatepicker]="endPicker" formControlName="end_date" />
-              <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
-              <mat-datepicker #endPicker></mat-datepicker>
-            </mat-form-field>
+            <div class="form-field">
+              <input type="date" formControlName="end_date" />
+            </div>
           </div>
         </div>
 
@@ -209,9 +205,9 @@
 
         <div class="form-section">
           <label class="form-label">Description (Optional)</label>
-          <mat-form-field appearance="outline" class="full-width">
-            <textarea matInput formControlName="description" rows="2" placeholder="Additional notes..."></textarea>
-          </mat-form-field>
+          <div class="form-field">
+            <textarea formControlName="description" rows="2" placeholder="Additional notes..."></textarea>
+          </div>
         </div>
 
         <div class="form-actions">

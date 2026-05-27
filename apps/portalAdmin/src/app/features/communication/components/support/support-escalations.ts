@@ -5,9 +5,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommunicationService, SupportTicket } from '../../services/communication.service';
@@ -22,9 +19,6 @@ import { CommunicationService, SupportTicket } from '../../services/communicatio
     MatButtonModule,
     MatTableModule,
     MatChipsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
   ],
@@ -76,22 +70,21 @@ import { CommunicationService, SupportTicket } from '../../services/communicatio
       <mat-card class="table-card">
         <mat-card-content>
           <div class="filter-bar">
-            <mat-form-field appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Search</mat-label>
-              <input matInput placeholder="Search tickets..." [value]="searchQuery()"
-                     (input)="searchQuery.set($any($event.target).value)">
-              <mat-icon matPrefix>search</mat-icon>
-            </mat-form-field>
-            <mat-form-field appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Status</mat-label>
-              <mat-select [value]="statusFilter()" (selectionChange)="statusFilter.set($event.value)">
-                <mat-option value="ALL">All</mat-option>
-                <mat-option value="OPEN">Open</mat-option>
-                <mat-option value="IN_PROGRESS">In Progress</mat-option>
-                <mat-option value="ESCALATED">Escalated</mat-option>
-                <mat-option value="RESOLVED">Resolved</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-field">
+              <label class="input-label">Search</label>
+              <input placeholder="Search tickets..." [value]="searchQuery()"
+                     (input)="searchQuery.set($any($event.target).value)" />
+            </div>
+            <div class="form-field">
+              <label class="input-label">Status</label>
+              <select [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+                <option value="ALL">All</option>
+                <option value="OPEN">Open</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="ESCALATED">Escalated</option>
+                <option value="RESOLVED">Resolved</option>
+              </select>
+            </div>
           </div>
         </mat-card-content>
       </mat-card>
@@ -195,7 +188,7 @@ import { CommunicationService, SupportTicket } from '../../services/communicatio
     .filter-bar {
       display: flex; gap: 16px; align-items: center; padding: 4px 0;
     }
-    .filter-bar mat-form-field { min-width: 220px; }
+    .filter-bar .form-field { min-width: 220px; }
 
     .table-card { border-radius: 12px; }
     .table-container { overflow-x: auto; }
@@ -234,6 +227,49 @@ import { CommunicationService, SupportTicket } from '../../services/communicatio
       gap: 12px; padding: 48px; color: #9ca3af;
     }
     .empty-state mat-icon { font-size: 48px; width: 48px; height: 48px; }
+  `,
+  `
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 4px;
+    }
   `],
 })
 export class SupportEscalationsComponent implements OnInit {

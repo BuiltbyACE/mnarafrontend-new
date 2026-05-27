@@ -1,12 +1,20 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 import { CalendarEvent, CalendarDay } from '@sms/shared/models';
+import { environment } from '@sms/core/config';
+
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
 
 @Injectable({ providedIn: 'root' })
 export class SharedCalendarService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1/lms/calendar/events';
+  private readonly baseUrl = `${environment.apiBaseUrl}/lms/calendar/events`;
 
   readonly currentMonth = signal(new Date().getMonth());
   readonly currentYear = signal(new Date().getFullYear());
@@ -57,13 +65,47 @@ export class SharedCalendarService {
     return result;
   });
 
+  private mapEvent(raw: any): CalendarEvent {
+    return {
+      id: raw.id,
+      title: raw.title,
+      event_type: raw.event_type,
+      date: raw.date,
+      start_date: raw.start_date,
+      end_date: raw.end_date,
+      hexColor: raw.hexColor ?? raw.hex_color,
+      isFullDayHighlight: raw.isFullDayHighlight ?? raw.is_full_day_highlight,
+      description: raw.description,
+      is_non_learning_day: raw.is_non_learning_day,
+      time: raw.time,
+    };
+  }
+
+  private expandDateRange(startDate: string, endDate: string): string[] {
+    const dates: string[] = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const cur = new Date(start);
+    while (cur <= end) {
+      dates.push(
+        `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`
+      );
+      cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+  }
+
   fetchEvents(month: number, year: number): Observable<CalendarEvent[]> {
     this.isLoading.set(true);
     const params = new HttpParams()
       .set('month', String(month + 1))
       .set('year', String(year));
 
-    return this.http.get<CalendarEvent[]>(this.baseUrl, { params }).pipe(
+    return this.http.get<PaginatedResponse<any> | any[]>(this.baseUrl, { params }).pipe(
+      map((res) => {
+        const rawEvents = Array.isArray(res) ? res : (res.results ?? []);
+        return rawEvents.map((e: any) => this.mapEvent(e));
+      }),
       tap({
         next: (events) => {
           this.events.set(events);
@@ -120,11 +162,13 @@ export class SharedCalendarService {
   mapToGrid(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
     const map = new Map<string, CalendarEvent[]>();
     for (const evt of events) {
-      const dateKey = evt.date ?? evt.start_date?.split('T')[0] ?? '';
-      if (!dateKey) continue;
-      const existing = map.get(dateKey) ?? [];
-      existing.push(evt);
-      map.set(dateKey, existing);
+      const dates = this.expandEventDates(evt);
+      for (const dateKey of dates) {
+        if (!dateKey) continue;
+        const existing = map.get(dateKey) ?? [];
+        existing.push(evt);
+        map.set(dateKey, existing);
+      }
     }
     return map;
   }
@@ -141,14 +185,28 @@ export class SharedCalendarService {
     return Math.max(0, dayEvents.filter((e) => !e.isFullDayHighlight).length - 3);
   }
 
+  private expandEventDates(evt: CalendarEvent): string[] {
+    if (evt.date) return [evt.date];
+    if (evt.start_date && evt.end_date) {
+      return this.expandDateRange(
+        evt.start_date.split('T')[0],
+        evt.end_date.split('T')[0]
+      );
+    }
+    if (evt.start_date) return [evt.start_date.split('T')[0]];
+    return [];
+  }
+
   private buildEventsMap(): Map<string, CalendarEvent[]> {
     const map = new Map<string, CalendarEvent[]>();
     for (const evt of this.events()) {
-      const startDate = evt.date ?? evt.start_date?.split('T')[0] ?? '';
-      if (!startDate) continue;
-      const existing = map.get(startDate) ?? [];
-      existing.push(evt);
-      map.set(startDate, existing);
+      const dates = this.expandEventDates(evt);
+      for (const dateKey of dates) {
+        if (!dateKey) continue;
+        const existing = map.get(dateKey) ?? [];
+        existing.push(evt);
+        map.set(dateKey, existing);
+      }
     }
     return map;
   }

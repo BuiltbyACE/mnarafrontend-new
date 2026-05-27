@@ -7,9 +7,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -24,9 +22,7 @@ import { UserRole } from '../../../../shared/models/rbac.models';
     CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
+
     MatButtonModule,
     MatIconModule,
     MatSlideToggleModule,
@@ -37,44 +33,44 @@ import { UserRole } from '../../../../shared/models/rbac.models';
     <mat-dialog-content>
       <form [formGroup]="form" class="dialog-form">
         <div class="form-row">
-          <mat-form-field appearance="outline">
-            <mat-label>First Name</mat-label>
-            <input matInput formControlName="first_name" placeholder="e.g. James" />
+          <div class="form-field">
+            <label class="input-label">First Name</label>
+            <input formControlName="first_name" placeholder="e.g. James" />
             @if (form.get('first_name')?.hasError('required') && form.get('first_name')?.touched) {
-              <mat-error>First name is required</mat-error>
+              <span class="error-text">First name is required</span>
             }
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Last Name</mat-label>
-            <input matInput formControlName="last_name" placeholder="e.g. Mwangi" />
+          </div>
+          <div class="form-field">
+            <label class="input-label">Last Name</label>
+            <input formControlName="last_name" placeholder="e.g. Mwangi" />
             @if (form.get('last_name')?.hasError('required') && form.get('last_name')?.touched) {
-              <mat-error>Last name is required</mat-error>
+              <span class="error-text">Last name is required</span>
             }
-          </mat-form-field>
+          </div>
         </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Email Address</mat-label>
-          <input matInput formControlName="email" type="email" placeholder="user@school.ac.ke" />
+        <div class="form-field">
+          <label class="input-label">Email Address</label>
+          <input formControlName="email" type="email" placeholder="user@school.ac.ke" />
           @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
-            <mat-error>Email is required</mat-error>
+            <span class="error-text">Email is required</span>
           }
           @if (form.get('email')?.hasError('email')) {
-            <mat-error>Enter a valid email address</mat-error>
+            <span class="error-text">Enter a valid email address</span>
           }
-        </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Role</mat-label>
-          <mat-select formControlName="role">
+        <div class="form-field">
+          <label class="input-label">Role</label>
+          <select formControlName="role">
             @for (role of roles; track role.value) {
-              <mat-option [value]="role.value">{{ role.label }}</mat-option>
+              <option [value]="role.value">{{ role.label }}</option>
             }
-          </mat-select>
+          </select>
           @if (form.get('role')?.hasError('required') && form.get('role')?.touched) {
-            <mat-error>Role is required</mat-error>
+            <span class="error-text">Role is required</span>
           }
-        </mat-form-field>
+        </div>
 
         <div class="toggle-row">
           <mat-slide-toggle formControlName="is_active" color="primary">
@@ -102,6 +98,45 @@ import { UserRole } from '../../../../shared/models/rbac.models';
     </mat-dialog-actions>
   `,
   styles: [`
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .form-field input,
+    .form-field select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 4px;
+    }
     .dialog-form { display: flex; flex-direction: column; gap: 4px; min-width: 480px; padding-top: 8px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .full-width { width: 100%; }

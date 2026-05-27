@@ -7,8 +7,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
+
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -22,8 +21,7 @@ import { AdminUser, UserRole } from '../../../../shared/models/rbac.models';
     CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatSelectModule,
+
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
@@ -40,17 +38,17 @@ import { AdminUser, UserRole } from '../../../../shared/models/rbac.models';
       </div>
 
       <form [formGroup]="form" class="dialog-form">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>New Role</mat-label>
-          <mat-select formControlName="role">
+        <div class="form-field">
+          <label class="input-label">New Role</label>
+          <select formControlName="role">
             @for (role of roles; track role.value) {
-              <mat-option [value]="role.value">{{ role.label }}</mat-option>
+              <option [value]="role.value">{{ role.label }}</option>
             }
-          </mat-select>
+          </select>
           @if (form.get('role')?.hasError('required') && form.get('role')?.touched) {
-            <mat-error>Role is required</mat-error>
+            <span class="error-text">Role is required</span>
           }
-        </mat-form-field>
+        </div>
 
         @if (errorMessage) {
           <div class="error-banner">
@@ -71,6 +69,45 @@ import { AdminUser, UserRole } from '../../../../shared/models/rbac.models';
     </mat-dialog-actions>
   `,
   styles: [`
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .form-field input,
+    .form-field select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 4px;
+    }
     .dialog-form { display: flex; flex-direction: column; gap: 4px; min-width: 400px; padding-top: 8px; }
     .full-width { width: 100%; }
     .user-summary { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 20px; }

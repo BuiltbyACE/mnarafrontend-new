@@ -11,6 +11,7 @@ export interface Tokens {
 
 /** Nested user object from /me endpoint */
 export interface UserProfile {
+  id?: number | string;
   firstName: string;
   lastName?: string;
   isActive: boolean;
@@ -27,7 +28,7 @@ export interface UserContext {
 }
 
 /** Portal types in the system */
-export type PortalType = 'ADMIN' | 'STAFF' | 'TRANSPORT' | 'STUDENT' | 'PARENT';
+export type PortalType = 'ADMIN' | 'STAFF' | 'TRANSPORT' | 'STUDENT' | 'PARENT' | 'FINANCE';
 
 /** Login request payload */
 export interface LoginRequest {

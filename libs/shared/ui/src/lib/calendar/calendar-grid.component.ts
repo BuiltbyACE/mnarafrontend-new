@@ -48,7 +48,11 @@ export class CalendarGridComponent {
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = this.formatDate(year, month, d);
-      const dayEvents = this.events().filter((evt) => evt.date === dateStr);
+      const dayEvents = this.events().filter((evt) => {
+        const start = (evt.start_date || evt.date || '').split('T')[0];
+        const end = (evt.end_date || start).split('T')[0];
+        return dateStr >= start && dateStr <= end;
+      });
       result.push({
         day: d,
         dateStr,
@@ -76,8 +80,8 @@ export class CalendarGridComponent {
     }
   }
 
-  onEventClick(event: CalendarEvent, day: CalendarDay): void {
-    event.stopPropagation();
+  onEventClick(event: CalendarEvent, day: CalendarDay, $event: PointerEvent): void {
+    $event.stopPropagation();
     this.eventClicked.emit(event);
   }
 

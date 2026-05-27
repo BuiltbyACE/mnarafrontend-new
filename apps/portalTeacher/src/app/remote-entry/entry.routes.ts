@@ -80,6 +80,11 @@ export const remoteRoutes: Route[] = [
           import('../features/behaviour/behaviour.component').then(m => m.BehaviourComponent),
       },
       {
+        path: 'chat',
+        loadComponent: () =>
+          import('../features/chat/chat.component').then(m => m.ChatComponent),
+      },
+      {
         path: 'messages',
         loadComponent: () =>
           import('../features/messages/messages.component').then(m => m.MessagesComponent),

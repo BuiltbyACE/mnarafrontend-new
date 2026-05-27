@@ -303,12 +303,14 @@ import { getApiUrl } from '@sms/core/config';
 
 import { 
   Admission, 
-  StudentDetail, 
   AdmissionRequest, 
+  AdmissionRecord,
+  AdmissionCreatePayload,
+  BehaviourCommitment,
+  BehaviourCommitmentPayload,
   StudentProfile, 
   StudentCategory, 
   StudentHouse, 
-  
 } from '../../../shared/models/students.models';
 
 import { YearLevel } from '../../../shared/models/academics.models'; // <-- ENSURE THIS IS HERE
@@ -374,8 +376,8 @@ export class StudentsService {
 
   // --- STUDENT PROFILES & DETAILS ---
 
-  getStudentDetail(studentId: number): Observable<StudentDetail> {
-    return this.http.get<StudentDetail>(`${this.baseUrl}${studentId}/`);
+  getStudentDetail(studentId: number): Observable<StudentProfile> {
+    return this.http.get<StudentProfile>(`${this.baseUrl}profiles/${studentId}/`);
   }
 
   getProfiles(page = 1, pageSize = 25, filters?: { status?: string; year_level?: number; search?: string }): Observable<PaginatedResponse<StudentProfile>> {
@@ -457,6 +459,38 @@ export class StudentsService {
       // CRITICAL: Extract the 'results' array from the paginated response
       map(response => response.results || []),
       catchError(err => throwError(() => new Error('Failed to load levels')))
+    );
+  }
+
+  // --- ADMISSION WIZARD ---
+
+  createAdmission(data: AdmissionCreatePayload): Observable<AdmissionRecord> {
+    return this.http.post<AdmissionRecord>(`${this.baseUrl}admissions/`, data).pipe(
+      catchError(err => this.handleError('Failed to create admission', err))
+    );
+  }
+
+  getAdmissionDetail(id: number): Observable<AdmissionRecord> {
+    return this.http.get<AdmissionRecord>(`${this.baseUrl}admissions/${id}/`);
+  }
+
+  // --- BEHAVIOUR COMMITMENT ---
+
+  submitBehaviourCommitment(admissionId: number, data: BehaviourCommitmentPayload): Observable<BehaviourCommitment> {
+    return this.http.post<BehaviourCommitment>(`${this.baseUrl}admissions/${admissionId}/submit-commitment/`, data).pipe(
+      catchError(err => this.handleError('Failed to submit behaviour commitment', err))
+    );
+  }
+
+  getBehaviourCommitments(admissionId: number): Observable<BehaviourCommitment[]> {
+    return this.http.get<BehaviourCommitment[]>(`${this.baseUrl}admissions/${admissionId}/commitments/`).pipe(
+      catchError(err => this.handleError('Failed to load behaviour commitments', err))
+    );
+  }
+
+  updateBehaviourCommitment(id: number, data: Partial<BehaviourCommitmentPayload>): Observable<BehaviourCommitment> {
+    return this.http.patch<BehaviourCommitment>(`${this.baseUrl}commitments/${id}/`, data).pipe(
+      catchError(err => this.handleError('Failed to update behaviour commitment', err))
     );
   }
 

@@ -1,7 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '@sms/core/config';
+
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
 
 export type AdminEventType = 'TERM' | 'HOLIDAY' | 'SDL' | 'EXAM';
 
@@ -41,23 +48,46 @@ export class AdminCalendarService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiBaseUrl;
 
-  private readonly _events = signal<AdminCalendarEvent[]>([
-    { id: 1, title: 'Term 1 Begins', event_type: 'TERM', start_date: '2026-01-12', end_date: '2026-01-12', is_non_learning_day: false, hexColor: '#2563eb', isFullDayHighlight: true },
-    { id: 2, title: 'Mid-Term Break', event_type: 'HOLIDAY', start_date: '2026-02-23', end_date: '2026-02-27', is_non_learning_day: true, hexColor: '#ef4444', isFullDayHighlight: true },
-    { id: 3, title: 'SDL Week', event_type: 'SDL', start_date: '2026-03-09', end_date: '2026-03-13', is_non_learning_day: false, hexColor: '#10b981', isFullDayHighlight: true },
-    { id: 4, title: 'End of Term Exams', event_type: 'EXAM', start_date: '2026-03-23', end_date: '2026-03-27', is_non_learning_day: false, hexColor: '#f59e0b', isFullDayHighlight: true },
-    { id: 5, title: 'Staff Meeting', event_type: 'TERM', start_date: '2026-04-10', end_date: '2026-04-10', is_non_learning_day: false, hexColor: '#2563eb', isFullDayHighlight: false },
-    { id: 6, title: 'Grade Submission Deadline', event_type: 'TERM', start_date: '2026-04-15', end_date: '2026-04-15', is_non_learning_day: false, hexColor: '#8b5cf6', isFullDayHighlight: false },
-  ]);
+  private readonly _events = signal<AdminCalendarEvent[]>([]);
 
   readonly events = this._events.asReadonly();
 
+  constructor() {
+    this.loadEvents();
+  }
+
+  private mapEvent(raw: any): AdminCalendarEvent {
+    return {
+      id: raw.id,
+      title: raw.title,
+      event_type: raw.event_type,
+      start_date: raw.start_date,
+      end_date: raw.end_date,
+      is_non_learning_day: raw.is_non_learning_day,
+      description: raw.description,
+      time: raw.time,
+      hexColor: raw.hexColor ?? raw.hex_color,
+      isFullDayHighlight: raw.isFullDayHighlight ?? raw.is_full_day_highlight,
+    };
+  }
+
+  loadEvents(): void {
+    this.http.get<PaginatedResponse<any>>(`${this.baseUrl}/lms/admin/calendar-events/`)
+      .pipe(map((res) => (res.results || []).map((e) => this.mapEvent(e))))
+      .subscribe({
+        next: (events) => this._events.set(events),
+        error: () => this._events.set([]),
+      });
+  }
+
   getEvents(): Observable<AdminCalendarEvent[]> {
-    return this.http.get<AdminCalendarEvent[]>(`${this.baseUrl}/lms/admin/calendar-events/`);
+    return this.http.get<PaginatedResponse<any>>(`${this.baseUrl}/lms/admin/calendar-events/`)
+      .pipe(map((res) => (res.results || []).map((e) => this.mapEvent(e))));
   }
 
   createEvent(payload: CreateEventPayload): Observable<AdminCalendarEvent> {
-    return this.http.post<AdminCalendarEvent>(`${this.baseUrl}/lms/admin/calendar-events/`, payload);
+    return this.http.post<any>(`${this.baseUrl}/lms/admin/calendar-events/`, payload)
+      .pipe(map((e) => this.mapEvent(e)));
   }
 
   addEvent(event: AdminCalendarEvent): void {

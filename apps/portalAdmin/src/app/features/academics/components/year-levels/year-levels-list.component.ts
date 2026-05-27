@@ -3,13 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
 import { AcademicsService, YearLevel } from '../../services/academics.service';
 import { YearLevelDialogComponent } from './year-level-dialog.component';
 
@@ -21,14 +19,13 @@ import { YearLevelDialogComponent } from './year-level-dialog.component';
     FormsModule,
     MatTableModule,
     MatButtonModule,
-    MatIconModule,
     MatCardModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-     MatChipsModule,
-     MatProgressSpinnerModule,
-   ],
+    MatChipsModule,
+    MatProgressSpinnerModule,
+  
+    MatIconModule,
+  ],
   template: `
     <div class="page-container">
       <div class="page-header">
@@ -44,10 +41,9 @@ import { YearLevelDialogComponent } from './year-level-dialog.component';
 
       <mat-card class="content-card">
         <div class="search-bar">
-          <mat-form-field appearance="outline" class="search-field">
-            <mat-icon matPrefix>search</mat-icon>
-            <input matInput placeholder="Search year levels..." [(ngModel)]="searchQuery" />
-          </mat-form-field>
+          <div class="search-field">
+            <input placeholder="Search year levels..." [(ngModel)]="searchQuery" />
+          </div>
         </div>
 
         @if (service.isLoading()) {
@@ -137,6 +133,24 @@ import { YearLevelDialogComponent } from './year-level-dialog.component';
     .search-field {
       width: 100%;
       max-width: 400px;
+    }
+
+    .search-field input {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+    }
+    .search-field input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
     }
 
     .full-width-table {
@@ -240,3 +254,4 @@ export class YearLevelsListComponent implements OnInit {
     }
   }
 }
+

@@ -10,9 +10,6 @@ import { YearLevel } from '../../../../shared/models/academics.models';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AcademicsService } from '../../services/academics.service';
@@ -26,9 +23,6 @@ import { AcademicsService } from '../../services/academics.service';
     MatDialogModule,
     MatButtonModule,
     MatIconModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
     MatProgressSpinnerModule,
   ],
   template: `
@@ -46,35 +40,35 @@ import { AcademicsService } from '../../services/academics.service';
 
         <div class="form-fields">
           <!-- Source Year Level -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Source Year Level</mat-label>
-            <mat-select [(ngModel)]="sourceYearLevel" required>
+          <div class="form-field">
+            <label for="sourceYearLevel">Source Year Level</label>
+            <select id="sourceYearLevel" [ngModel]="sourceYearLevel()" (ngModelChange)="sourceYearLevel.set($event)" required>
               @for (year of yearLevels(); track year.id) {
-                <mat-option [value]="year.id">{{ year.name }}</mat-option>
+                <option [ngValue]="year.id">{{ year.name }}</option>
               }
-            </mat-select>
-            <mat-hint>Current year level of students</mat-hint>
-          </mat-form-field>
+            </select>
+            <span class="hint-text">Current year level of students</span>
+          </div>
 
           <!-- Target Year Level -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Target Year Level</mat-label>
-            <mat-select [(ngModel)]="targetYearLevel" required>
+          <div class="form-field">
+            <label for="targetYearLevel">Target Year Level</label>
+            <select id="targetYearLevel" [ngModel]="targetYearLevel()" (ngModelChange)="targetYearLevel.set($event)" required>
               @for (year of yearLevels(); track year.id) {
-                <mat-option [value]="year.id" [disabled]="year.id === sourceYearLevel()">
+                <option [ngValue]="year.id" [disabled]="year.id === sourceYearLevel()">
                   {{ year.name }}
-                </mat-option>
+                </option>
               }
-            </mat-select>
-            <mat-hint>Year level to promote to</mat-hint>
-          </mat-form-field>
+            </select>
+            <span class="hint-text">Year level to promote to</span>
+          </div>
 
           <!-- Academic Year -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Academic Year</mat-label>
-            <input matInput [(ngModel)]="academicYear" placeholder="e.g., 2026/2027" required>
-            <mat-hint>Format: YYYY/YYYY</mat-hint>
-          </mat-form-field>
+          <div class="form-field">
+            <label for="academicYear">Academic Year</label>
+            <input id="academicYear" [ngModel]="academicYear()" (ngModelChange)="academicYear.set($event)" placeholder="e.g., 2026/2027" required>
+            <span class="hint-text">Format: YYYY/YYYY</span>
+          </div>
         </div>
 
         @if (error()) {
@@ -105,6 +99,20 @@ import { AcademicsService } from '../../services/academics.service';
     </div>
   `,
   styles: [`
+    .form-field { display: flex; flex-direction: column; gap: 4px; }
+    .form-field label { font-size: 14px; font-weight: 500; color: #374151; }
+    .form-field input,
+    .form-field select {
+      width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 14px; color: #1f2937; background: #fff; transition: border-color 0.15s; box-sizing: border-box;
+    }
+    .form-field input:focus,
+    .form-field select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+    .form-field input.ng-invalid.ng-touched,
+    .form-field select.ng-invalid.ng-touched { border-color: #ef4444; }
+    .error-text { font-size: 12px; color: #ef4444; }
+    .hint-text { font-size: 12px; color: #6b7280; }
+
     .dialog-container {
       min-width: 400px;
     }
@@ -226,7 +234,7 @@ export class BulkPromotionDialogComponent implements OnInit {
       source_year_level: this.sourceYearLevel()!,
       target_year_level: this.targetYearLevel()!,
       academic_year: this.academicYear(),
-      student_ids: [], // Backend will auto-select all students from source year
+      student_ids: [],
     };
 
     this.academicsService.bulkPromote(request).subscribe({

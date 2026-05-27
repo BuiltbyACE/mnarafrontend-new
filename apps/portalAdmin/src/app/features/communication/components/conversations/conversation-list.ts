@@ -5,7 +5,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -23,7 +22,6 @@ import { ComposeDialogComponent } from './compose-dialog';
     MatListModule,
     MatIconModule,
     MatButtonModule,
-    MatInputModule,
     MatDividerModule,
     MatBadgeModule,
     MatProgressSpinnerModule,
@@ -98,13 +96,12 @@ import { ComposeDialogComponent } from './compose-dialog';
 
             <!-- Chat Input -->
             <div class="chat-footer">
-              <mat-form-field appearance="outline" class="chat-input-field">
+              <div class="form-field chat-input-field">
                 <input
-                  matInput
                   [formControl]="messageControl"
                   placeholder="Type a message..."
                   (keydown.enter)="$event.preventDefault(); sendMessage(tid)">
-              </mat-form-field>
+              </div>
               <button
                 mat-icon-button
                 color="primary"
@@ -210,7 +207,6 @@ import { ComposeDialogComponent } from './compose-dialog';
       padding: 12px 16px; border-top: 1px solid #e5e7eb; flex-shrink: 0; background: #fff;
     }
     .chat-input-field { flex: 1; margin: 0; }
-    .chat-input-field .mat-mdc-form-field-subscript-wrapper { display: none; }
     .send-btn { flex-shrink: 0; }
 
     /* ── No Chat Selected ── */
@@ -222,6 +218,49 @@ import { ComposeDialogComponent } from './compose-dialog';
     .no-chat-icon { font-size: 64px; width: 64px; height: 64px; margin-bottom: 8px; }
     .no-chat-selected h2 { margin: 0; font-weight: 600; color: #6b7280; font-size: 1.2rem; }
     .no-chat-selected p { margin: 0; font-size: 0.9rem; }
+  `,
+  `
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 4px;
+    }
   `],
 })
 export class ConversationListComponent implements OnInit {

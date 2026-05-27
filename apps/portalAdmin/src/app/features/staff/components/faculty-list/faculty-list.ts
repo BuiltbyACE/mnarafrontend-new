@@ -506,9 +506,6 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatStepperModule } from '@angular/material/stepper';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import {
@@ -536,9 +533,6 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
     CommonModule,
     ReactiveFormsModule,
     MatStepperModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatDividerModule,
@@ -591,73 +585,58 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
             </div>
 
             <div class="form-row two-col">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>First Name</mat-label>
-                <input matInput formControlName="first_name" placeholder="e.g. Amina" />
-                <mat-icon matSuffix>person</mat-icon>
+              <div class="form-field">
+                <label class="input-label">First Name</label>
+                <input formControlName="first_name" placeholder="e.g. Amina" />
                 @if (identityForm.get('first_name')?.hasError('required') && identityForm.get('first_name')?.touched) {
-                  <mat-error>First name is required</mat-error>
+                  <span class="error-text">First name is required</span>
                 }
-              </mat-form-field>
+              </div>
 
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Last Name</mat-label>
-                <input matInput formControlName="last_name" placeholder="e.g. Odhiambo" />
-                <mat-icon matSuffix>person_outline</mat-icon>
+              <div class="form-field">
+                <label class="input-label">Last Name</label>
+                <input formControlName="last_name" placeholder="e.g. Odhiambo" />
                 @if (identityForm.get('last_name')?.hasError('required') && identityForm.get('last_name')?.touched) {
-                  <mat-error>Last name is required</mat-error>
+                  <span class="error-text">Last name is required</span>
                 }
-              </mat-form-field>
+              </div>
             </div>
 
             <div class="form-row two-col">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>National ID</mat-label>
-                <input matInput formControlName="national_id" placeholder="e.g. 32456789" />
-                <mat-icon matSuffix>fingerprint</mat-icon>
+              <div class="form-field">
+                <label class="input-label">National ID</label>
+                <input formControlName="national_id" placeholder="e.g. 32456789" />
                 @if (identityForm.get('national_id')?.hasError('required') && identityForm.get('national_id')?.touched) {
-                  <mat-error>National ID is required</mat-error>
+                  <span class="error-text">National ID is required</span>
                 }
                 @if (identityForm.get('national_id')?.hasError('pattern') && identityForm.get('national_id')?.touched) {
-                  <mat-error>Must be 7–8 digits</mat-error>
+                  <span class="error-text">Must be 7–8 digits</span>
                 }
-              </mat-form-field>
+              </div>
 
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>KRA PIN</mat-label>
-                <input matInput formControlName="kra_pin" placeholder="e.g. A012345678Z" />
-                <mat-icon matSuffix>receipt_long</mat-icon>
+              <div class="form-field">
+                <label class="input-label">KRA PIN</label>
+                <input formControlName="kra_pin" placeholder="e.g. A012345678Z" />
                 @if (identityForm.get('kra_pin')?.hasError('required') && identityForm.get('kra_pin')?.touched) {
-                  <mat-error>KRA PIN is required</mat-error>
+                  <span class="error-text">KRA PIN is required</span>
                 }
                 @if (identityForm.get('kra_pin')?.hasError('pattern') && identityForm.get('kra_pin')?.touched) {
-                  <mat-error>Invalid KRA PIN format (e.g. A012345678Z)</mat-error>
+                  <span class="error-text">Invalid KRA PIN format (e.g. A012345678Z)</span>
                 }
-              </mat-form-field>
+              </div>
             </div>
 
             <div class="form-row one-col">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Staff Role</mat-label>
-                <mat-select formControlName="is_teacher">
-                  <mat-option [value]="true">
-                    <div class="role-option">
-                      <mat-icon>school</mat-icon>
-                      <span>Teacher — Academic Staff</span>
-                    </div>
-                  </mat-option>
-                  <mat-option [value]="false">
-                    <div class="role-option">
-                      <mat-icon>engineering</mat-icon>
-                      <span>Support Staff — Non-Teaching</span>
-                    </div>
-                  </mat-option>
-                </mat-select>
-                <mat-icon matSuffix>work</mat-icon>
+              <div class="form-field">
+                <label class="input-label">Staff Role</label>
+                <select formControlName="is_teacher">
+                  <option [ngValue]="true">Teacher — Academic Staff</option>
+                  <option [ngValue]="false">Support Staff — Non-Teaching</option>
+                </select>
                 @if (identityForm.get('is_teacher')?.hasError('required') && identityForm.get('is_teacher')?.touched) {
-                  <mat-error>Please select a role</mat-error>
+                  <span class="error-text">Please select a role</span>
                 }
-              </mat-form-field>
+              </div>
             </div>
 
             <div class="step-actions">
@@ -703,25 +682,23 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
               </div>
 
               <div class="form-row one-col">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>TSC Number</mat-label>
-                  <input matInput formControlName="tsc_number" placeholder="e.g. TSC/0012345" />
-                  <mat-icon matSuffix>verified</mat-icon>
+                <div class="form-field">
+                  <label class="input-label">TSC Number</label>
+                  <input formControlName="tsc_number" placeholder="e.g. TSC/0012345" />
                   @if (pedagogyForm.get('tsc_number')?.hasError('required') && pedagogyForm.get('tsc_number')?.touched) {
-                    <mat-error>TSC Number is required for teachers</mat-error>
+                    <span class="error-text">TSC Number is required for teachers</span>
                   }
-                </mat-form-field>
+                </div>
               </div>
 
               <div class="form-row one-col">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Specialization / Teaching Area</mat-label>
-                  <input matInput formControlName="specialization_area" placeholder="e.g. Mathematics & Physics" />
-                  <mat-icon matSuffix>menu_book</mat-icon>
+                <div class="form-field">
+                  <label class="input-label">Specialization / Teaching Area</label>
+                  <input formControlName="specialization_area" placeholder="e.g. Mathematics & Physics" />
                   @if (pedagogyForm.get('specialization_area')?.hasError('required') && pedagogyForm.get('specialization_area')?.touched) {
-                    <mat-error>Specialization area is required</mat-error>
+                    <span class="error-text">Specialization area is required</span>
                   }
-                </mat-form-field>
+                </div>
               </div>
 
             } @else {
@@ -736,11 +713,10 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
               </div>
 
               <div class="form-row one-col">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Specialization Area (Optional)</mat-label>
-                  <input matInput formControlName="specialization_area" placeholder="e.g. IT Infrastructure, Security, Catering" />
-                  <mat-icon matSuffix>build</mat-icon>
-                </mat-form-field>
+                <div class="form-field">
+                  <label class="input-label">Specialization Area (Optional)</label>
+                  <input formControlName="specialization_area" placeholder="e.g. IT Infrastructure, Security, Catering" />
+                </div>
               </div>
 
               <div class="skip-notice">
@@ -1220,6 +1196,47 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
       .review-grid { grid-template-columns: 1fr; }
       .step-form { padding: 20px 16px 18px; }
     }
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 4px;
+    }
   `],
 })
 export class AddStaffWizardComponent {
@@ -1654,6 +1671,47 @@ this.staffService.createFaculty(payload).subscribe({
 
     .detail-actions { display: flex; flex-direction: column; gap: 12px; }
     .detail-actions button { justify-content: flex-start; }
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 4px;
+    }
   `],
 })
 export class FacultyListComponent implements OnInit {

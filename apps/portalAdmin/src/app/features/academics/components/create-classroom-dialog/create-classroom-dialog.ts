@@ -4,12 +4,8 @@
  */
 
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -20,12 +16,8 @@ import { ClassroomWritePayload, YearLevel } from '../../../../shared/models/acad
   selector: 'app-create-classroom-dialog',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
@@ -34,41 +26,42 @@ import { ClassroomWritePayload, YearLevel } from '../../../../shared/models/acad
     <h2 mat-dialog-title>Add Classroom</h2>
     <mat-dialog-content>
       <form [formGroup]="form" class="dialog-form">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Class Name</mat-label>
-          <input matInput formControlName="name" placeholder="e.g. Form 1A" />
+        <div class="form-field">
+          <label for="name">Class Name</label>
+          <input id="name" formControlName="name" placeholder="e.g. Form 1A" />
           @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
-            <mat-error>Class name is required</mat-error>
+            <span class="error-text">Class name is required</span>
           }
-        </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Year Level</mat-label>
-          <mat-select formControlName="year_level">
+        <div class="form-field">
+          <label for="year_level">Year Level</label>
+          <select id="year_level" formControlName="year_level">
+            <option [ngValue]="null" disabled>Select year level</option>
             @if (loadingYearLevels) {
-              <mat-option disabled>Loading year levels…</mat-option>
+              <option disabled>Loading year levels…</option>
             }
             @for (yl of yearLevels; track yl.id) {
-              <mat-option [value]="yl.id">{{ yl.name }}</mat-option>
+              <option [ngValue]="yl.id">{{ yl.name }}</option>
             }
-          </mat-select>
+          </select>
           @if (form.get('year_level')?.hasError('required') && form.get('year_level')?.touched) {
-            <mat-error>Year level is required</mat-error>
+            <span class="error-text">Year level is required</span>
           }
-        </mat-form-field>
+        </div>
 
         <div class="form-row">
-          <mat-form-field appearance="outline">
-            <mat-label>Room Number</mat-label>
-            <input matInput formControlName="room_number" placeholder="e.g. B12" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Capacity</mat-label>
-            <input matInput formControlName="capacity" type="number" min="1" placeholder="e.g. 35" />
+          <div class="form-field">
+            <label for="room_number">Room Number</label>
+            <input id="room_number" formControlName="room_number" placeholder="e.g. B12" />
+          </div>
+          <div class="form-field">
+            <label for="capacity">Capacity</label>
+            <input id="capacity" type="number" formControlName="capacity" min="1" placeholder="e.g. 35" />
             @if (form.get('capacity')?.hasError('min')) {
-              <mat-error>Capacity must be at least 1</mat-error>
+              <span class="error-text">Capacity must be at least 1</span>
             }
-          </mat-form-field>
+          </div>
         </div>
 
         @if (errorMessage) {
@@ -90,9 +83,22 @@ import { ClassroomWritePayload, YearLevel } from '../../../../shared/models/acad
     </mat-dialog-actions>
   `,
   styles: [`
-    .dialog-form { display: flex; flex-direction: column; gap: 4px; min-width: 460px; padding-top: 8px; }
+    .dialog-form { display: flex; flex-direction: column; gap: 16px; min-width: 460px; padding-top: 8px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .full-width { width: 100%; }
+    .form-field { display: flex; flex-direction: column; gap: 4px; }
+    .form-field label { font-size: 14px; font-weight: 500; color: #374151; }
+    .form-field input,
+    .form-field select {
+      width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 14px; color: #1f2937; background: #fff; transition: border-color 0.15s; box-sizing: border-box;
+    }
+    .form-field input:focus,
+    .form-field select:focus {
+      outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field input.ng-invalid.ng-touched,
+    .form-field select.ng-invalid.ng-touched { border-color: #ef4444; }
+    .error-text { font-size: 12px; color: #ef4444; }
     .error-banner { display: flex; align-items: center; gap: 8px; padding: 12px; background: #fee2e2; border-radius: 8px; color: #dc2626; font-size: 14px; }
     mat-dialog-actions { padding: 16px 24px; }
   `],

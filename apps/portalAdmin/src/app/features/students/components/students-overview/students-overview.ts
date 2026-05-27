@@ -14,9 +14,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatChipsModule } from '@angular/material/chips';
@@ -41,9 +38,6 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
     MatTableModule,
     MatPaginatorModule,
     MatTabsModule,
-    MatSelectModule,
-    MatInputModule,
-    MatFormFieldModule,
     MatProgressSpinnerModule,
     MatMenuModule,
     MatChipsModule,
@@ -144,32 +138,31 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
 
           <!-- Filters -->
           <div class="filter-bar">
-            <mat-form-field appearance="outline" class="search-field">
-              <mat-icon matPrefix>search</mat-icon>
-              <input matInput placeholder="Search students..." [formControl]="searchControl" />
-            </mat-form-field>
+            <div class="search-field">
+              <input placeholder="Search students..." [formControl]="searchControl" />
+            </div>
 
-            <mat-form-field appearance="outline" class="filter-select">
-              <mat-label>Class</mat-label>
-              <mat-select [(ngModel)]="filterClass" (ngModelChange)="applyFilters()">
-                <mat-option value="">All Classes</mat-option>
-                <mat-option value="grade-8">Grade 8</mat-option>
-                <mat-option value="grade-7">Grade 7</mat-option>
-                <mat-option value="grade-6">Grade 6</mat-option>
-                <mat-option value="grade-5">Grade 5</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-field filter-select">
+              <label class="input-label">Class</label>
+              <select [(ngModel)]="filterClass" (ngModelChange)="applyFilters()">
+                <option value="">All Classes</option>
+                <option value="grade-8">Grade 8</option>
+                <option value="grade-7">Grade 7</option>
+                <option value="grade-6">Grade 6</option>
+                <option value="grade-5">Grade 5</option>
+              </select>
+            </div>
 
-            <mat-form-field appearance="outline" class="filter-select">
-              <mat-label>Status</mat-label>
-              <mat-select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
-                <mat-option value="">All Status</mat-option>
-                <mat-option value="ACTIVE">Active</mat-option>
-                <mat-option value="INACTIVE">Inactive</mat-option>
-                <mat-option value="GRADUATED">Graduated</mat-option>
-                <mat-option value="TRANSFERRED">Transferred</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-field filter-select">
+              <label class="input-label">Status</label>
+              <select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
+                <option value="">All Status</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="GRADUATED">Graduated</option>
+                <option value="TRANSFERRED">Transferred</option>
+              </select>
+            </div>
           </div>
 
           <!-- Table -->
@@ -224,7 +217,7 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                   <button mat-icon-button color="primary" matTooltip="View" (click)="viewStudent(s.id)">
                     <mat-icon>visibility</mat-icon>
                   </button>
-                  <button mat-icon-button color="accent" matTooltip="Edit">
+                  <button mat-icon-button color="accent" matTooltip="Edit" (click)="editStudent(s)">
                     <mat-icon>edit</mat-icon>
                   </button>
                   <button mat-icon-button color="warn" matTooltip="Archive" (click)="archiveStudent(s)">
@@ -443,8 +436,57 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
       flex-wrap: wrap;
     }
     .search-field { flex: 1; min-width: 200px; }
+    .search-field input {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+    }
+    .search-field input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-field input,
+    .form-field select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1f2937;
+      background: #fff;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-field input:focus,
+    .form-field select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .form-field select {
+      cursor: pointer;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 2px;
+    }
     .filter-select { width: 140px; }
-    ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
 
     .table-wrapper { position: relative; }
     .loading-overlay {
@@ -667,5 +709,9 @@ export class StudentsOverviewComponent implements OnInit {
 
   viewStudent(studentId: number): void {
     this.router.navigate(['/portalAdmin/students', studentId]);
+  }
+
+  editStudent(student: StudentProfile): void {
+    this.router.navigate(['/portalAdmin/students', student.id], { queryParams: { edit: 'true' } });
   }
 }

@@ -2,8 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-// ─── Leaflet CSS for Live Fleet Map ────────────────────────────────────────
-@import 'leaflet/dist/leaflet.css';
+// ─── MapLibre GL CSS for Live Fleet Map ────────────────────────────────────
+@import 'maplibre-gl/dist/maplibre-gl.css';
 
 /**
  * Mnara SMS — Admin Portal Global Styles
