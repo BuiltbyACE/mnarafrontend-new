@@ -10,7 +10,7 @@ import { TokenStorageService } from '@sms/core/auth';
 import type {
   FleetVehicle, TransportRoute, DailyTrip, TripManifest,
   TripIncident, VehicleMaintenanceLog, VehicleTelemetrySample,
-  FleetDevice, FleetTelemetry,
+  FleetDevice, FleetTelemetry, RouteStop,
   TransportDashboardData,
   DeviceProvisionResponse, DeviceProvisionRequest, EmergencyStopResponse,
 } from '../../../shared/models/transport.models';
@@ -97,6 +97,30 @@ export class TransportService {
     return this.http.get<TransportRoute>(getApiUrl(`/transport/routes/${id}/`));
   }
 
+  createRoute(data: Partial<TransportRoute>): Observable<TransportRoute> {
+    return this.http.post<TransportRoute>(getApiUrl('/transport/routes/'), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to create route')))
+    );
+  }
+
+  updateRoute(id: number, data: Partial<TransportRoute>): Observable<TransportRoute> {
+    return this.http.patch<TransportRoute>(getApiUrl(`/transport/routes/${id}/`), data).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to update route')))
+    );
+  }
+
+  deleteRoute(id: number): Observable<void> {
+    return this.http.delete<void>(getApiUrl(`/transport/routes/${id}/`)).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to delete route')))
+    );
+  }
+
+  setRouteStops(routeId: number, stops: { name: string; order: number; latitude: string; longitude: string; estimated_arrival_offset: string }[]): Observable<{ stops: RouteStop[] }> {
+    return this.http.put<{ stops: RouteStop[] }>(getApiUrl(`/transport/routes/${routeId}/set_stops/`), { stops }).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to set route stops')))
+    );
+  }
+
   getDailyTrips(params?: { status?: string; trip_type?: string; vehicle?: number; driver?: number }): Observable<DailyTrip[]> {
     let httpParams = new HttpParams();
     if (params?.status) httpParams = httpParams.set('status', params.status);
@@ -117,6 +141,12 @@ export class TransportService {
   endTrip(id: string): Observable<{ status: string; trip_id: string; end_time: string }> {
     return this.http.post<{ status: string; trip_id: string; end_time: string }>(
       getApiUrl(`/transport/daily-trips/${id}/end_trip/`), {}
+    );
+  }
+
+  cancelTrip(id: string): Observable<{ status: string; trip_id: string }> {
+    return this.http.post<{ status: string; trip_id: string }>(getApiUrl(`/transport/daily-trips/${id}/cancel/`), {}).pipe(
+      catchError((err) => throwError(() => new Error(err.error?.message || 'Failed to cancel trip')))
     );
   }
 

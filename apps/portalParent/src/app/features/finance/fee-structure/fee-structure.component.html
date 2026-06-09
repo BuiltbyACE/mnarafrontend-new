@@ -1,0 +1,138 @@
+<div class="fs-page">
+  <header class="fs-header">
+    @if (schoolInfo()?.logo; as logoUrl) {
+      <img [src]="logoUrl" alt="School Logo" class="fs-header-logo" />
+    } @else {
+      <mat-icon class="fs-header-icon">receipt_long</mat-icon>
+    }
+    <div class="fs-header-text">
+      <h1 class="fs-header-title">{{ schoolInfo()?.name || 'Fee Structure' }}</h1>
+      <p class="fs-header-sub">{{ schoolInfo()?.location || 'Detailed fee breakdown by category for each child' }}</p>
+    </div>
+    @if (children().length > 0 && !loading()) {
+      <div class="fs-header-actions">
+        <button mat-stroked-button class="action-btn" (click)="viewOnlinePdf()" [disabled]="pdfLoading()">
+          <mat-icon>visibility</mat-icon>
+          View Online
+        </button>
+        <button mat-flat-button class="action-btn action-btn-primary" (click)="downloadPdf()" [disabled]="pdfLoading()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          {{ pdfLoading() ? 'Generating…' : 'Download PDF' }}
+        </button>
+      </div>
+    }
+  </header>
+
+  <div class="fs-content">
+    @if (pdfError()) {
+      <div class="fs-pdf-error">{{ pdfError() }}</div>
+    }
+    @if (loading()) {
+      <div class="fs-loading">
+        <mat-spinner diameter="36"></mat-spinner>
+        <span>Loading fee structure…</span>
+      </div>
+    } @else if (error()) {
+      <div class="fs-error">{{ error() }}</div>
+    } @else if (children().length > 0) {
+      <section class="fs-summary-row">
+        <div class="fs-summary-card">
+          <div class="fs-summary-icon">
+            <mat-icon>people</mat-icon>
+          </div>
+          <div class="fs-summary-body">
+            <span class="fs-summary-label">Children</span>
+            <span class="fs-summary-value">{{ children().length }}</span>
+          </div>
+        </div>
+        <div class="fs-summary-card">
+          <div class="fs-summary-icon fs-summary-icon-blue">
+            <mat-icon>payments</mat-icon>
+          </div>
+          <div class="fs-summary-body">
+            <span class="fs-summary-label">Total Fees</span>
+            <span class="fs-summary-value">{{ formatCurrency(totalFee()) }}</span>
+          </div>
+        </div>
+        <div class="fs-summary-card">
+          <div class="fs-summary-icon fs-summary-icon-green">
+            <mat-icon>calendar_today</mat-icon>
+          </div>
+          <div class="fs-summary-body">
+            <span class="fs-summary-label">Period</span>
+            <span class="fs-summary-value">{{ children()[0].term }} — {{ children()[0].academic_year }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="fs-children-section">
+        <mat-tab-group animationDuration="200ms">
+          @for (child of children(); track child.student_id) {
+            <mat-tab [label]="child.student_name + ' — ' + child.class_name">
+              <div class="fs-child-panel">
+                <div class="fs-child-bar">
+                  <div class="fs-child-bar-item">
+                    <span class="fs-child-bar-label">Student</span>
+                    <span class="fs-child-bar-value">{{ child.student_name }}</span>
+                  </div>
+                  <div class="fs-child-bar-item">
+                    <span class="fs-child-bar-label">Class</span>
+                    <span class="fs-child-bar-value">{{ child.class_name }}</span>
+                  </div>
+                  <div class="fs-child-bar-item">
+                    <span class="fs-child-bar-label">Year Level</span>
+                    <span class="fs-child-bar-value">{{ child.year_level }}</span>
+                  </div>
+                  <div class="fs-child-bar-item fs-child-bar-item-total">
+                    <span class="fs-child-bar-label">Total Fee</span>
+                    <span class="fs-child-bar-value fs-child-bar-value-total">{{ formatCurrency(child.total_fee) }}</span>
+                  </div>
+                </div>
+
+                @if (child.fee_categories.length > 0) {
+                  <div class="fs-table-wrap">
+                    <table class="fs-table">
+                      <thead>
+                        <tr>
+                          <th>Category</th>
+                          <th>Amount</th>
+                          <th>Frequency</th>
+                          <th>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (cat of child.fee_categories; track cat.category) {
+                          <tr>
+                            <td class="fs-td-cat">{{ cat.category }}</td>
+                            <td class="fs-td-mono">{{ formatCurrency(cat.amount) }}</td>
+                            <td>{{ cat.frequency }}</td>
+                            <td class="fs-td-desc">{{ cat.description || '—' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td class="fs-tfoot-label">Total</td>
+                          <td class="fs-tfoot-value">{{ formatCurrency(child.total_fee) }}</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                } @else {
+                  <div class="fs-no-categories">No fee categories defined for this student.</div>
+                }
+              </div>
+            </mat-tab>
+          }
+        </mat-tab-group>
+      </section>
+    } @else {
+      <div class="fs-empty">
+        <mat-icon>info</mat-icon>
+        <span>No fee structure available for your children.</span>
+      </div>
+    }
+  </div>
+</div>

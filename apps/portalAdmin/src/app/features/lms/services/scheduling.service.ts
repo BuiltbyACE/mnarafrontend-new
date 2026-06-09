@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap, catchError, throwError, map } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 
 export interface AcademicYear {
@@ -14,10 +14,17 @@ export interface AcademicYear {
 export interface AcademicTerm {
   id: number;
   name: string;
-  academic_year: { id: number; name: string };
+  academic_year: number;
+  academic_year_name: string;
   start_date: string;
   end_date: string;
-  is_active: boolean;
+}
+
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 }
 
 export interface Period {
@@ -25,7 +32,8 @@ export interface Period {
   name: string;
   start_time: string;
   end_time: string;
-  is_active: boolean;
+  period_type: string;
+  is_break_time: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -43,7 +51,8 @@ export class SchedulingService {
   // Academic Years CRUD
   getAcademicYears(): Observable<AcademicYear[]> {
     this.isLoading.set(true);
-    return this.http.get<AcademicYear[]>(`${this.baseUrl}years/`).pipe(
+    return this.http.get<PaginatedResponse<AcademicYear>>(`${this.baseUrl}years/`).pipe(
+      map(res => res.results || []),
       tap(data => {
         this.academicYears.set(data);
         this.isLoading.set(false);
@@ -61,7 +70,7 @@ export class SchedulingService {
   }
 
   updateAcademicYear(id: number, data: Partial<AcademicYear>): Observable<AcademicYear> {
-    return this.http.put<AcademicYear>(`${this.baseUrl}years/${id}/`, data).pipe(
+    return this.http.patch<AcademicYear>(`${this.baseUrl}years/${id}/`, data).pipe(
       tap(updated => this.academicYears.update(items => 
         items.map(item => item.id === id ? updated : item)
       )),
@@ -69,8 +78,8 @@ export class SchedulingService {
     );
   }
 
-  deleteAcademicYear(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}years/${id}/`).pipe(
+  deleteAcademicYear(id: number): Observable<AcademicYear> {
+    return this.http.patch<AcademicYear>(`${this.baseUrl}years/${id}/`, { is_active: false }).pipe(
       tap(() => this.academicYears.update(items => items.filter(item => item.id !== id))),
       catchError(err => this.handleError('Failed to delete academic year', err))
     );
@@ -79,7 +88,8 @@ export class SchedulingService {
   // Academic Terms CRUD
   getAcademicTerms(): Observable<AcademicTerm[]> {
     this.isLoading.set(true);
-    return this.http.get<AcademicTerm[]>(`${this.baseUrl}terms/`).pipe(
+    return this.http.get<PaginatedResponse<AcademicTerm>>(`${this.baseUrl}terms/`).pipe(
+      map(res => res.results || []),
       tap(data => {
         this.academicTerms.set(data);
         this.isLoading.set(false);
@@ -97,7 +107,7 @@ export class SchedulingService {
   }
 
   updateAcademicTerm(id: number, data: Partial<AcademicTerm>): Observable<AcademicTerm> {
-    return this.http.put<AcademicTerm>(`${this.baseUrl}terms/${id}/`, data).pipe(
+    return this.http.patch<AcademicTerm>(`${this.baseUrl}terms/${id}/`, data).pipe(
       tap(updated => this.academicTerms.update(items => 
         items.map(item => item.id === id ? updated : item)
       )),
@@ -105,8 +115,8 @@ export class SchedulingService {
     );
   }
 
-  deleteAcademicTerm(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}terms/${id}/`).pipe(
+  deleteAcademicTerm(id: number): Observable<AcademicTerm> {
+    return this.http.patch<AcademicTerm>(`${this.baseUrl}terms/${id}/`, { is_active: false }).pipe(
       tap(() => this.academicTerms.update(items => items.filter(item => item.id !== id))),
       catchError(err => this.handleError('Failed to delete academic term', err))
     );
@@ -115,7 +125,8 @@ export class SchedulingService {
   // Periods CRUD
   getPeriods(): Observable<Period[]> {
     this.isLoading.set(true);
-    return this.http.get<Period[]>(`${this.baseUrl}periods/`).pipe(
+    return this.http.get<PaginatedResponse<Period>>(`${this.baseUrl}periods/`).pipe(
+      map(res => res.results || []),
       tap(data => {
         this.periods.set(data);
         this.isLoading.set(false);
@@ -133,7 +144,7 @@ export class SchedulingService {
   }
 
   updatePeriod(id: number, data: Partial<Period>): Observable<Period> {
-    return this.http.put<Period>(`${this.baseUrl}periods/${id}/`, data).pipe(
+    return this.http.patch<Period>(`${this.baseUrl}periods/${id}/`, data).pipe(
       tap(updated => this.periods.update(items => 
         items.map(item => item.id === id ? updated : item)
       )),
@@ -141,8 +152,8 @@ export class SchedulingService {
     );
   }
 
-  deletePeriod(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}periods/${id}/`).pipe(
+  deletePeriod(id: number): Observable<Period> {
+    return this.http.patch<Period>(`${this.baseUrl}periods/${id}/`, { is_active: false }).pipe(
       tap(() => this.periods.update(items => items.filter(item => item.id !== id))),
       catchError(err => this.handleError('Failed to delete period', err))
     );

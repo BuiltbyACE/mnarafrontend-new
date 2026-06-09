@@ -217,12 +217,6 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                   <button mat-icon-button color="primary" matTooltip="View" (click)="viewStudent(s.id)">
                     <mat-icon>visibility</mat-icon>
                   </button>
-                  <button mat-icon-button color="accent" matTooltip="Edit" (click)="editStudent(s)">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                  <button mat-icon-button color="warn" matTooltip="Archive" (click)="archiveStudent(s)">
-                    <mat-icon>delete</mat-icon>
-                  </button>
                 </td>
               </ng-container>
 
@@ -676,12 +670,6 @@ export class StudentsOverviewComponent implements OnInit {
     this.loadProfiles();
   }
 
-  archiveStudent(student: StudentProfile): void {
-    if (student.admission_record?.id) {
-      this.studentsService.updateAdmissionStatus(student.admission_record.id, 'INACTIVE').subscribe(() => this.loadProfiles());
-    }
-  }
-
   getInitials(name: string): string {
     if (!name) return '?';
     return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -709,9 +697,5 @@ export class StudentsOverviewComponent implements OnInit {
 
   viewStudent(studentId: number): void {
     this.router.navigate(['/portalAdmin/students', studentId]);
-  }
-
-  editStudent(student: StudentProfile): void {
-    this.router.navigate(['/portalAdmin/students', student.id], { queryParams: { edit: 'true' } });
   }
 }

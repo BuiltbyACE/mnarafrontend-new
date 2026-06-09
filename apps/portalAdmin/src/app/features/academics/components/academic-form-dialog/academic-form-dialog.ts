@@ -137,25 +137,26 @@ export interface DialogData {
           @if (entityType === 'classrooms') {
             <div class="form-field">
               <label class="input-label">Name</label>
-              <input formControlName="name" placeholder="e.g., Room A101" />
+              <input formControlName="name" placeholder="e.g., East, West, Nujoom" />
             </div>
 
             <div class="form-field">
-              <label class="input-label">Building</label>
-              <input formControlName="building" placeholder="e.g., Main Block" />
+              <label class="input-label">Year Level</label>
+              <select formControlName="year_level">
+                @for (yl of yearLevels(); track yl.id) {
+                  <option [value]="yl.id">{{ yl.name }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label class="input-label">Room Number</label>
+              <input formControlName="room_number" placeholder="e.g., B-2" />
             </div>
 
             <div class="form-field">
               <label class="input-label">Capacity</label>
               <input type="number" formControlName="capacity" placeholder="e.g., 30" />
-            </div>
-
-            <div class="form-field">
-              <label class="input-label">Status</label>
-              <select formControlName="is_active">
-                <option [value]="true">Active</option>
-                <option [value]="false">Inactive</option>
-              </select>
             </div>
           }
 
@@ -375,9 +376,9 @@ export class AcademicFormDialogComponent {
 
       case 'classrooms':
         return this.fb.group({
-          ...baseControls,
           name: [this.entityData?.name || '', Validators.required],
-          building: [this.entityData?.building || ''],
+          year_level: [null as number | null, Validators.required],
+          room_number: [this.entityData?.room_number || ''],
           capacity: [this.entityData?.capacity || 30, [Validators.required, Validators.min(1)]],
         });
 
@@ -407,12 +408,15 @@ export class AcademicFormDialogComponent {
       });
     }
 
+    if (this.entityType === 'classrooms' || this.entityType === 'subject-offerings') {
+      this.academicsService.getYearLevels().subscribe((data: any) => {
+        this.academicsService.yearLevels.set(data);
+      });
+    }
+
     if (this.entityType === 'subject-offerings') {
       this.academicsService.getSubjects().subscribe((data: any) => {
         this.academicsService.subjects.set(data);
-      });
-      this.academicsService.getYearLevels().subscribe((data: any) => {
-        this.academicsService.yearLevels.set(data);
       });
     }
   }

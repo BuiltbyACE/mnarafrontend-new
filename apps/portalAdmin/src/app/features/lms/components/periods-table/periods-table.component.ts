@@ -53,11 +53,11 @@ import { PeriodDialogComponent } from '../period-dialog/period-dialog.component'
           <td mat-cell *matCellDef="let row">{{ row.end_time }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="is_active">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
+        <ng-container matColumnDef="period_type">
+          <th mat-header-cell *matHeaderCellDef>Type</th>
           <td mat-cell *matCellDef="let row">
-            <mat-chip [class.active]="row.is_active" [class.inactive]="!row.is_active">
-              {{ row.is_active ? 'Active' : 'Inactive' }}
+            <mat-chip [class.lesson]="row.period_type === 'LESSON'" [class.break]="row.period_type !== 'LESSON'">
+              {{ row.is_break_time ? 'Break' : row.period_type }}
             </mat-chip>
           </td>
         </ng-container>
@@ -113,8 +113,8 @@ import { PeriodDialogComponent } from '../period-dialog/period-dialog.component'
        box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
      }
      .full-width-table { width: 100%; }
-     mat-chip.active { background: #dcfce7; color: #166534; }
-    mat-chip.inactive { background: #fee2e2; color: #991b1b; }
+      mat-chip.lesson { background: #dbeafe; color: #1e40af; }
+    mat-chip.break { background: #fef3c7; color: #92400e; }
     @media (max-width: 768px) {
       .table-header { flex-direction: column; align-items: stretch; }
       .search-field { max-width: 100%; }
@@ -126,7 +126,7 @@ export class PeriodsTableComponent {
   readonly dialog = inject(MatDialog);
 
   searchQuery = '';
-  displayedColumns = ['name', 'start_time', 'end_time', 'is_active', 'actions'];
+  displayedColumns = ['name', 'start_time', 'end_time', 'period_type', 'actions'];
 
   readonly filteredPeriods = () => {
     const periods = this.service.periods();

@@ -95,11 +95,11 @@
                   <span class="approval-desc">{{ approval.description }}</span>
                 </div>
                 <div class="approval-actions">
-                  <button mat-stroked-button color="primary" class="action-btn review-btn">
+                  <button mat-stroked-button color="primary" class="action-btn review-btn" (click)="reviewApproval(approval)" [disabled]="processingId() === approval.id">
                     <mat-icon>visibility</mat-icon>
                     Review
                   </button>
-                  <button mat-flat-button color="primary" class="action-btn approve-btn">
+                  <button mat-flat-button color="primary" class="action-btn approve-btn" (click)="approveApproval(approval)" [disabled]="processingId() === approval.id">
                     <mat-icon>check</mat-icon>
                     Approve
                   </button>

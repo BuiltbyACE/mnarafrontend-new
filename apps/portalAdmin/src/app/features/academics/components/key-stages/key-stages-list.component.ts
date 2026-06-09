@@ -42,7 +42,7 @@ import { KeyStageDialogComponent } from './key-stage-dialog.component';
       <mat-card class="content-card">
         <div class="search-bar">
           <div class="search-field">
-            <input placeholder="Search key stages..." [(ngModel)]="searchQuery" />
+            <input placeholder="Search key stages..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
           </div>
         </div>
 
@@ -234,13 +234,13 @@ export class KeyStagesListComponent implements OnInit {
   readonly service = inject(AcademicsService);
   readonly dialog = inject(MatDialog);
 
-  searchQuery = '';
+  searchQuery = signal('');
   displayedColumns = ['name', 'description', 'levels', 'actions'];
 
   readonly filteredKeyStages = computed(() => {
     const keyStages = this.service.keyStages();
-    if (!this.searchQuery) return keyStages;
-    const query = this.searchQuery.toLowerCase();
+    if (!this.searchQuery()) return keyStages;
+    const query = this.searchQuery().toLowerCase();
     return keyStages.filter(ks => 
       ks.name.toLowerCase().includes(query) ||
       ks.code.toLowerCase().includes(query) ||
@@ -261,7 +261,9 @@ export class KeyStagesListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.service.createKeyStage(result).subscribe();
+        this.service.createKeyStage(result).subscribe({
+          next: () => this.service.getKeyStages().subscribe()
+        });
       }
     });
   }
@@ -274,14 +276,18 @@ export class KeyStagesListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.service.updateKeyStage(keyStage.id, result).subscribe();
+        this.service.updateKeyStage(keyStage.id, result).subscribe({
+          next: () => this.service.getKeyStages().subscribe()
+        });
       }
     });
   }
 
   deleteKeyStage(keyStage: KeyStage): void {
     if (confirm(`Delete ${keyStage.name}?`)) {
-      this.service.deleteKeyStage(keyStage.id).subscribe();
+      this.service.deleteKeyStage(keyStage.id).subscribe({
+        next: () => this.service.getKeyStages().subscribe()
+      });
     }
   }
 }

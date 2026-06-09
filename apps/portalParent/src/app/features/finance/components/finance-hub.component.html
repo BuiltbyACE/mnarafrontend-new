@@ -2,8 +2,8 @@
   <header class="hub-header">
     <mat-icon class="header-icon">payments</mat-icon>
     <div class="header-text">
-      <h1 class="header-title">Fees, Payments & Statements</h1>
-      <p class="header-sub">Transparent financial management for your family</p>
+      <h1 class="header-title">Fees & Statements</h1>
+      <p class="header-sub">View statements and fee breakdowns</p>
     </div>
   </header>
 
@@ -26,10 +26,7 @@
             <span class="summary-amount" [class.negative]="totalBalance > 0">{{ formatCurrency(totalBalance) }}</span>
             <span class="summary-status">Across {{ feeBalances().length }} student{{ feeBalances().length === 1 ? '' : 's' }}</span>
           </div>
-          <button mat-flat-button color="primary" class="pay-btn" routerLink="pay-now">
-            <mat-icon>send</mat-icon>
-            Pay via M-Pesa
-          </button>
+
         </div>
       </section>
 
@@ -59,18 +56,13 @@
       <section class="nav-cards">
         <a routerLink="statement" class="nav-card">
           <mat-icon class="nav-card-icon">receipt_long</mat-icon>
-          <span class="nav-card-label">View Statement</span>
+          <span class="nav-card-label">Fee Statement</span>
           <span class="nav-card-desc">Download fee statements & invoices</span>
         </a>
-        <a routerLink="pay-now" class="nav-card">
-          <mat-icon class="nav-card-icon">payment</mat-icon>
-          <span class="nav-card-label">Make Payment</span>
-          <span class="nav-card-desc">Secure M-Pesa or card payment</span>
-        </a>
-        <a routerLink="receipts" class="nav-card">
+        <a routerLink="/parent/fee-structure" class="nav-card">
           <mat-icon class="nav-card-icon">description</mat-icon>
-          <span class="nav-card-label">Receipts</span>
-          <span class="nav-card-desc">View all past payment receipts</span>
+          <span class="nav-card-label">Fee Structure</span>
+          <span class="nav-card-desc">View fee breakdown by category</span>
         </a>
       </section>
 

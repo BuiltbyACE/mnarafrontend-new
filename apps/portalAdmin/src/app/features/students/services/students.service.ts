@@ -310,7 +310,8 @@ import {
   BehaviourCommitmentPayload,
   StudentProfile, 
   StudentCategory, 
-  StudentHouse, 
+  StudentHouse,
+  StudentEnrollment,
 } from '../../../shared/models/students.models';
 
 import { YearLevel } from '../../../shared/models/academics.models'; // <-- ENSURE THIS IS HERE
@@ -491,6 +492,14 @@ export class StudentsService {
   updateBehaviourCommitment(id: number, data: Partial<BehaviourCommitmentPayload>): Observable<BehaviourCommitment> {
     return this.http.patch<BehaviourCommitment>(`${this.baseUrl}commitments/${id}/`, data).pipe(
       catchError(err => this.handleError('Failed to update behaviour commitment', err))
+    );
+  }
+
+  // --- TRANSFER ---
+
+  transferStudent(enrollmentId: number, data: { transfer_date: string; destination_school: string; transfer_reason?: string; notes?: string }): Observable<StudentEnrollment> {
+    return this.http.post<StudentEnrollment>(`${this.baseUrl}enrollments/${enrollmentId}/transfer/`, data).pipe(
+      catchError(err => this.handleError('Failed to transfer student', err))
     );
   }
 

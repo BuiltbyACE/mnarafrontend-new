@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AcademicsService, Subject } from '../../services/academics.service';
 
 export interface SubjectDialogData {
@@ -18,6 +19,7 @@ export interface SubjectDialogData {
     ReactiveFormsModule,
     MatDialogModule,
     MatButtonModule,
+    MatProgressSpinnerModule,
   ],
   template: `
     <h2 mat-dialog-title>{{ data.isEdit ? 'Edit' : 'Add' }} Subject</h2>
@@ -32,10 +34,21 @@ export interface SubjectDialogData {
         </div>
 
         <div class="form-field">
+          <label class="input-label">Subject Code</label>
+          <input formControlName="code" placeholder="e.g., MATH" />
+          @if (form.get('code')?.hasError('required')) {
+            <span class="error-text">Code is required</span>
+          }
+        </div>
+
+        <div class="form-field">
           <label class="input-label">Department</label>
-          <select formControlName="department">
+            <select formControlName="department">
             <option value="">Select Department</option>
-            @for (dept of departments; track dept.id) {
+            @if (service.isLoading()) {
+              <option disabled>Loading departments…</option>
+            }
+            @for (dept of service.departments(); track dept.id) {
               <option [value]="dept.id">{{ dept.name }}</option>
             }
           </select>
@@ -121,30 +134,30 @@ export interface SubjectDialogData {
 export class SubjectDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<SubjectDialogComponent>);
-  private service = inject(AcademicsService);
+  protected service = inject(AcademicsService);
   data = inject<SubjectDialogData>(MAT_DIALOG_DATA);
-
-  departments: { id: number; name: string }[] = [];
 
   form: FormGroup;
 
   constructor() {
     this.form = this.fb.group({
       name: ['', Validators.required],
+      code: ['', Validators.required],
       department: ['', Validators.required],
       is_active: [true],
     });
   }
 
   ngOnInit(): void {
-    this.departments = this.service.departments();
-    
+    this.service.getDepartments().subscribe();
+
     if (this.data.isEdit && this.data.subject) {
       const deptId = typeof this.data.subject.department === 'object'
         ? this.data.subject.department.id
         : this.data.subject.department;
       this.form.patchValue({
         name: this.data.subject.name,
+        code: this.data.subject.code,
         department: deptId,
         is_active: this.data.subject.is_active,
       });

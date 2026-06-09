@@ -16,8 +16,10 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { StudentsService } from '../../services/students.service';
 import { StudentProfile, CarerData, MedicalRecord, CONDITION_LABELS, MedicalConditionKey } from '../../../../shared/models/students.models';
+import { TransferDialogComponent } from '../transfer-dialog/transfer-dialog';
 
 @Component({
   selector: 'app-student-detail',
@@ -36,6 +38,7 @@ import { StudentProfile, CarerData, MedicalRecord, CONDITION_LABELS, MedicalCond
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatExpansionModule,
+    MatDialogModule,
   ],
   template: `
     <div class="detail-container" *ngIf="student(); else loading">
@@ -65,6 +68,10 @@ import { StudentProfile, CarerData, MedicalRecord, CONDITION_LABELS, MedicalCond
           <button mat-stroked-button (click)="printAdmissionForm()">
             <mat-icon>print</mat-icon>
             Print Admission Form
+          </button>
+          <button mat-stroked-button color="warn" (click)="openTransferDialog()">
+            <mat-icon>swap_horiz</mat-icon>
+            Transfer Student
           </button>
         </div>
       </div>
@@ -537,6 +544,7 @@ export class StudentDetailComponent implements OnInit {
   private studentsService = inject(StudentsService);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   student = signal<StudentProfile | null>(null);
   medicalRecord = computed<MedicalRecord | null>(() => {
@@ -604,9 +612,84 @@ export class StudentDetailComponent implements OnInit {
     return [];
   }
 
+  openTransferDialog(): void {
+    const s = this.student();
+    const enrollment = s?.enrollments?.find(e => e.status === 'ACTIVE');
+    if (!enrollment) {
+      this.snackBar.open('No active enrollment to transfer', 'Close', { duration: 3000 });
+      return;
+    }
+    const dialogRef = this.dialog.open(TransferDialogComponent, { width: '500px' });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.studentsService.transferStudent(enrollment.id, result).subscribe({
+          next: () => {
+            this.snackBar.open('Student transferred successfully', 'Close', { duration: 3000 });
+            const id = Number(this.route.snapshot.paramMap.get('id'));
+            if (id) this.studentsService.getStudentDetail(id).subscribe(data => this.student.set(data));
+          },
+          error: (err) => this.snackBar.open(err.error?.error || 'Transfer failed', 'Close', { duration: 3000 }),
+        });
+      }
+    });
+  }
+
   printAdmissionForm(): void {
-    console.log('Print admission form for:', this.student()?.user_school_id);
-    // TODO: Implement admission form printing
+    const s = this.student();
+    if (!s) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`
+      <html>
+      <head><title>Admission Form - ${s.first_name} ${s.last_name}</title>
+      <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #1e293b; }
+        .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px; }
+        .header h1 { margin: 0; font-size: 22px; }
+        .header p { margin: 4px 0 0; color: #64748b; font-size: 14px; }
+        .section { margin-bottom: 20px; }
+        .section h2 { font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; color: #2563eb; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+        .field { display: flex; flex-direction: column; }
+        .field .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+        .field .value { font-size: 14px; font-weight: 500; }
+        .full { grid-column: 1 / -1; }
+        @media print { body { padding: 20px; } .no-print { display: none; } }
+      </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Admission Form</h1>
+          <p>Student: ${s.first_name} ${s.last_name} (${s.user_school_id || 'N/A'})</p>
+        </div>
+        <div class="section">
+          <h2>Personal Information</h2>
+          <div class="grid">
+            <div class="field"><span class="label">First Name</span><span class="value">${s.first_name || 'N/A'}</span></div>
+            <div class="field"><span class="label">Last Name</span><span class="value">${s.last_name || 'N/A'}</span></div>
+            <div class="field"><span class="label">Gender</span><span class="value">${s.admission_record?.gender || s.gender || 'N/A'}</span></div>
+            <div class="field"><span class="label">Date of Birth</span><span class="value">${s.date_of_birth || 'N/A'}</span></div>
+            <div class="field"><span class="label">Nationality</span><span class="value">${s.admission_record?.nationality || 'N/A'}</span></div>
+            <div class="field"><span class="label">Residence</span><span class="value">${s.admission_record?.residence || 'N/A'}</span></div>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Admission Details</h2>
+          <div class="grid">
+            <div class="field"><span class="label">School ID</span><span class="value">${s.user_school_id || 'N/A'}</span></div>
+            <div class="field"><span class="label">Admission Date</span><span class="value">${s.admission_record?.date_of_admission || s.enrollment_date || 'N/A'}</span></div>
+            <div class="field"><span class="label">Current Class</span><span class="value">${this.getCurrentClass()}</span></div>
+            <div class="field"><span class="label">Enrollment Date</span><span class="value">${s.enrollment_date || 'N/A'}</span></div>
+          </div>
+        </div>
+        <p class="no-print" style="text-align:center;margin-top:32px;color:#64748b;">
+          <button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:white;border:none;border-radius:6px;font-size:14px;cursor:pointer;">Print</button>
+        </p>
+        <script>setTimeout(() => window.print(), 500);</script>
+      </body>
+      </html>
+    `);
+    win.document.close();
   }
 
   generateFeeStatement(): void {

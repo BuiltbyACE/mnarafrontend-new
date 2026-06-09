@@ -9,16 +9,18 @@ import {
   ElementRef,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { DatePipe, DecimalPipe, PercentPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { PrincipalDashboardService, PrincipalDashboardPayload } from '../../services/principal-dashboard.service';
+import { ReviewApprovalDialogComponent, ReviewApprovalResult } from './review-approval-dialog/review-approval-dialog';
 
 Chart.register(...registerables);
 
@@ -26,15 +28,14 @@ Chart.register(...registerables);
   selector: 'app-principal-dashboard',
   standalone: true,
   imports: [
-    RouterLink,
     DatePipe,
-    DecimalPipe,
-    PercentPipe,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatDividerModule,
+    MatDialogModule,
+    MatSnackBarModule,
     BaseChartDirective,
   ],
   templateUrl: './principal-dashboard.component.html',
@@ -43,10 +44,13 @@ Chart.register(...registerables);
 })
 export class PrincipalDashboardComponent implements OnInit {
   private readonly dashboardService = inject(PrincipalDashboardService);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly dashboardData = signal<PrincipalDashboardPayload | null>(null);
   readonly isLoading = signal(true);
   readonly error = signal<string | null>(null);
+  readonly processingId = signal<number | null>(null);
 
   readonly doughnutChartRef = viewChild<ElementRef<HTMLCanvasElement>>('doughnutCanvas');
 
@@ -201,6 +205,59 @@ export class PrincipalDashboardComponent implements OnInit {
     if (!data) return 0;
     return data.financialHealth.total;
   });
+
+  reviewApproval(approval: PrincipalDashboardPayload['pendingApprovals'][0]): void {
+    const ref = this.dialog.open<ReviewApprovalDialogComponent, PrincipalDashboardPayload['pendingApprovals'][0], ReviewApprovalResult>(
+      ReviewApprovalDialogComponent,
+      { data: approval, width: '480px' },
+    );
+    ref.afterClosed().subscribe(result => {
+      if (!result) return;
+      if (result.action === 'approve') {
+        this.doApprove(approval.id);
+      } else {
+        this.doReject(approval.id, result.reason ?? 'No reason provided');
+      }
+    });
+  }
+
+  approveApproval(approval: PrincipalDashboardPayload['pendingApprovals'][0]): void {
+    this.doApprove(approval.id);
+  }
+
+  private doApprove(id: number): void {
+    this.processingId.set(id);
+    this.dashboardService.approveApproval(id).subscribe({
+      next: () => {
+        this.removeApproval(id);
+        this.processingId.set(null);
+        this.snackBar.open('Approved successfully', 'Close', { duration: 3000 });
+      },
+      error: () => {
+        this.processingId.set(null);
+        this.snackBar.open('Failed to approve. Please try again.', 'Close', { duration: 5000 });
+      },
+    });
+  }
+
+  private doReject(id: number, reason: string): void {
+    this.processingId.set(id);
+    this.dashboardService.rejectApproval(id, reason).subscribe({
+      next: () => {
+        this.removeApproval(id);
+        this.processingId.set(null);
+        this.snackBar.open('Rejected', 'Close', { duration: 3000 });
+      },
+      error: () => {
+        this.processingId.set(null);
+        this.snackBar.open('Failed to reject. Please try again.', 'Close', { duration: 5000 });
+      },
+    });
+  }
+
+  private removeApproval(id: number): void {
+    this.dashboardData.update(d => d ? { ...d, pendingApprovals: d.pendingApprovals.filter(a => a.id !== id) } : null);
+  }
 
   formatCurrency(value: number): string {
     if (value >= 1000000) {

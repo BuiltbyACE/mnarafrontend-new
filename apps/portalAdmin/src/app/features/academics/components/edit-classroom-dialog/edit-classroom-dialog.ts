@@ -8,7 +8,6 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { AcademicsService } from '../../services/academics.service';
@@ -22,7 +21,6 @@ import { Classroom, ClassroomWritePayload, YearLevel } from '../../../../shared/
     MatDialogModule,
     MatButtonModule,
     MatIconModule,
-    MatSlideToggleModule,
     MatProgressSpinnerModule,
     MatDividerModule,
   ],
@@ -63,15 +61,6 @@ import { Classroom, ClassroomWritePayload, YearLevel } from '../../../../shared/
               <span class="error-text">Must be at least 1</span>
             }
           </div>
-        </div>
-
-        <mat-divider style="margin: 8px 0;"></mat-divider>
-
-        <div class="toggle-row">
-          <mat-slide-toggle formControlName="is_active" color="primary">
-            Active
-          </mat-slide-toggle>
-          <span class="toggle-hint">Deactivating sends <code>PATCH {{ '{' }} "is_active": false {{ '}' }}</code> — data is retained</span>
         </div>
 
         @if (errorMessage) {
@@ -131,7 +120,6 @@ export class EditClassroomDialogComponent implements OnInit {
     year_level: [null as number | null, Validators.required],
     room_number: [this.data.classroom.room_number || ''],
     capacity: [this.data.classroom.capacity, [Validators.min(1)]],
-    is_active: [this.data.classroom.is_active],
   });
 
   ngOnInit(): void {
@@ -162,7 +150,6 @@ export class EditClassroomDialogComponent implements OnInit {
       year_level: (v.year_level ?? undefined) as number | undefined,
       room_number: v.room_number ?? '',
       capacity: v.capacity ?? 30,
-      is_active: v.is_active ?? true,
     };
     this.academicsService.updateClassroom(this.data.classroom.id, payload).subscribe({
       next: (res: any) => this.dialogRef.close(true),

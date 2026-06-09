@@ -48,11 +48,20 @@ export interface PeriodDialogData {
         </div>
 
         <div class="form-field">
-          <label class="input-label">Status</label>
-          <select formControlName="is_active">
-            <option [value]="true">Active</option>
-            <option [value]="false">Inactive</option>
+          <label class="input-label">Period Type</label>
+          <select formControlName="period_type">
+            <option value="LESSON">Lesson</option>
+            <option value="BREAK">Break</option>
+            <option value="LUNCH">Lunch</option>
+            <option value="ASSEMBLY">Assembly</option>
           </select>
+        </div>
+
+        <div class="form-field checkbox-field">
+          <label>
+            <input type="checkbox" formControlName="is_break_time" />
+            Is break time
+          </label>
         </div>
       </form>
     </mat-dialog-content>
@@ -117,6 +126,19 @@ export interface PeriodDialogData {
       color: #374151;
       margin-bottom: 2px;
     }
+    .checkbox-field label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #374151;
+      cursor: pointer;
+    }
+    .checkbox-field input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
     .error-text {
       font-size: 0.75rem;
       color: #dc2626;
@@ -136,7 +158,8 @@ export class PeriodDialogComponent {
       name: ['', Validators.required],
       start_time: ['', Validators.required],
       end_time: ['', Validators.required],
-      is_active: [true],
+      period_type: ['LESSON', Validators.required],
+      is_break_time: [false],
     });
   }
 
@@ -146,7 +169,8 @@ export class PeriodDialogComponent {
         name: this.data.period.name,
         start_time: this.data.period.start_time,
         end_time: this.data.period.end_time,
-        is_active: this.data.period.is_active,
+        period_type: this.data.period.period_type,
+        is_break_time: this.data.period.is_break_time,
       });
     }
   }

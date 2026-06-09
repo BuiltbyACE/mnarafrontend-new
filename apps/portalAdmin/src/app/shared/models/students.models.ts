@@ -313,11 +313,14 @@ export interface StudentEnrollment {
   student_name: string;
   academic_year_name: string;
   classroom_name: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'TRANSFERRED' | 'PROMOTED';
+  status: 'ACTIVE' | 'PROMOTED' | 'RETAINED' | 'GRADUATED' | 'TRANSFERRED';
   promotion_notes: string | null;
   student: number;
   academic_year: number;
   classroom: number;
+  transfer_date: string | null;
+  destination_school: string | null;
+  transfer_reason: string | null;
 }
 
 export interface SiblingMinimal {

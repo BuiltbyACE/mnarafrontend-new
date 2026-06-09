@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AcademicsService, YearLevel } from '../../services/academics.service';
 
 export interface YearLevelDialogData {
@@ -18,6 +19,7 @@ export interface YearLevelDialogData {
     ReactiveFormsModule,
     MatDialogModule,
     MatButtonModule,
+    MatProgressSpinnerModule,
   ],
   template: `
     <h2 mat-dialog-title>{{ data.isEdit ? 'Edit' : 'Add' }} Year Level</h2>
@@ -33,9 +35,12 @@ export interface YearLevelDialogData {
 
         <div class="form-field">
           <label for="key_stage">Key Stage</label>
-          <select id="key_stage" formControlName="key_stage">
+            <select id="key_stage" formControlName="key_stage">
             <option value="">Select Key Stage</option>
-            @for (ks of keyStages; track ks.id) {
+            @if (service.isLoading()) {
+              <option disabled>Loading key stages…</option>
+            }
+            @for (ks of service.keyStages(); track ks.id) {
               <option [ngValue]="ks.id">{{ ks.name }}</option>
             }
           </select>
@@ -44,13 +49,6 @@ export interface YearLevelDialogData {
           }
         </div>
 
-        <div class="form-field">
-          <label for="is_active">Status</label>
-          <select id="is_active" formControlName="is_active">
-            <option [ngValue]="true">Active</option>
-            <option [ngValue]="false">Inactive</option>
-          </select>
-        </div>
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -93,10 +91,8 @@ export interface YearLevelDialogData {
 export class YearLevelDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<YearLevelDialogComponent>);
-  private service = inject(AcademicsService);
+  protected service = inject(AcademicsService);
   data = inject<YearLevelDialogData>(MAT_DIALOG_DATA);
-
-  keyStages: { id: number; name: string }[] = [];
 
   form: FormGroup;
 
@@ -104,13 +100,13 @@ export class YearLevelDialogComponent implements OnInit {
     this.form = this.fb.group({
       name: ['', Validators.required],
       key_stage: ['', Validators.required],
-      is_active: [true],
+      order: [1, Validators.required],
     });
   }
 
   ngOnInit(): void {
-    this.keyStages = this.service.keyStages();
-    
+    this.service.getKeyStages().subscribe();
+
     if (this.data.isEdit && this.data.yearLevel) {
       const ksId = typeof this.data.yearLevel.key_stage === 'object'
         ? this.data.yearLevel.key_stage.id
@@ -118,7 +114,7 @@ export class YearLevelDialogComponent implements OnInit {
       this.form.patchValue({
         name: this.data.yearLevel.name,
         key_stage: ksId,
-        is_active: this.data.yearLevel.is_active,
+        order: this.data.yearLevel.order,
       });
     }
   }

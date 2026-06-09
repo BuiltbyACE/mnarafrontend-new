@@ -1,9 +1,17 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { getApiUrl } from '@sms/core/config';
 import { AcademicsService, SubjectOffering } from '../../services/academics.service';
+
+interface StaffProfileSelect {
+  id: number;
+  full_name: string;
+}
 
 export interface SubjectOfferingDialogData {
   isEdit: boolean;
@@ -18,6 +26,7 @@ export interface SubjectOfferingDialogData {
     ReactiveFormsModule,
     MatDialogModule,
     MatButtonModule,
+    MatProgressSpinnerModule,
   ],
   template: `
     <h2 mat-dialog-title>{{ data.isEdit ? 'Edit' : 'Add' }} Subject Offering</h2>
@@ -25,9 +34,9 @@ export interface SubjectOfferingDialogData {
       <form [formGroup]="form" class="dialog-form">
         <div class="form-field">
           <label for="subject">Subject</label>
-          <select id="subject" formControlName="subject">
+            <select id="subject" formControlName="subject">
             <option value="">Select Subject</option>
-            @for (subj of subjects; track subj.id) {
+            @for (subj of service.subjects(); track subj.id) {
               <option [ngValue]="subj.id">{{ subj.name }}</option>
             }
           </select>
@@ -38,9 +47,9 @@ export interface SubjectOfferingDialogData {
 
         <div class="form-field">
           <label for="year_level">Year Level</label>
-          <select id="year_level" formControlName="year_level">
+            <select id="year_level" formControlName="year_level">
             <option value="">Select Year Level</option>
-            @for (yl of yearLevels; track yl.id) {
+            @for (yl of service.yearLevels(); track yl.id) {
               <option [ngValue]="yl.id">{{ yl.name }}</option>
             }
           </select>
@@ -55,8 +64,21 @@ export interface SubjectOfferingDialogData {
         </div>
 
         <div class="form-field">
-          <label for="teacher_name">Teacher</label>
-          <input id="teacher_name" formControlName="teacher_name" placeholder="Assign teacher" />
+          <label for="teacher">Teacher</label>
+          <select id="teacher" formControlName="teacher">
+            <option [ngValue]="null">Not assigned</option>
+            @if (loadingProfiles) {
+              <option disabled>Loading staff…</option>
+            } @else if (profilesError) {
+              <option disabled>Could not load staff list</option>
+            }
+            @for (p of staffProfiles; track p.id) {
+              <option [ngValue]="p.id">{{ p.full_name }}</option>
+            }
+          </select>
+          @if (profilesError) {
+            <span class="error-text">{{ profilesError }}</span>
+          }
         </div>
 
         <div class="form-field">
@@ -108,12 +130,13 @@ export interface SubjectOfferingDialogData {
 export class SubjectOfferingDialogComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<SubjectOfferingDialogComponent>);
-  private service = inject(AcademicsService);
+  private http = inject(HttpClient);
+  protected service = inject(AcademicsService);
   data = inject<SubjectOfferingDialogData>(MAT_DIALOG_DATA);
 
-  subjects: { id: number; name: string }[] = [];
-  yearLevels: { id: number; name: string }[] = [];
-
+  staffProfiles: StaffProfileSelect[] = [];
+  loadingProfiles = false;
+  profilesError = '';
   form: FormGroup;
 
   constructor() {
@@ -121,24 +144,53 @@ export class SubjectOfferingDialogComponent implements OnInit {
       subject: ['', Validators.required],
       year_level: ['', Validators.required],
       credit_hours: [''],
-      teacher_name: [''],
+      teacher: [null],
       is_compulsory: [true],
     });
   }
 
   ngOnInit(): void {
-    this.subjects = this.service.subjects();
-    this.yearLevels = this.service.yearLevels();
-    
+    this.service.getSubjects().subscribe();
+    this.service.getYearLevels().subscribe();
+
+    const subjectControl = this.form.get('subject');
+
     if (this.data.isEdit && this.data.offering) {
       this.form.patchValue({
         subject: this.data.offering.subject,
         year_level: this.data.offering.year_level,
         credit_hours: this.data.offering.credit_hours,
-        teacher_name: this.data.offering.teacher_name,
+        teacher: this.data.offering.teacher,
         is_compulsory: this.data.offering.is_compulsory,
-      });
+      }, { emitEvent: false });
+
+      this.loadStaffProfiles(this.data.offering.subject);
+    } else {
+      this.loadStaffProfiles();
     }
+
+    subjectControl?.valueChanges.subscribe((subjectId: number | '') => {
+      this.loadStaffProfiles(subjectId || undefined);
+      this.form.patchValue({ teacher: null });
+    });
+  }
+
+  private loadStaffProfiles(subjectId?: number): void {
+    this.loadingProfiles = true;
+    const url = getApiUrl('/staff/profiles/select/') + (subjectId ? `?subject_id=${subjectId}` : '');
+    this.http.get<StaffProfileSelect[]>(url).subscribe({
+      next: (profiles) => {
+        this.staffProfiles = profiles;
+        this.loadingProfiles = false;
+      },
+      error: (err) => {
+        this.staffProfiles = [];
+        this.profilesError = err.status === 404
+          ? 'Staff profiles endpoint not available. Contact IT.'
+          : 'Failed to load staff list.';
+        this.loadingProfiles = false;
+      },
+    });
   }
 
   onCancel(): void {

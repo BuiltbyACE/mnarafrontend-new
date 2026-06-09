@@ -66,11 +66,11 @@ import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
           import('../features/rbac/rbac.routes').then((m) => m.rbacRoutes),
       },
       // Timetable
-      {
-        path: 'timetable',
-        loadChildren: () =>
-          import('../features/timetable/timetable.routes').then((m) => m.timetableRoutes),
-      },
+      // {
+      //   path: 'timetable',
+      //   loadChildren: () =>
+      //     import('../features/timetable/timetable.routes').then((m) => m.timetableRoutes),
+      // },
       // School Calendar
       {
         path: 'calendar',

@@ -55,4 +55,12 @@ export class PrincipalDashboardService {
       `${this.baseUrl}/analytics/dashboard/principal-summary/`
     );
   }
+
+  approveApproval(id: number): Observable<{ status: string }> {
+    return this.http.post<{ status: string }>(`${this.baseUrl}/analytics/approvals/${id}/approve/`, {});
+  }
+
+  rejectApproval(id: number, reason: string): Observable<{ status: string }> {
+    return this.http.post<{ status: string }>(`${this.baseUrl}/analytics/approvals/${id}/reject/`, { reason });
+  }
 }

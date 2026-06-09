@@ -45,7 +45,7 @@ import { TermDialogComponent } from '../term-dialog/term-dialog.component';
 
         <ng-container matColumnDef="academic_year">
           <th mat-header-cell *matHeaderCellDef>Academic Year</th>
-          <td mat-cell *matCellDef="let row">{{ row.academic_year.name }}</td>
+          <td mat-cell *matCellDef="let row">{{ row.academic_year_name }}</td>
         </ng-container>
 
         <ng-container matColumnDef="start_date">
@@ -56,15 +56,6 @@ import { TermDialogComponent } from '../term-dialog/term-dialog.component';
         <ng-container matColumnDef="end_date">
           <th mat-header-cell *matHeaderCellDef>End Date</th>
           <td mat-cell *matCellDef="let row">{{ row.end_date }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="is_active">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let row">
-            <mat-chip [class.active]="row.is_active" [class.inactive]="!row.is_active">
-              {{ row.is_active ? 'Active' : 'Inactive' }}
-            </mat-chip>
-          </td>
         </ng-container>
 
         <ng-container matColumnDef="actions">
@@ -131,7 +122,7 @@ export class TermsTableComponent {
   readonly dialog = inject(MatDialog);
 
   searchQuery = '';
-  displayedColumns = ['name', 'academic_year', 'start_date', 'end_date', 'is_active', 'actions'];
+  displayedColumns = ['name', 'academic_year', 'start_date', 'end_date', 'actions'];
 
   readonly filteredTerms = () => {
     const terms = this.service.academicTerms();
@@ -139,7 +130,7 @@ export class TermsTableComponent {
     const query = this.searchQuery.toLowerCase();
     return terms.filter(t => 
       t.name.toLowerCase().includes(query) ||
-      t.academic_year.name.toLowerCase().includes(query)
+      t.academic_year_name.toLowerCase().includes(query)
     );
   };
 

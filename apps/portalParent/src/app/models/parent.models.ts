@@ -43,29 +43,6 @@ export interface DashboardSummary {
   urgent_notices: UrgentNotice[];
 }
 
-// ─── Students / Profiles ─────────────────────────────────────────
-export interface SiblingProfile {
-  id: number;
-  first_name: string;
-  last_name: string;
-  date_of_birth?: string;
-  enrollment_date?: string;
-  user_school_id: string;
-  is_active: boolean;
-  current_class_name: string;
-  category_name?: string;
-  house_name?: string;
-  gender?: string;
-  attendance_percentage?: number;
-  overall_performance?: number;
-  subjects?: string[];
-  siblings?: { id: number; full_name: string; class_name: string }[];
-  parent_name?: string;
-  parent_contact?: string;
-  parent_email?: string;
-  address?: string;
-}
-
 // ─── Timetable ────────────────────────────────────────────────────
 export interface TimetableEntry {
   day: string;
@@ -90,6 +67,37 @@ export interface ExamResultEntry {
 }
 
 // ─── Finance ──────────────────────────────────────────────────────
+export interface FeeCategoryItem {
+  category: string;
+  amount: number;
+  frequency: string;
+  description: string;
+}
+
+export interface FeeStructureChild {
+  student_id: number;
+  student_name: string;
+  class_name: string;
+  year_level: string;
+  term: string;
+  academic_year: string;
+  total_fee: number;
+  fee_categories: FeeCategoryItem[];
+}
+
+export interface FeeStructureResponse {
+  children: FeeStructureChild[];
+}
+
+export interface SchoolInfo {
+  name: string;
+  postal_address: string;
+  email: string;
+  phone: string;
+  location: string;
+  logo: string | null;
+}
+
 export interface StudentInvoice {
   id: number;
   student: number;
@@ -120,81 +128,6 @@ export interface FeeBalance {
   balance: number;
 }
 
-// ─── Behaviour ────────────────────────────────────────────────────
-export interface BehaviourRecord {
-  id: number;
-  student_name: string;
-  student_id: string;
-  type: 'COMMENDATION' | 'INCIDENT';
-  severity: 'LOW' | 'MEDIUM' | 'HIGH';
-  description: string;
-  date: string;
-  status: string;
-  reported_by_name: string;
-}
-
-export interface BehaviourStats {
-  total_records: number;
-  commendations: number;
-  incidents: number;
-  pending_follow_ups: number;
-}
-
-export interface ChildListed {
-  full_name: string;
-  dob: string;
-  year_group: string;
-}
-
-export interface BehaviourCommitment {
-  id: number;
-  parent_full_name: string;
-  contact_mobile: string;
-  contact_email: string;
-  signed_date: string;
-  commit_support_values: boolean;
-  commit_discipline_at_home: boolean;
-  decl_termination_clause: boolean;
-  children_listed: ChildListed[];
-  [key: string]: unknown;
-}
-
-export interface CommitmentCreateRequest {
-  parent_full_name: string;
-  contact_mobile: string;
-  contact_email: string;
-  commit_attend_meetings: boolean;
-  commit_monitor_progress: boolean;
-  commit_provide_resources: boolean;
-  commit_communicate_concerns: boolean;
-  commit_reinforce_school_rules: boolean;
-  commit_support_values: boolean;
-  commit_discipline_at_home: boolean;
-  commit_encourage_reading: boolean;
-  commit_limit_screen_time: boolean;
-  commit_participate_activities: boolean;
-  commit_ensure_punctuality: boolean;
-  decl_termination_clause: boolean;
-  decl_data_accuracy: boolean;
-  decl_photo_consent: boolean;
-  decl_medical_consent: boolean;
-  decl_fee_obligation: boolean;
-}
-
-// ─── Notifications ────────────────────────────────────────────────
-export interface AppNotification {
-  id: number;
-  title: string;
-  message: string;
-  type: 'INFO' | 'WARNING' | 'URGENT';
-  is_read: boolean;
-  created_at: string;
-}
-
-export interface UnreadCount {
-  count: number;
-}
-
 // ─── Announcements ────────────────────────────────────────────────
 export interface Announcement {
   id: number;
@@ -222,12 +155,37 @@ export interface Manifest {
   trip_date: string;
 }
 
-// ─── Attendance ───────────────────────────────────────────────────
-export interface AttendanceRecord {
-  student: number;
-  date: string;
-  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'HOLIDAY';
-  remarks: string;
+export interface RouteStop {
+  id: number;
+  route: number;
+  name: string;
+  order: number;
+  latitude: string;
+  longitude: string;
+  estimated_arrival_offset: string;
+}
+
+export interface TransportRoute {
+  id: number;
+  name: string;
+  is_active: boolean;
+  stops: RouteStop[];
+}
+
+export interface FleetTelemetry {
+  id?: number;
+  fleet_id?: string;
+  trip?: string;
+  vehicle_id?: number;
+  latitude: number;
+  longitude: number;
+  speed_kmh: number;
+  timestamp?: string;
+  driver_name?: string;
+  route_name?: string;
+  passenger_count?: number;
+  status?: 'ON_ROUTE' | 'DELAYED' | 'STOPPED' | 'IN_TRANSIT' | 'IDLE';
+  registration_number?: string;
 }
 
 // ─── Status Helpers ────────────────────────────────────────────────

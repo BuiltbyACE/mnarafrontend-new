@@ -42,7 +42,7 @@ import { SubjectDialogComponent } from './subject-dialog.component';
       <mat-card class="content-card">
         <div class="search-bar">
           <div class="search-field">
-            <input placeholder="Search subjects..." [(ngModel)]="searchQuery" />
+            <input placeholder="Search subjects..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
           </div>
         </div>
 
@@ -205,13 +205,13 @@ export class SubjectsListComponent implements OnInit {
   readonly service = inject(AcademicsService);
   readonly dialog = inject(MatDialog);
 
-  searchQuery = '';
+  searchQuery = signal('');
   displayedColumns = ['name', 'department', 'is_active', 'actions'];
 
   readonly filteredSubjects = computed(() => {
     const subjects = this.service.subjects();
-    if (!this.searchQuery) return subjects;
-    const query = this.searchQuery.toLowerCase();
+    if (!this.searchQuery()) return subjects;
+    const query = this.searchQuery().toLowerCase();
     return subjects.filter(s => 
       s.name.toLowerCase().includes(query) ||
       (s.department?.name || s.department_name || '').toLowerCase().includes(query)
@@ -230,7 +230,9 @@ export class SubjectsListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.service.createSubject(result).subscribe();
+        this.service.createSubject(result).subscribe({
+          next: () => this.service.getSubjects().subscribe()
+        });
       }
     });
   }
@@ -243,14 +245,18 @@ export class SubjectsListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.service.updateSubject(subject.id, result).subscribe();
+        this.service.updateSubject(subject.id, result).subscribe({
+          next: () => this.service.getSubjects().subscribe()
+        });
       }
     });
   }
 
   deleteSubject(subject: Subject): void {
     if (confirm(`Delete ${subject.name}?`)) {
-      this.service.deleteSubject(subject.id).subscribe();
+      this.service.deleteSubject(subject.id).subscribe({
+        next: () => this.service.getSubjects().subscribe()
+      });
     }
   }
 }

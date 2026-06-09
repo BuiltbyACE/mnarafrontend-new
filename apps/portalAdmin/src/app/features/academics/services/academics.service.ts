@@ -7,9 +7,12 @@ import { getApiUrl } from '@sms/core/config';
 export interface Department {
   id: number;
   name: string;
-  head_of_department: { id: number; name: string } | null;
+  code: string;
+  subject_count?: number;
+  hod_name?: string;
+  head_of_department?: { id: number; name: string } | null;
   head_of_department_name?: string;
-  is_active: boolean;
+  is_active?: boolean;
 }
 
 export interface KeyStage {
@@ -28,7 +31,7 @@ export interface YearLevel {
   name: string;
   key_stage: { id: number; name: string };
   key_stage_name?: string;
-  is_active: boolean;
+  order: number;
 }
 
 export interface Subject {
@@ -42,17 +45,21 @@ export interface Subject {
 
 export interface Classroom {
   id: number;
+  name: string;
+  year_level_name: string;
   room_number: string;
   capacity: number;
-  building?: string;
+  current_enrollment: number;
+  class_teacher: { school_id: string; full_name: string } | null;
   is_active: boolean;
 }
 
 export interface ClassroomWritePayload {
-  room_number: string;
-  capacity: number;
-  building?: string;
-  is_active?: boolean;
+  name: string;
+  year_level: number;
+  room_number?: string;
+  capacity?: number;
+  class_teacher?: number | null;
 }
 
 export interface SubjectOffering {
@@ -65,6 +72,9 @@ export interface SubjectOffering {
   is_compulsory: boolean;
   teacher_name: string | null;
   credit_hours: string;
+  academic_year: string;
+  selection_group: string | null;
+  teacher: number | null;
   key_stage_name?: string;
   is_active?: boolean;
 }
@@ -225,7 +235,7 @@ export class AcademicsService {
   updateYearLevel(id: number, data: Partial<YearLevel>): Observable<YearLevel> {
     return this.http.put<YearLevel>(`${this.baseUrl}year-levels/${id}/`, data).pipe(
       tap(updated => this.yearLevels.update(items => 
-        items.map(item => item.id === id ? updated : item)
+        items.map(item => item.id === id ? { ...updated, ...data } : item)
       )),
       catchError(err => this.handleError('Failed to update year level', err))
     );

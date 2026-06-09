@@ -60,13 +60,6 @@ export interface TermDialogData {
           }
         </div>
 
-        <div class="form-field">
-          <label class="input-label">Status</label>
-          <select formControlName="is_active">
-            <option [value]="true">Active</option>
-            <option [value]="false">Inactive</option>
-          </select>
-        </div>
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -140,28 +133,31 @@ export class TermDialogComponent {
 
   form: FormGroup;
 
+  private service = inject(SchedulingService);
+
   constructor() {
     this.form = this.fb.group({
       name: ['', Validators.required],
       academic_year: ['', Validators.required],
       start_date: ['', Validators.required],
       end_date: ['', Validators.required],
-      is_active: [true],
     });
   }
 
   ngOnInit(): void {
-    this.years = this.data.isEdit && this.data.term 
-      ? [{ id: this.data.term.academic_year.id, name: this.data.term.academic_year.name }]
-      : [];
+    this.years = this.service.academicYears().map(y => ({ id: y.id, name: y.name }));
+    if (this.years.length === 0) {
+      this.service.getAcademicYears().subscribe(years => {
+        this.years = years.map(y => ({ id: y.id, name: y.name }));
+      });
+    }
     
     if (this.data.isEdit && this.data.term) {
       this.form.patchValue({
         name: this.data.term.name,
-        academic_year: this.data.term.academic_year.id,
+        academic_year: this.data.term.academic_year,
         start_date: this.data.term.start_date,
         end_date: this.data.term.end_date,
-        is_active: this.data.term.is_active,
       });
     }
   }

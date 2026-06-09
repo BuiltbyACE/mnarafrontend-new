@@ -42,7 +42,7 @@ import { DepartmentDialogComponent } from './department-dialog.component';
       <mat-card class="content-card">
         <div class="search-bar">
           <div class="search-field">
-            <input placeholder="Search departments..." [(ngModel)]="searchQuery" />
+            <input placeholder="Search departments..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
           </div>
         </div>
 
@@ -57,18 +57,23 @@ import { DepartmentDialogComponent } from './department-dialog.component';
               <td mat-cell *matCellDef="let row">{{ row.name }}</td>
             </ng-container>
 
+            <ng-container matColumnDef="code">
+              <th mat-header-cell *matHeaderCellDef>Code</th>
+              <td mat-cell *matCellDef="let row">{{ row.code || '—' }}</td>
+            </ng-container>
+
             <ng-container matColumnDef="head_of_department">
               <th mat-header-cell *matHeaderCellDef>HOD</th>
               <td mat-cell *matCellDef="let row">
-                {{ row.head_of_department?.name || 'Not assigned' }}
+                {{ row.head_of_department?.name || row.hod_name || 'Not assigned' }}
               </td>
             </ng-container>
 
             <ng-container matColumnDef="is_active">
               <th mat-header-cell *matHeaderCellDef>Status</th>
               <td mat-cell *matCellDef="let row">
-                <mat-chip [class.active]="row.is_active" [class.inactive]="!row.is_active">
-                  {{ row.is_active ? 'Active' : 'Inactive' }}
+                <mat-chip [class.active]="row.is_active !== false" [class.inactive]="row.is_active === false">
+                  {{ row.is_active === false ? 'Inactive' : 'Active' }}
                 </mat-chip>
               </td>
             </ng-container>
@@ -203,16 +208,18 @@ export class DepartmentsListComponent implements OnInit {
   readonly service = inject(AcademicsService);
   readonly dialog = inject(MatDialog);
 
-  searchQuery = '';
-  displayedColumns = ['name', 'head_of_department', 'is_active', 'actions'];
+  searchQuery = signal('');
+  displayedColumns = ['name', 'code', 'head_of_department', 'is_active', 'actions'];
 
   readonly filteredDepartments = computed(() => {
     const departments = this.service.departments();
-    if (!this.searchQuery) return departments;
-    const query = this.searchQuery.toLowerCase();
+    if (!this.searchQuery()) return departments;
+    const query = this.searchQuery().toLowerCase();
     return departments.filter(d => 
       d.name.toLowerCase().includes(query) ||
-      d.head_of_department?.name.toLowerCase().includes(query)
+      d.code.toLowerCase().includes(query) ||
+      (d.head_of_department?.name?.toLowerCase().includes(query) ?? false) ||
+      (d.hod_name?.toLowerCase().includes(query) ?? false)
     );
   });
 
@@ -227,8 +234,10 @@ export class DepartmentsListComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.service.createDepartment(result).subscribe();
+      if (result && typeof result === 'object') {
+        this.service.createDepartment(result).subscribe({
+          next: () => this.service.getDepartments().subscribe()
+        });
       }
     });
   }
@@ -240,15 +249,19 @@ export class DepartmentsListComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.service.updateDepartment(department.id, result).subscribe();
+      if (result && typeof result === 'object') {
+        this.service.updateDepartment(department.id, result).subscribe({
+          next: () => this.service.getDepartments().subscribe()
+        });
       }
     });
   }
 
   deleteDepartment(department: Department): void {
     if (confirm(`Delete ${department.name}?`)) {
-      this.service.deleteDepartment(department.id).subscribe();
+      this.service.deleteDepartment(department.id).subscribe({
+        next: () => this.service.getDepartments().subscribe()
+      });
     }
   }
 }

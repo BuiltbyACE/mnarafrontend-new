@@ -4,22 +4,18 @@ import { Observable } from 'rxjs';
 import { environment } from '@sms/core/config';
 import {
   DashboardSummary,
-  SiblingProfile,
   TimetableEntry,
   ExamResultEntry,
   StudentInvoice,
   Transaction,
   FeeBalance,
-  BehaviourRecord,
-  BehaviourStats,
-  BehaviourCommitment,
-  CommitmentCreateRequest,
-  AppNotification,
-  UnreadCount,
+  FeeStructureResponse,
+  SchoolInfo,
   Announcement,
   Trip,
   Manifest,
-  AttendanceRecord,
+  TransportRoute,
+  FleetTelemetry,
 } from '../models/parent.models';
 
 @Injectable({ providedIn: 'root' })
@@ -32,15 +28,6 @@ export class ParentApiService {
     return this.http.get<DashboardSummary>(`${this.baseUrl}/parents/dashboard-summary/`, {
       params: { student_id: studentId },
     });
-  }
-
-  // ─── Students / Profiles ─────────────────────────────────────────
-  getStudentProfiles(): Observable<{results: SiblingProfile[]}> {
-    return this.http.get<{results: SiblingProfile[]}>(`${this.baseUrl}/students/profiles/`);
-  }
-
-  getStudentProfile(id: number): Observable<SiblingProfile> {
-    return this.http.get<SiblingProfile>(`${this.baseUrl}/students/profiles/${id}/`);
   }
 
   // ─── Timetable ───────────────────────────────────────────────────
@@ -84,58 +71,17 @@ export class ParentApiService {
     return this.http.get<FeeBalance[]>(`${this.baseUrl}/finance/fee-balances/`);
   }
 
-  // ─── Behaviour Records ───────────────────────────────────────────
-  getBehaviourRecords(params?: { student?: number; type?: string }): Observable<BehaviourRecord[]> {
-    let p = new HttpParams();
-    if (params?.student) p = p.set('student', params.student);
-    if (params?.type) p = p.set('type', params.type);
-    return this.http.get<BehaviourRecord[]>(`${this.baseUrl}/students/behaviour-records/`, { params: p });
+  // ─── Finance: Fee Structure ─────────────────────────────────────
+  getFeeStructure(): Observable<FeeStructureResponse> {
+    return this.http.get<FeeStructureResponse>(`${this.baseUrl}/finance/fee-structure/`);
   }
 
-  getBehaviourRecord(id: number): Observable<BehaviourRecord> {
-    return this.http.get<BehaviourRecord>(`${this.baseUrl}/students/behaviour-records/${id}/`);
+  getSchoolInfo(): Observable<SchoolInfo> {
+    return this.http.get<SchoolInfo>(`${this.baseUrl}/finance/school-info/`);
   }
 
-  getBehaviourStats(): Observable<BehaviourStats> {
-    return this.http.get<BehaviourStats>(`${this.baseUrl}/students/behaviour-records/stats/`);
-  }
-
-  // ─── Behaviour Commitments ───────────────────────────────────────
-  getBehaviourCommitments(): Observable<BehaviourCommitment[]> {
-    return this.http.get<BehaviourCommitment[]>(`${this.baseUrl}/students/behaviour-commitments/`);
-  }
-
-  getBehaviourCommitment(id: number): Observable<BehaviourCommitment> {
-    return this.http.get<BehaviourCommitment>(`${this.baseUrl}/students/behaviour-commitments/${id}/`);
-  }
-
-  createBehaviourCommitment(data: CommitmentCreateRequest): Observable<BehaviourCommitment> {
-    return this.http.post<BehaviourCommitment>(`${this.baseUrl}/students/behaviour-commitments/`, data);
-  }
-
-  updateBehaviourCommitment(id: number, data: Partial<CommitmentCreateRequest>): Observable<BehaviourCommitment> {
-    return this.http.put<BehaviourCommitment>(`${this.baseUrl}/students/behaviour-commitments/${id}/`, data);
-  }
-
-  deleteBehaviourCommitment(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/students/behaviour-commitments/${id}/`);
-  }
-
-  // ─── Notifications ───────────────────────────────────────────────
-  getNotifications(): Observable<AppNotification[]> {
-    return this.http.get<AppNotification[]>(`${this.baseUrl}/notifications/`);
-  }
-
-  markNotificationRead(id: number): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/notifications/${id}/read/`, {});
-  }
-
-  markAllNotificationsRead(): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/notifications/read-all/`, {});
-  }
-
-  getUnreadCount(): Observable<UnreadCount> {
-    return this.http.get<UnreadCount>(`${this.baseUrl}/notifications/unread-count/`);
+  downloadFeeStructurePdf(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/finance/fee-structure/generate-pdf/`, { responseType: 'blob' });
   }
 
   // ─── Announcements ───────────────────────────────────────────────
@@ -152,10 +98,12 @@ export class ParentApiService {
     return this.http.get<Manifest[]>(`${this.baseUrl}/transport/manifests/`);
   }
 
-  // ─── Attendance ──────────────────────────────────────────────────
-  getAttendanceRecords(params?: { student?: number }): Observable<AttendanceRecord[]> {
-    let p = new HttpParams();
-    if (params?.student) p = p.set('student', params.student);
-    return this.http.get<AttendanceRecord[]>(`${this.baseUrl}/students/attendance/`, { params: p });
+  getTransportRoutes(): Observable<TransportRoute[]> {
+    return this.http.get<TransportRoute[]>(`${this.baseUrl}/transport/routes/`);
   }
+
+  getFleetTelemetry(): Observable<FleetTelemetry[]> {
+    return this.http.get<FleetTelemetry[]>(`${this.baseUrl}/transport/telemetry/`);
+  }
+
 }

@@ -41,7 +41,7 @@ import { ClassroomDialogComponent } from './classroom-dialog.component';
       <mat-card class="content-card">
         <div class="search-bar">
           <div class="search-field">
-            <input placeholder="Search classrooms..." [(ngModel)]="searchQuery" />
+            <input placeholder="Search classrooms..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
           </div>
         </div>
 
@@ -51,29 +51,25 @@ import { ClassroomDialogComponent } from './classroom-dialog.component';
           </div>
         } @else {
           <table mat-table [dataSource]="filteredClassrooms()" class="full-width-table">
-            <ng-container matColumnDef="room_number">
-              <th mat-header-cell *matHeaderCellDef>Room Number</th>
-              <td mat-cell *matCellDef="let row">{{ row.room_number }}</td>
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Class Name</th>
+              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
             </ng-container>
 
-            <ng-container matColumnDef="building">
-              <th mat-header-cell *matHeaderCellDef>Building</th>
-              <td mat-cell *matCellDef="let row">{{ row.building || 'N/A' }}</td>
+            <ng-container matColumnDef="year_level">
+              <th mat-header-cell *matHeaderCellDef>Year Level</th>
+              <td mat-cell *matCellDef="let row">{{ row.year_level_name }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="room_number">
+              <th mat-header-cell *matHeaderCellDef>Room</th>
+              <td mat-cell *matCellDef="let row">{{ row.room_number || '—' }}</td>
             </ng-container>
 
             <ng-container matColumnDef="capacity">
               <th mat-header-cell *matHeaderCellDef>Capacity</th>
               <td mat-cell *matCellDef="let row">
                 <span class="capacity-badge">{{ row.capacity }} seats</span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="is_active">
-              <th mat-header-cell *matHeaderCellDef>Status</th>
-              <td mat-cell *matCellDef="let row">
-                <mat-chip [class.active]="row.is_active" [class.inactive]="!row.is_active">
-                  {{ row.is_active ? 'Active' : 'Inactive' }}
-                </mat-chip>
               </td>
             </ng-container>
 
@@ -209,16 +205,16 @@ export class ClassroomsListComponent implements OnInit {
   readonly service = inject(AcademicsService);
   readonly dialog = inject(MatDialog);
 
-  searchQuery = '';
-  displayedColumns = ['room_number', 'building', 'capacity', 'is_active', 'actions'];
+  searchQuery = signal('');
+  displayedColumns = ['name', 'year_level', 'room_number', 'capacity', 'actions'];
 
   readonly filteredClassrooms = computed(() => {
     const classrooms = this.service.classrooms();
-    if (!this.searchQuery) return classrooms;
-    const query = this.searchQuery.toLowerCase();
-    return classrooms.filter(c => 
-      c.room_number.toLowerCase().includes(query) ||
-      (c.building && c.building.toLowerCase().includes(query))
+    if (!this.searchQuery()) return classrooms;
+    const query = this.searchQuery().toLowerCase();
+    return classrooms.filter(c =>
+      c.name.toLowerCase().includes(query) ||
+      c.room_number.toLowerCase().includes(query)
     );
   });
 
@@ -233,8 +229,10 @@ export class ClassroomsListComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.service.createClassroom(result).subscribe();
+      if (result && typeof result === 'object') {
+        this.service.createClassroom(result).subscribe({
+          next: () => this.service.getClassrooms().subscribe()
+        });
       }
     });
   }
@@ -246,15 +244,19 @@ export class ClassroomsListComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.service.updateClassroom(classroom.id, result).subscribe();
+      if (result && typeof result === 'object') {
+        this.service.updateClassroom(classroom.id, result).subscribe({
+          next: () => this.service.getClassrooms().subscribe()
+        });
       }
     });
   }
 
   deleteClassroom(classroom: Classroom): void {
     if (confirm(`Delete classroom ${classroom.room_number}?`)) {
-      this.service.deleteClassroom(classroom.id).subscribe();
+      this.service.deleteClassroom(classroom.id).subscribe({
+        next: () => this.service.getClassrooms().subscribe()
+      });
     }
   }
 }

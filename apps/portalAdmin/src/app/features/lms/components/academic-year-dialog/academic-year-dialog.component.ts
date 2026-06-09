@@ -157,7 +157,8 @@ export class AcademicYearDialogComponent {
 
   onSubmit(): void {
     if (this.form.valid) {
-      this.dialogRef.close(this.form.value);
+      const value = this.form.value;
+      this.dialogRef.close({ ...value, is_active: value.is_active === true || value.is_active === 'true' });
     }
   }
 }

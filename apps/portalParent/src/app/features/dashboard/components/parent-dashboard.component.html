@@ -48,10 +48,7 @@
               <span class="balance-status" [style.color]="STATUS_COLORS[data.financial_snapshot.status]">
                 {{ data.financial_snapshot.status }}
               </span>
-              <a routerLink="finance/pay-now" class="pay-btn">
-                <mat-icon>send</mat-icon>
-                Pay via M-Pesa
-              </a>
+
             } @else {
               <div class="paid-badge">
                 <mat-icon>check_circle</mat-icon>

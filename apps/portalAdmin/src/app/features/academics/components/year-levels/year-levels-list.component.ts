@@ -42,7 +42,7 @@ import { YearLevelDialogComponent } from './year-level-dialog.component';
       <mat-card class="content-card">
         <div class="search-bar">
           <div class="search-field">
-            <input placeholder="Search year levels..." [(ngModel)]="searchQuery" />
+            <input placeholder="Search year levels..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
           </div>
         </div>
 
@@ -61,15 +61,6 @@ import { YearLevelDialogComponent } from './year-level-dialog.component';
               <th mat-header-cell *matHeaderCellDef>Key Stage</th>
               <td mat-cell *matCellDef="let row">
                 <span class="key-stage-badge">{{ row.key_stage?.name || row.key_stage_name || 'N/A' }}</span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="is_active">
-              <th mat-header-cell *matHeaderCellDef>Status</th>
-              <td mat-cell *matCellDef="let row">
-                <mat-chip [class.active]="row.is_active" [class.inactive]="!row.is_active">
-                  {{ row.is_active ? 'Active' : 'Inactive' }}
-                </mat-chip>
               </td>
             </ng-container>
 
@@ -205,13 +196,13 @@ export class YearLevelsListComponent implements OnInit {
   readonly service = inject(AcademicsService);
   readonly dialog = inject(MatDialog);
 
-  searchQuery = '';
-  displayedColumns = ['name', 'key_stage', 'is_active', 'actions'];
+  searchQuery = signal('');
+  displayedColumns = ['name', 'key_stage', 'actions'];
 
   readonly filteredYearLevels = computed(() => {
     const yearLevels = this.service.yearLevels();
-    if (!this.searchQuery) return yearLevels;
-    const query = this.searchQuery.toLowerCase();
+    if (!this.searchQuery()) return yearLevels;
+    const query = this.searchQuery().toLowerCase();
     return yearLevels.filter(yl => 
       yl.name.toLowerCase().includes(query) ||
       (yl.key_stage?.name || yl.key_stage_name || '').toLowerCase().includes(query)
@@ -230,7 +221,9 @@ export class YearLevelsListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.service.createYearLevel(result).subscribe();
+        this.service.createYearLevel(result).subscribe({
+          next: () => this.service.getYearLevels().subscribe()
+        });
       }
     });
   }
@@ -250,7 +243,9 @@ export class YearLevelsListComponent implements OnInit {
 
   deleteYearLevel(yearLevel: YearLevel): void {
     if (confirm(`Delete ${yearLevel.name}?`)) {
-      this.service.deleteYearLevel(yearLevel.id).subscribe();
+      this.service.deleteYearLevel(yearLevel.id).subscribe({
+        next: () => this.service.getYearLevels().subscribe()
+      });
     }
   }
 }
