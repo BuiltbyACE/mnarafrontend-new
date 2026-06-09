@@ -18,6 +18,7 @@
     "@nx/angular": "^22.6.5",
     "chart.js": "^4.5.1",
     "ng2-charts": "^10.0.0",
+    "pdfmake": "^0.3.10",
     "rxjs": "~7.8.0"
   },
   "devDependencies": {
@@ -52,6 +53,7 @@
     "@swc/helpers": "~0.5.18",
     "@types/jest": "^30.0.0",
     "@types/node": "20.19.9",
+    "@types/pdfmake": "^0.3.3",
     "@typescript-eslint/utils": "^8.40.0",
     "@vitest/coverage-v8": "~4.1.0",
     "@vitest/ui": "~4.1.0",

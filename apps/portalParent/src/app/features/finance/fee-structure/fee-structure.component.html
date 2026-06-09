@@ -7,7 +7,7 @@
     }
     <div class="fs-header-text">
       <h1 class="fs-header-title">{{ schoolInfo()?.name || 'Fee Structure' }}</h1>
-      <p class="fs-header-sub">{{ schoolInfo()?.location || 'Detailed fee breakdown by category for each child' }}</p>
+      <p class="fs-header-sub">Detailed fee breakdown by category for each child</p>
     </div>
     @if (children().length > 0 && !loading()) {
       <div class="fs-header-actions">

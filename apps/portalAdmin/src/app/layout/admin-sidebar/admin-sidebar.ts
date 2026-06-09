@@ -1,11 +1,7 @@
-/**
- * Admin Sidebar Component
- * Replicated exactly from reference UI
- */
-
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Location } from '@angular/common';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -35,7 +31,6 @@ interface NavChild {
   ],
   template: `
     <div class="sidebar-container">
-      <!-- Logo Section -->
       <div class="logo-section">
         <div class="logo-group">
           <div class="logo-icon">
@@ -51,12 +46,10 @@ interface NavChild {
         </div>
       </div>
 
-      <!-- Navigation -->
       <nav class="nav-section">
         <div class="nav-list">
           @for (item of navItems; track item.name) {
             @if (item.children) {
-              <!-- Dropdown parent -->
               <div
                 class="nav-item"
                 role="button"
@@ -80,9 +73,9 @@ interface NavChild {
                   @for (child of item.children; track child.route) {
                     <a
                       class="child-item"
-                      [routerLink]="child.route"
+                      [routerLink]="link(child.route)"
                       routerLinkActive="active"
-                      [routerLinkActiveOptions]="{ exact: child.route === '/portalAdmin/students' }"
+                      [routerLinkActiveOptions]="{ exact: child.route === 'students' }"
                     >
                       <span class="child-dot"></span>
                       <span>{{ child.label }}</span>
@@ -91,12 +84,11 @@ interface NavChild {
                 </div>
               }
             } @else {
-              <!-- Plain link -->
               <a
                 class="nav-item"
-                [routerLink]="item.route"
+                [routerLink]="link(item.route)"
                 routerLinkActive="active"
-                [routerLinkActiveOptions]="{ exact: item.route === '/portalAdmin' }"
+                [routerLinkActiveOptions]="{ exact: !item.route }"
               >
                 <div class="nav-item-left">
                   <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
@@ -111,7 +103,6 @@ interface NavChild {
         </div>
       </nav>
 
-      <!-- Footer -->
       <div class="sidebar-footer">
         <div class="footer-text">&copy; 2024 SafariStack Solutions. All rights reserved.</div>
         <div class="footer-version">Version 1.0.0</div>
@@ -123,7 +114,7 @@ interface NavChild {
       display: flex;
       flex-direction: column;
       height: 100%;
-      background: #2563EB; /* Bright royal blue */
+      background: #2563EB;
       color: white;
       font-family: 'Inter', sans-serif;
       position: relative;
@@ -180,7 +171,6 @@ interface NavChild {
       padding: 4px 12px;
       padding-bottom: 56px;
       
-      /* Hide scrollbar for a cleaner look */
       &::-webkit-scrollbar {
         width: 0px;
         background: transparent;
@@ -246,7 +236,6 @@ interface NavChild {
       color: rgba(255, 255, 255, 0.6);
     }
 
-    /* Dropdown children */
     .children-list {
       padding: 2px 0 2px 12px;
       display: flex;
@@ -297,7 +286,6 @@ interface NavChild {
       transform: rotate(90deg);
     }
 
-    /* Sidebar Footer */
     .sidebar-footer {
       padding: 12px 16px;
       position: absolute;
@@ -325,7 +313,20 @@ interface NavChild {
 export class AdminSidebarComponent {
   @Input() pendingApprovals = 0;
 
+  private location = inject(Location);
+
   readonly expandedItem = signal<string | null>(null);
+
+  readonly adminBase = computed(() => {
+    const path = this.location.path();
+    if (path.startsWith('/admin')) return '/admin';
+    return '/portalAdmin';
+  });
+
+  link(route: string): string {
+    if (!route) return this.adminBase();
+    return `${this.adminBase()}/${route}`;
+  }
 
   toggleExpand(name: string): void {
     this.expandedItem.update(current => current === name ? null : name);
@@ -333,56 +334,60 @@ export class AdminSidebarComponent {
 
   isParentActive(item: NavItem): boolean {
     if (!item.children) return false;
-    return item.children.some(c => location.pathname.startsWith(c.route));
+    const base = this.adminBase();
+    return item.children.some(c => {
+      const full = c.route ? `${base}/${c.route}` : base;
+      return this.location.path().startsWith(full);
+    });
   }
 
   readonly navItems: NavItem[] = [
-    { name: 'dashboard', label: 'Dashboard', icon: 'home', route: '/portalAdmin' },
+    { name: 'dashboard', label: 'Dashboard', icon: 'home', route: '' },
     {
-      name: 'academics', label: 'Academics', icon: 'school', route: '/portalAdmin/academics',
+      name: 'academics', label: 'Academics', icon: 'school', route: 'academics',
       children: [
-        { label: 'Class Rooms', route: '/portalAdmin/academics/classrooms' },
-        { label: 'Departments', route: '/portalAdmin/academics/departments' },
-        { label: 'Key Stages', route: '/portalAdmin/academics/key-stages' },
-        { label: 'Subject Offerings', route: '/portalAdmin/academics/subject-offerings' },
-        { label: 'Subjects', route: '/portalAdmin/academics/subjects' },
-        { label: 'Year levels', route: '/portalAdmin/academics/year-levels' },
+        { label: 'Class Rooms', route: 'academics/classrooms' },
+        { label: 'Departments', route: 'academics/departments' },
+        { label: 'Key Stages', route: 'academics/key-stages' },
+        { label: 'Subject Offerings', route: 'academics/subject-offerings' },
+        { label: 'Subjects', route: 'academics/subjects' },
+        { label: 'Year levels', route: 'academics/year-levels' },
       ],
     },
     {
-      name: 'lms', label: 'LMS', icon: 'menu_book', route: '/portalAdmin/lms',
+      name: 'lms', label: 'LMS', icon: 'menu_book', route: 'lms',
       children: [
-        { label: 'Assignments', route: '/portalAdmin/lms/assignments', icon: 'assignment' },
-        { label: 'Scheduling Hub', route: '/portalAdmin/lms/scheduling', icon: 'calendar_month' },
-        { label: 'Examinations Hub', route: '/portalAdmin/lms/examinations', icon: 'school' },
-        { label: 'Operations Hub', route: '/portalAdmin/lms/operations', icon: 'event_note' },
+        { label: 'Assignments', route: 'lms/assignments', icon: 'assignment' },
+        { label: 'Scheduling Hub', route: 'lms/scheduling', icon: 'calendar_month' },
+        { label: 'Examinations Hub', route: 'lms/examinations', icon: 'school' },
+        { label: 'Operations Hub', route: 'lms/operations', icon: 'event_note' },
       ],
     },
-    { name: 'students', label: 'Students', icon: 'group', route: '/portalAdmin/students',
+    { name: 'students', label: 'Students', icon: 'group', route: 'students',
       children: [
-        { label: 'All Students', route: '/portalAdmin/students' },
-        { label: 'Student Admission', route: '/portalAdmin/students/admissions' },
-        { label: 'Promote Students', route: '/portalAdmin/students/promote' },
-        { label: 'Student Categories', route: '/portalAdmin/students/categories' },
-        { label: 'Student Houses', route: '/portalAdmin/students/houses' },
+        { label: 'All Students', route: 'students' },
+        { label: 'Student Admission', route: 'students/admissions' },
+        { label: 'Promote Students', route: 'students/promote' },
+        { label: 'Student Categories', route: 'students/categories' },
+        { label: 'Student Houses', route: 'students/houses' },
       ],
     },
-    { name: 'timetable', label: 'Timetable', icon: 'calendar_month', route: '/portalAdmin/timetable' },
-    { name: 'calendar', label: 'School Calendar', icon: 'event_note', route: '/portalAdmin/calendar' },
-    { name: 'staff', label: 'HR', icon: 'person_outline', route: '/portalAdmin/staff' },
-    { name: 'finance', label: 'Finance', icon: 'account_balance', route: '/portalAdmin/finance',
+    { name: 'timetable', label: 'Timetable', icon: 'calendar_month', route: 'timetable' },
+    { name: 'calendar', label: 'School Calendar', icon: 'event_note', route: 'calendar' },
+    { name: 'staff', label: 'HR', icon: 'person_outline', route: 'staff' },
+    { name: 'finance', label: 'Finance', icon: 'account_balance', route: 'finance',
       children: [
-        { label: 'Dashboard', route: '/portalAdmin/finance/dashboard' },
-        { label: 'Fee Balances', route: '/portalAdmin/finance/fee-balances' },
-        { label: 'Inventory', route: '/portalAdmin/finance/inventory' },
-        { label: 'Parents', route: '/portalAdmin/finance/parents' },
+        { label: 'Dashboard', route: 'finance/dashboard' },
+        { label: 'Fee Balances', route: 'finance/fee-balances' },
+        { label: 'Inventory', route: 'finance/inventory' },
+        { label: 'Parents', route: 'finance/parents' },
       ],
     },
-    { name: 'transport', label: 'Transport', icon: 'directions_bus', route: '/portalAdmin/transport' },
-    { name: 'communication', label: 'Communication', icon: 'chat', route: '/portalAdmin/communication' },
-    { name: 'monitoring', label: 'Live Monitor', icon: 'security', route: '/portalAdmin/monitoring' },
-    { name: 'reports', label: 'Reports', icon: 'bar_chart', route: '/portalAdmin/reports' },
-    { name: 'systemAccess', label: 'System Access', icon: 'admin_panel_settings', route: '/portalAdmin/system-access' },
-    { name: 'settings', label: 'Settings', icon: 'settings', route: '/portalAdmin/settings' },
+    { name: 'transport', label: 'Transport', icon: 'directions_bus', route: 'transport' },
+    { name: 'communication', label: 'Communication', icon: 'chat', route: 'communication' },
+    { name: 'monitoring', label: 'Live Monitor', icon: 'security', route: 'monitoring' },
+    { name: 'reports', label: 'Reports', icon: 'bar_chart', route: 'reports' },
+    { name: 'systemAccess', label: 'System Access', icon: 'admin_panel_settings', route: 'system-access' },
+    { name: 'settings', label: 'Settings', icon: 'settings', route: 'settings' },
   ];
 }

@@ -10,6 +10,7 @@ import {
   Transaction,
   FeeBalance,
   FeeStructureResponse,
+  FeeStructurePdfResponse,
   SchoolInfo,
   Announcement,
   Trip,
@@ -80,8 +81,8 @@ export class ParentApiService {
     return this.http.get<SchoolInfo>(`${this.baseUrl}/finance/school-info/`);
   }
 
-  downloadFeeStructurePdf(): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/finance/fee-structure/generate-pdf/`, { responseType: 'blob' });
+  downloadFeeStructurePdf(): Observable<FeeStructurePdfResponse> {
+    return this.http.get<FeeStructurePdfResponse>(`${this.baseUrl}/finance/fee-structure/generate-pdf/`);
   }
 
   // ─── Announcements ───────────────────────────────────────────────

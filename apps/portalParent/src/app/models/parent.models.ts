@@ -94,8 +94,14 @@ export interface SchoolInfo {
   postal_address: string;
   email: string;
   phone: string;
-  location: string;
   logo: string | null;
+}
+
+export interface FeeStructurePdfResponse {
+  children: FeeStructureChild[];
+  grand_total: number;
+  school_info: SchoolInfo;
+  generated_at: string;
 }
 
 export interface StudentInvoice {
