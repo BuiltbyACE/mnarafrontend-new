@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '@sms/core/config';
 import {
   DashboardSummary,
   TimetableEntry,
-  ExamResultEntry,
+  TermReportCard,
   StudentInvoice,
   Transaction,
   FeeBalance,
@@ -18,6 +19,7 @@ import {
   Manifest,
   TransportRoute,
   FleetTelemetry,
+  PrintableReportCardResponse,
 } from '../models/parent.models';
 
 @Injectable({ providedIn: 'root' })
@@ -37,11 +39,17 @@ export class ParentApiService {
     return this.http.get<TimetableEntry[]>(`${this.baseUrl}/academics/my-timetable/`);
   }
 
-  // ─── Exam Results ────────────────────────────────────────────────
-  getExamResults(params?: { student?: number }): Observable<ExamResultEntry[]> {
+  // ─── Exam Results (Report Cards) ───────────────────────────────
+  getReportCards(params?: { student?: number }): Observable<TermReportCard[]> {
     let p = new HttpParams();
     if (params?.student) p = p.set('student', params.student);
-    return this.http.get<ExamResultEntry[]>(`${this.baseUrl}/lms/exam-results/`, { params: p });
+    return this.http.get<any>(`${this.baseUrl}/lms/report-cards/`, { params: p }).pipe(
+      map(res => res.results ? res.results : res)
+    );
+  }
+
+  getPrintableReportCard(id: number): Observable<PrintableReportCardResponse> {
+    return this.http.get<PrintableReportCardResponse>(`${this.baseUrl}/lms/report-cards/${id}/printable/`);
   }
 
   // ─── Finance: Invoices ───────────────────────────────────────────
@@ -93,16 +101,22 @@ export class ParentApiService {
 
   // ─── Announcements ───────────────────────────────────────────────
   getAnnouncements(): Observable<Announcement[]> {
-    return this.http.get<Announcement[]>(`${this.baseUrl}/lms/announcements/`);
+    return this.http.get<any>(`${this.baseUrl}/lms/announcements/`).pipe(
+      map(res => res.results ? res.results : res)
+    );
   }
 
   // ─── Transport ───────────────────────────────────────────────────
-  getTrips(): Observable<Trip[]> {
-    return this.http.get<Trip[]>(`${this.baseUrl}/transport/trips/`);
+  getDailyTrips(): Observable<Trip[]> {
+    return this.http.get<any>(`${this.baseUrl}/transport/daily-trips/`).pipe(
+      map(res => res.results ? res.results : res)
+    );
   }
 
   getManifests(): Observable<Manifest[]> {
-    return this.http.get<Manifest[]>(`${this.baseUrl}/transport/manifests/`);
+    return this.http.get<any>(`${this.baseUrl}/transport/manifests/`).pipe(
+      map(res => res.results ? res.results : res)
+    );
   }
 
   getTransportRoutes(): Observable<TransportRoute[]> {
@@ -111,6 +125,15 @@ export class ParentApiService {
 
   getFleetTelemetry(): Observable<FleetTelemetry[]> {
     return this.http.get<FleetTelemetry[]>(`${this.baseUrl}/transport/telemetry/`);
+  }
+
+  getMyLiveTracking(): Observable<FleetTelemetry[]> {
+    return this.http.get<FleetTelemetry[]>(`${this.baseUrl}/transport/daily-trips/live_tracking/`);
+  }
+
+  // Legacy method for backward compatibility
+  getTrips(): Observable<Trip[]> {
+    return this.getDailyTrips();
   }
 
 }

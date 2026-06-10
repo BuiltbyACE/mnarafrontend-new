@@ -1,0 +1,187 @@
+<div class="report-cards-page">
+  <div class="page-header">
+    <h2>Academic Performance</h2>
+  </div>
+
+  @if (loading()) { 
+    <div class="loading-wrap"><mat-spinner diameter="28"></mat-spinner></div> 
+  }
+  @else if (reports().length > 0) {
+    @for (report of reports(); track report.id) {
+      <div class="a4-container">
+        
+        <div class="report-actions">
+          <button mat-flat-button color="primary" (click)="downloadPdf(report)" [disabled]="pdfLoading() === report.id">
+            @if (pdfLoading() === report.id) {
+              <mat-spinner diameter="16" class="mr-2"></mat-spinner> Generating PDF...
+            } @else {
+              <mat-icon>download</mat-icon> Download PDF
+            }
+          </button>
+        </div>
+
+        @if (pdfError() && pdfLoading() === report.id) {
+          <div class="error-message">{{ pdfError() }}</div>
+        }
+
+        <!-- Header Section -->
+        <div class="school-header">
+          <h1>{{ schoolInfo()?.name || 'MNARA SCHOOL NAIROBI' | uppercase }}</h1>
+          <h2 class="report-title">SENIOR SECONDARY END OF TERM REPORT</h2>
+          <p>{{ schoolInfo()?.postal_address || 'P.O.BOX 7668-00508 NAIROBI' }}</p>
+          <p>(Email: {{ schoolInfo()?.email || 'info.mnara@gmail.com' }})</p>
+          <p>Tel: {{ schoolInfo()?.phone || '0713801024 / 0786166992' }}</p>
+          <h3 class="term-title">END OF TERM ASSESSMENT REPORT - {{ report.term_name }}</h3>
+        </div>
+
+        <!-- Student Info -->
+        <div class="student-info-grid">
+          <div class="student-photo-wrapper">
+            @if (report.student_photo) {
+              <img [src]="report.student_photo" alt="Student Photo" class="student-photo" />
+            } @else {
+              <div class="student-photo-placeholder">
+                <mat-icon>person</mat-icon>
+              </div>
+            }
+          </div>
+          <div class="student-details">
+            <div class="info-row">
+              <span class="label">ADM. NO:</span> <span class="value">{{ report.student_adm_no }}</span>
+              <span class="label ml-auto">Name:</span> <span class="value">{{ report.student_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Date of Birth:</span> <span class="value">{{ report.student_dob }}</span>
+              <span class="label ml-auto">Class Teacher:</span> <span class="value">N/A</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Attendance:</span> 
+              <span class="value">{{ report.attendance_present ?? '-' }} out of {{ report.attendance_out_of ?? '-' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subject Performance Table -->
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 15%;">SUBJECT</th>
+              <th style="width: 15%;">TEACHER</th>
+              <th style="width: 25%; text-align: center;">TEST/100<br>SCORE PERFORMANCE<br>BAND</th>
+              <th style="width: 45%;">REMARKS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of report.subject_rows; track row.id) {
+              <tr>
+                <td><strong>{{ row.subject_name }}</strong></td>
+                <td>{{ row.teacher_name }}</td>
+                <td class="scores-cell">
+                  <div class="score-line">
+                    <span class="score-type">CFA</span>
+                    <span class="score-val">{{ row.cfa_score ?? '-' }}</span>
+                    <span class="score-grade">{{ row.cfa_grade }}</span>
+                  </div>
+                  <div class="score-line">
+                    <span class="score-type">TEE</span>
+                    <span class="score-val">{{ row.tee_score ?? '-' }}</span>
+                    <span class="score-grade">{{ row.tee_grade }}</span>
+                  </div>
+                  <div class="score-line average-line">
+                    <span class="score-type">AVERAGE</span>
+                    <span class="score-val">{{ row.average_score ?? '-' }}</span>
+                    <span class="score-grade">{{ row.average_grade }}</span>
+                  </div>
+                </td>
+                <td class="remarks-cell">{{ row.subject_teacher_remarks }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <!-- Grading Legend -->
+        <div class="grading-legend">
+          <div class="legend-box">
+            <h4>SCORE/ RANGE /GRADING PERCENTAGE</h4>
+            <div class="legend-grid">
+              <div>A* (90-100%) Exceptional</div>
+              <div>A (80-89%) Excellent</div>
+              <div>B (70-79%) Good</div>
+              <div>C (60-69%) Satisfactory</div>
+              <div>D (50-59%) Fair</div>
+              <div>E (40-49%) Sufficient</div>
+              <div>F (30-39%) Poor</div>
+              <div>G (20-29%) Very poor</div>
+              <div>U (0-19%) Ungraded</div>
+            </div>
+          </div>
+          <div class="legend-box">
+            <h4>Assessment Code</h4>
+            <div><strong>CFA</strong> Cumulative Formative Assessment</div>
+            <div><strong>TEE</strong> Term End Exam</div>
+            <div><strong>ABS / X</strong> Absent</div>
+            <div><strong>CWA</strong> Complete Weekly Assignment /Projects</div>
+          </div>
+          <div class="legend-box">
+            <h4>CWA GRADES/5</h4>
+            <div>0 U-E</div>
+            <div>1 D</div>
+            <div>2 C</div>
+            <div>3 B</div>
+            <div>4 A</div>
+            <div>5 A*</div>
+          </div>
+        </div>
+
+        <!-- Class Teacher Comment -->
+        <div class="section-block">
+          <h4>Class Teacher’s Comment</h4>
+          <p class="comment-text">{{ report.class_teacher_remarks || 'No remarks available.' }}</p>
+        </div>
+
+        <!-- Co-curricular Activities -->
+        <div class="section-block">
+          <h4>Co-curricular Activities</h4>
+          <table class="simple-table">
+            <tbody>
+              <tr><td width="30%"><strong>Sports and Games</strong></td><td>{{ report.co_curricular?.sports_and_games || 'N/A' }}</td></tr>
+              <tr><td><strong>Responsibilities Held</strong></td><td>{{ report.co_curricular?.responsibilities_held || 'N/A' }}</td></tr>
+              <tr><td><strong>Achievements</strong></td><td>{{ report.co_curricular?.achievements || 'N/A' }}</td></tr>
+              <tr><td><strong>Life Skill Club</strong></td><td>{{ report.co_curricular?.life_skill_club || 'N/A' }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Work Pattern & Social Conduct -->
+        <div class="section-block">
+          <h4>Work Pattern & Social Conduct</h4>
+          <p class="scale-info">1= Excellent ; 2=Good ; 3=Average ; 4=Needs attention</p>
+          <div class="conduct-grid">
+            <div class="conduct-item"><span>Completes assignments</span> <strong>{{ report.social_conduct?.completes_assignments || '-' }}</strong></div>
+            <div class="conduct-item"><span>Makes good use of time</span> <strong>{{ report.social_conduct?.makes_good_use_of_time || '-' }}</strong></div>
+            <div class="conduct-item"><span>Does work keenly</span> <strong>{{ report.social_conduct?.does_work_keenly || '-' }}</strong></div>
+            <div class="conduct-item"><span>Follows directions</span> <strong>{{ report.social_conduct?.follows_directions || '-' }}</strong></div>
+            <div class="conduct-item"><span>Pays attention</span> <strong>{{ report.social_conduct?.pays_attention || '-' }}</strong></div>
+            <div class="conduct-item"><span>Shows courtesy</span> <strong>{{ report.social_conduct?.shows_courtesy || '-' }}</strong></div>
+            <div class="conduct-item"><span>Emotional intelligence</span> <strong>{{ report.social_conduct?.emotional_intelligence || '-' }}</strong></div>
+            <div class="conduct-item"><span>Grooming</span> <strong>{{ report.social_conduct?.grooming || '-' }}</strong></div>
+          </div>
+        </div>
+
+        <!-- Footer Dates -->
+        <div class="footer-dates">
+          <div><strong>OPENING:</strong> {{ report.next_term_opening_date || '-' }}</div>
+          <div><strong>MIDTERM:</strong> {{ report.next_term_midterm_dates || '-' }}</div>
+          <div><strong>CLOSING:</strong> {{ report.next_term_closing_date || '-' }}</div>
+        </div>
+
+        <div class="signature-line">
+          Principal’s signature: _____________________________
+        </div>
+
+      </div>
+    }
+  } @else { 
+    <div class="no-data">No report cards available</div> 
+  }
+</div>

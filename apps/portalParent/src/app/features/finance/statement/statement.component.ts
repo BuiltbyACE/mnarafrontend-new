@@ -324,6 +324,35 @@ export class StatementComponent implements OnInit {
       });
     }
 
+    // Payment Information section
+    content.push(
+      this.pdfStyling.buildSectionHeader('🏦 How to Pay'),
+    );
+    content.push({
+      stack: [
+        {
+          columns: [
+            {
+              stack: [
+                { text: 'M-PESA Paybill', bold: true, fontSize: 10, color: C.slate900, margin: [0, 0, 0, 4] },
+                { text: 'Business Number: 123456', fontSize: 9, color: C.slate700 },
+                { text: 'Account Number: Student ID', fontSize: 9, color: C.slate700 },
+              ]
+            },
+            {
+              stack: [
+                { text: 'Bank Transfer', bold: true, fontSize: 10, color: C.slate900, margin: [0, 0, 0, 4] },
+                { text: 'Bank Name: Equity Bank (Kileleshwa Branch)', fontSize: 9, color: C.slate700 },
+                { text: 'Account Name: Mnara School', fontSize: 9, color: C.slate700 },
+                { text: 'Account Number: 01802XXXXXXXXX', fontSize: 9, color: C.slate700 },
+              ]
+            }
+          ]
+        }
+      ],
+      margin: [0, 8, 0, 16]
+    });
+
     return this.pdfStyling.buildDocumentDefinition(content, {
       title: `Fee Statement - ${school.name}`,
       subject: 'Fee Statement',

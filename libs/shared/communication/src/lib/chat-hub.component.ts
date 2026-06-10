@@ -36,10 +36,12 @@ import { RecipientGroup } from './communication.models';
     <div class="chat-hub">
       <div class="chat-sidebar">
         <div class="sidebar-header">
-          <button mat-flat-button color="primary" class="new-msg-btn" (click)="showNewMessage.set(true)">
-            <mat-icon>edit</mat-icon>
-            New Message
-          </button>
+          @if (canBroadcast()) {
+            <button mat-flat-button color="primary" class="new-msg-btn" (click)="showNewMessage.set(true)">
+              <mat-icon>edit</mat-icon>
+              New Message
+            </button>
+          }
         </div>
         <app-chat-conversation-list />
       </div>
@@ -57,8 +59,9 @@ import { RecipientGroup } from './communication.models';
         </div>
 
         <div class="panel-body">
-          <label class="panel-label">Send to a group</label>
-          <div class="group-list">
+          @if (canBroadcast()) {
+            <label class="panel-label">Send to a group</label>
+            <div class="group-list">
             @for (group of groups(); track group.type) {
               <button
                 class="group-btn"
@@ -80,6 +83,7 @@ import { RecipientGroup } from './communication.models';
           <div class="divider">
             <span>OR</span>
           </div>
+          }
 
           <label class="panel-label">Search for an individual</label>
           <div class="user-search">
@@ -167,6 +171,7 @@ export class ChatHubComponent implements OnInit {
   private readonly baseUrl = `${environment.apiBaseUrl}/communication`;
 
   readonly showNewMessage = signal(false);
+  readonly canBroadcast = signal(false);
   readonly groups = signal<RecipientGroup[]>([]);
   readonly selectedGroup = signal<string | null>(null);
   readonly selectedUserIds = signal<number[]>([]);
@@ -176,8 +181,12 @@ export class ChatHubComponent implements OnInit {
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
+    const role = this.tokenStorage.getUserContext()?.portalKey;
+    if (role === 'ADMIN' || role === 'TEACHER' || role === 'STAFF') {
+      this.canBroadcast.set(true);
+      this.fetchGroups();
+    }
     this.chatService.fetchConversations().subscribe();
-    this.fetchGroups();
     this.connectWebSocket();
   }
 

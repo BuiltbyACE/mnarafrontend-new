@@ -33,6 +33,24 @@
         </mat-card-content>
       </mat-card>
 
+      @if (data.transport_snapshot) {
+        <mat-card class="status-card transport-card" [class.transport-active]="data.transport_snapshot.status === 'IN_TRANSIT'">
+          <mat-card-content>
+            <div class="card-header">
+              <mat-icon class="card-icon">directions_bus</mat-icon>
+              <span class="card-label">Transport Status</span>
+            </div>
+            <div class="card-body">
+              <p class="status-message">{{ data.transport_snapshot.message }}</p>
+              <span class="status-time" [class]="data.transport_snapshot.color_code">
+                <mat-icon class="time-icon">info</mat-icon>
+                {{ data.transport_snapshot.status }}
+              </span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
       <mat-card class="status-card finance-card" [class.balance-warning]="data.financial_snapshot.term_balance > 0" [class.balance-paid]="data.financial_snapshot.term_balance === 0">
         <mat-card-content>
           <div class="card-header">

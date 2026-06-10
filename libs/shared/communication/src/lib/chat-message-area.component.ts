@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthStore } from '@sms/core/auth';
+import { AuthStore, TokenStorageService } from '@sms/core/auth';
 import { ChatService } from './chat.service';
 import { PresenceService } from './presence.service';
 
@@ -58,26 +58,28 @@ import { PresenceService } from './presence.service';
           <div #scrollAnchor></div>
         </div>
 
-        <div class="compose-bar">
-          <input
-            type="text"
-            [ngModel]="messageText()"
-            (ngModelChange)="messageText.set($event)"
-            (keydown.enter)="send()"
-            (input)="onTyping()"
-            placeholder="Type a message..."
-            class="compose-input"
-            [disabled]="chatService.messagesLoading()"
-          />
-          <button
-            mat-icon-button
-            class="send-btn"
-            [disabled]="!messageText().trim()"
-            (click)="send()"
-          >
-            <mat-icon>send</mat-icon>
-          </button>
-        </div>
+        @if (canReply) {
+          <div class="compose-bar">
+            <input
+              type="text"
+              [ngModel]="messageText()"
+              (ngModelChange)="messageText.set($event)"
+              (keydown.enter)="send()"
+              (input)="onTyping()"
+              placeholder="Type a message..."
+              class="compose-input"
+              [disabled]="chatService.messagesLoading()"
+            />
+            <button
+              mat-icon-button
+              class="send-btn"
+              [disabled]="!messageText().trim()"
+              (click)="send()"
+            >
+              <mat-icon>send</mat-icon>
+            </button>
+          </div>
+        }
       } @else {
         <div class="no-selection">
           <mat-icon class="no-selection-icon">chat</mat-icon>
@@ -127,6 +129,12 @@ export class ChatMessageAreaComponent implements AfterViewChecked {
   readonly chatService = inject(ChatService);
   readonly presenceService = inject(PresenceService);
   private readonly authStore = inject(AuthStore);
+  private readonly tokenStorage = inject(TokenStorageService);
+
+  get canReply(): boolean {
+    const role = this.tokenStorage.getUserContext()?.portalKey;
+    return role === 'ADMIN' || role === 'TEACHER' || role === 'STAFF';
+  }
 
   readonly messageText = signal('');
   get currentUserId(): number {

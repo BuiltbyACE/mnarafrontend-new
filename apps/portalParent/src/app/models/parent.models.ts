@@ -34,6 +34,12 @@ export interface UrgentNotice {
   is_urgent: boolean;
 }
 
+export interface TransportSnapshot {
+  status: string;
+  message: string;
+  color_code: string;
+}
+
 export interface DashboardSummary {
   student_name: string;
   sibling_students: SiblingStudent[];
@@ -41,6 +47,7 @@ export interface DashboardSummary {
   financial_snapshot: FinancialSnapshot;
   recent_academics: RecentAcademic[];
   urgent_notices: UrgentNotice[];
+  transport_snapshot?: TransportSnapshot;
 }
 
 // ─── Timetable ────────────────────────────────────────────────────
@@ -54,16 +61,69 @@ export interface TimetableEntry {
   end_time: string;
 }
 
-// ─── Exam Results ─────────────────────────────────────────────────
-export interface ExamResultEntry {
+export interface ReportCardSubjectRow {
   id: number;
-  component: number;
-  component_name: string;
-  exam_series: string;
-  subject: string;
-  raw_score: number;
-  computed_grade: string;
-  created_at: string;
+  subject_name: string;
+  teacher_name: string;
+  cfa_score: number | null;
+  cfa_grade: string;
+  tee_score: number | null;
+  tee_grade: string;
+  average_score: number | null;
+  average_grade: string;
+  subject_teacher_remarks: string;
+}
+
+export interface ReportCardSocialConduct {
+  id: number;
+  completes_assignments: number | null;
+  makes_good_use_of_time: number | null;
+  does_work_keenly: number | null;
+  follows_directions: number | null;
+  pays_attention: number | null;
+  shows_courtesy: number | null;
+  emotional_intelligence: number | null;
+  grooming: number | null;
+}
+
+export interface ReportCardCoCurricular {
+  id: number;
+  sports_and_games: string;
+  responsibilities_held: string;
+  achievements: string;
+  life_skill_club: string;
+}
+
+export interface TermReportCard {
+  id: number;
+  student: number;
+  student_name: string;
+  student_adm_no: string;
+  student_dob: string;
+  student_photo: string | null;
+  term: number;
+  term_name: string;
+  total_score: number | null;
+  average_percentage: number | null;
+  overall_grade: string;
+  class_teacher_remarks: string;
+  principal_remarks: string;
+  is_published: boolean;
+  attendance_present: number | null;
+  attendance_out_of: number | null;
+  next_term_opening_date: string | null;
+  next_term_midterm_dates: string;
+  next_term_closing_date: string | null;
+  
+  subject_rows: ReportCardSubjectRow[];
+  social_conduct: ReportCardSocialConduct | null;
+  co_curricular: ReportCardCoCurricular | null;
+}
+
+export interface PrintableReportCardResponse {
+  report_card: TermReportCard;
+  school_info: SchoolInfo;
+  generated_at: string;
 }
 
 // ─── Finance ──────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatePipe } from '@angular/common';
 import { ParentApiService } from '../../services/parent-api.service';
+import { TransportPermissionService } from '../../services/transport-permission.service';
 import { Trip, Manifest, TransportRoute, FleetTelemetry } from '../../models/parent.models';
 import { ParentFleetMapComponent } from './parent-fleet-map.component';
 
@@ -27,9 +28,10 @@ import { ParentFleetMapComponent } from './parent-fleet-map.component';
             <mat-spinner diameter="36"></mat-spinner>
             <span>Loading transport data…</span>
           </div>
-        } @else if (error()) {
-          <div class="tr-error">{{ error() }}</div>
         } @else {
+          @if (error()) {
+            <div class="tr-error" style="margin-bottom: 16px;">{{ error() }}</div>
+          }
           <mat-tab-group animationDuration="200ms">
             <mat-tab label="Live Map">
               <div class="tr-map-panel">
@@ -108,6 +110,7 @@ import { ParentFleetMapComponent } from './parent-fleet-map.component';
 })
 export class TransportComponent implements OnInit {
   private readonly api = inject(ParentApiService);
+  private readonly permissionService = inject(TransportPermissionService);
 
   readonly trips = signal<Trip[]>([]);
   readonly manifests = signal<Manifest[]>([]);
@@ -117,19 +120,19 @@ export class TransportComponent implements OnInit {
   readonly error = signal<string | null>(null);
 
   ngOnInit() {
-    this.api.getTrips().subscribe({ next: (t) => this.trips.set(t) });
+    this.api.getDailyTrips().subscribe({ next: (t) => this.trips.set(t) });
     this.api.getManifests().subscribe({ next: (m) => this.manifests.set(m) });
 
     this.api.getTransportRoutes().subscribe({
       next: (r) => this.routes.set(r),
     });
 
-    this.api.getFleetTelemetry().subscribe({
+    this.api.getMyLiveTracking().subscribe({
       next: (t) => this.telemetry.set(t),
       complete: () => this.loading.set(false),
       error: () => {
         this.loading.set(false);
-        this.error.set('Failed to load transport data. Please try again later.');
+        this.error.set('Failed to load live tracking data. You can still view trips, routes, and manifests.');
       },
     });
   }

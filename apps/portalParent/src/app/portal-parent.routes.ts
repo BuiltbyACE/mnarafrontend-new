@@ -16,16 +16,9 @@ export const remoteRoutes: Route[] = [
 
       // Academics
       {
-        path: 'academics',
-        component: AcademicHubComponent,
-        children: [
-          { path: '', pathMatch: 'full', redirectTo: 'report-cards' },
-          {
-            path: 'report-cards',
-            loadComponent: () =>
-              import('./features/academics/report-cards/report-cards.component').then(m => m.ReportCardsComponent),
-          },
-        ],
+        path: 'academics/report-cards',
+        loadComponent: () =>
+          import('./features/academics/report-cards/report-cards.component').then(m => m.ReportCardsComponent),
       },
 
       // Finance

@@ -1,13 +1,15 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild, PLATFORM_ID, inject, input, output, effect, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
 import maplibregl from 'maplibre-gl';
 import { FleetTelemetry, TransportRoute } from '../../models/parent.models';
+import { TransportPermissionService } from '../../services/transport-permission.service';
 
 @Component({
   selector: 'app-parent-fleet-map',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MatIconModule],
   template: `
     <div class="pmap-wrapper">
       @if (showReconnecting()) {
@@ -25,9 +27,17 @@ import { FleetTelemetry, TransportRoute } from '../../models/parent.models';
     .pmap-container { width: 100%; height: 100%; background: #f8fafc; }
     .pmap-reconnect-bar { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000; background: #fef3c7; border: 1px solid #fde68a; color: #92400e; padding: 8px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 500; }
     .pmap-reconnect-dot { width: 6px; height: 6px; background: #f59e0b; border-radius: 50%; animation: pmap-pulse 1s infinite; }
+    .pmap-permission-banner { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000; background: #eff6ff; border: 1px solid #3b82f6; color: #1e40af; padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; gap: 12px; font-size: 0.875rem; font-weight: 500; }
+    .pmap-permission-icon { flex-shrink: 0; width: 24px; height: 24px; }
+    .pmap-permission-icon mat-icon { width: 20px; height: 20px; color: #3b82f6; }
+    .pmap-permission-content { flex: 1; }
+    .pmap-permission-title { font-weight: 600; margin-bottom: 4px; }
+    .pmap-permission-message { font-size: 0.8125rem; opacity: 0.8; }
     @keyframes pmap-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     ::ng-deep .maplibregl-popup-content { font-family: Inter, sans-serif; border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     ::ng-deep .maplibregl-popup-close-button { font-size: 16px; padding: 4px 8px; color: #94a3b8; }
+    ::ng-deep .school-marker { width: 44px; height: 44px; background: #2563eb; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(37,99,235,0.4); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; position: relative; z-index: 10; }
+    ::ng-deep .school-marker-label { position: absolute; bottom: -24px; white-space: nowrap; font-size: 0.75rem; font-weight: 700; color: #1e3a8a; text-shadow: 1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white; }
   `],
 })
 export class ParentFleetMapComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -92,13 +102,120 @@ export class ParentFleetMapComponent implements OnInit, OnDestroy, AfterViewInit
     this.map = new maplibregl.Map({
       container: this.mapElement.nativeElement,
       style: 'https://tiles.openfreemap.org/styles/bright',
-      center: [36.8219, -1.2921],
-      zoom: 12,
+      center: [36.77805933015456, -1.2822594212716916], // Mnara School
+      zoom: 15,
     });
 
     this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
     this.map.on('load', () => {
+      // 1. Rock-solid WebGL source for the school
+      this.map.addSource('school-source', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [36.77805933015456, -1.2822594212716916] },
+            properties: { title: 'Mnara School', icon: '🏫' }
+          }]
+        }
+      });
+
+      // 2. Glowing shadow
+      this.map.addLayer({
+        id: 'school-glow',
+        type: 'circle',
+        source: 'school-source',
+        paint: { 'circle-radius': 30, 'circle-color': '#2563eb', 'circle-opacity': 0.3, 'circle-blur': 1 }
+      });
+
+      // 3. Blue background circle
+      this.map.addLayer({
+        id: 'school-circle',
+        type: 'circle',
+        source: 'school-source',
+        paint: { 'circle-radius': 22, 'circle-color': '#2563eb', 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' }
+      });
+
+      // 4. Emoji centered inside the circle
+      this.map.addLayer({
+        id: 'school-emoji',
+        type: 'symbol',
+        source: 'school-source',
+        layout: { 'text-field': '{icon}', 'text-size': 20, 'text-anchor': 'center', 'text-allow-overlap': true },
+        paint: { 'text-color': '#ffffff' }
+      });
+
+      // 5. Text label firmly anchored below the circle
+      this.map.addLayer({
+        id: 'school-text',
+        type: 'symbol',
+        source: 'school-source',
+        layout: { 'text-field': '{title}', 'text-size': 13, 'text-anchor': 'top', 'text-offset': [0, 2], 'text-allow-overlap': true, 'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'] },
+        paint: { 'text-color': '#1e3a8a', 'text-halo-color': '#ffffff', 'text-halo-width': 2 }
+      });
+
+      // ==========================================
+      // DEMO: HOME CHECKPOINT & GEOFENCE
+      // ==========================================
+      const schoolCoords = [36.77805933015456, -1.2822594212716916];
+      const homeCoords = [36.765848, -1.37878];
+
+      this.map.addSource('demo-home-source', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: homeCoords },
+              properties: { title: 'Home (Saeed)', icon: '🏠' }
+            }
+          ]
+        }
+      });
+
+      // Geofence Radius (Notification Trigger Zone)
+      this.map.addLayer({
+        id: 'home-geofence',
+        type: 'circle',
+        source: 'demo-home-source',
+        paint: {
+          'circle-radius': 90, 
+          'circle-color': '#10b981',
+          'circle-opacity': 0.15,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#10b981'
+        }
+      });
+
+      // Home Background Circle
+      this.map.addLayer({
+        id: 'home-circle',
+        type: 'circle',
+        source: 'demo-home-source',
+        paint: { 'circle-radius': 18, 'circle-color': '#8b5cf6', 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' }
+      });
+
+      // Home Emoji
+      this.map.addLayer({
+        id: 'home-emoji',
+        type: 'symbol',
+        source: 'demo-home-source',
+        layout: { 'text-field': '{icon}', 'text-size': 16, 'text-anchor': 'center', 'text-allow-overlap': true },
+        paint: { 'text-color': '#ffffff' }
+      });
+
+      // Home Label
+      this.map.addLayer({
+        id: 'home-text',
+        type: 'symbol',
+        source: 'demo-home-source',
+        layout: { 'text-field': '{title}', 'text-size': 12, 'text-anchor': 'top', 'text-offset': [0, 1.8], 'text-allow-overlap': true, 'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'] },
+        paint: { 'text-color': '#4c1d95', 'text-halo-color': '#ffffff', 'text-halo-width': 2 }
+      });
+
       this.map.addSource(this.ROUTE_SOURCE, {
         type: 'geojson',
         lineMetrics: true,
