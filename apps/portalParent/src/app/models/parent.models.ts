@@ -134,6 +134,51 @@ export interface FeeBalance {
   balance: number;
 }
 
+// ─── Fee Statement ────────────────────────────────────────────────
+export interface FinancialSummary {
+  total_invoiced: number;
+  total_paid: number;
+  outstanding_balance: number;
+  currency: string;
+}
+
+export interface FeeStatementInvoice {
+  id: number;
+  fee_category: string | null;
+  academic_year: string | null;
+  term: string | null;
+  amount_due: number;
+  amount_paid: number;
+  balance: number;
+  status: 'PENDING' | 'PARTIAL' | 'PAID';
+}
+
+export interface FeeStatementPayment {
+  id: number;
+  amount: number;
+  payment_method: 'MPESA' | 'BANK' | 'CASH' | 'CHEQUE';
+  reference_code: string;
+  transaction_date: string | null;
+}
+
+export interface FeeStatementChild {
+  student_id: number;
+  student_name: string;
+  school_id: string | null;
+  class_name: string | null;
+  year_level: string | null;
+  enrollment_status: string | null;
+  financial_summary: FinancialSummary;
+  invoices: FeeStatementInvoice[];
+  recent_payments: FeeStatementPayment[];
+}
+
+export interface FeeStatementResponse {
+  children: FeeStatementChild[];
+  school_info: SchoolInfo;
+  generated_at: string;
+}
+
 // ─── Announcements ────────────────────────────────────────────────
 export interface Announcement {
   id: number;

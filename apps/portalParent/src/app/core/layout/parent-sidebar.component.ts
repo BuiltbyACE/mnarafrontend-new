@@ -19,7 +19,7 @@ export class ParentSidebarComponent {
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: 'dashboard' },
     { label: 'Exam Reports', icon: 'assessment', route: 'academics/report-cards' },
-    { label: 'Fee Statement', icon: 'receipt_long', route: 'finance/statement' },
+    { label: 'Fee Statement', icon: 'receipt_long', route: 'statement' },
     { label: 'Fee Structure', icon: 'description', route: 'fee-structure' },
     { label: 'Transport', icon: 'directions_bus', route: 'transport' },
     { label: 'Announcements', icon: 'campaign', route: 'announcements' },

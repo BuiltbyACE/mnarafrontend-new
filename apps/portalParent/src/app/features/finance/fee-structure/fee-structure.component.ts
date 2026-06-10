@@ -7,6 +7,7 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import type { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { ParentApiService } from '../../../services/parent-api.service';
+import { PdfStylingService } from '../../../services/pdf-styling.service';
 import {
   FeeStructureChild,
   FeeStructurePdfResponse,
@@ -24,6 +25,7 @@ import {
 })
 export class FeeStructureComponent implements OnInit {
   private readonly api = inject(ParentApiService);
+  private readonly pdfStyling = inject(PdfStylingService);
 
   readonly children = signal<FeeStructureChild[]>([]);
   readonly schoolInfo = signal<SchoolInfo | null>(null);
@@ -98,294 +100,132 @@ export class FeeStructureComponent implements OnInit {
   private buildPdfDefinition(data: FeeStructurePdfResponse): TDocumentDefinitions {
     const school = data.school_info;
     const children = data.children;
-
-    const C = {
-      primary: '#2563eb',
-      primaryDark: '#1d4ed8',
-      primaryLight: '#3b82f6',
-      blue50: '#eff6ff',
-      blue100: '#dbeafe',
-      blue800: '#1e40af',
-      slate900: '#0f172a',
-      slate600: '#475569',
-      slate400: '#94a3b8',
-      slate200: '#e2e8f0',
-      white: '#ffffff',
-    };
-
+    const C = this.pdfStyling.colors;
     const fm = (amount: number) => this.formatCurrency(amount);
 
-    const headerContent = school.logo
-      ? {
-          columns: [
-            { image: school.logo, width: 50, alignment: 'center', margin: [10, 10, 10, 10] },
-            {
-              stack: [
-                { text: school.name, fontSize: 18, bold: true, color: C.white, margin: [0, 12, 0, 2] },
-                { text: school.postal_address, fontSize: 8, color: '#ffffffcc', margin: [0, 0, 0, 1] },
-                { text: `${school.email}  |  ${school.phone}`, fontSize: 8, color: '#ffffffcc', margin: [0, 0, 0, 12] },
-              ],
-              alignment: 'center',
-              margin: [0, 0, 20, 0],
-            },
-          ],
-          fillColor: C.primary,
-        }
-      : {
-          stack: [
-            { text: school.name, fontSize: 18, bold: true, color: C.white, margin: [0, 10, 0, 2] },
-            { text: school.postal_address, fontSize: 8, color: '#ffffffcc', margin: [0, 0, 0, 1] },
-            { text: `${school.email}  |  ${school.phone}`, fontSize: 8, color: '#ffffffcc', margin: [0, 0, 0, 10] },
-          ],
-          fillColor: C.primary,
-          alignment: 'center',
-        };
+    const content: any[] = [];
 
-    const headerBar: any = {
-      layout: 'noBorders',
-      table: {
-        widths: ['*'],
-        body: [[headerContent]],
-      },
-      margin: [0, 0, 0, 16],
-    };
+    // Header with logo and school info
+    content.push(
+      this.pdfStyling.buildHeader(
+        {
+          name: school.name,
+          postal_address: school.postal_address,
+          email: school.email,
+          phone: school.phone,
+          logo: school.logo,
+        },
+        { title: 'FEE STRUCTURE', subtitle: `${children[0]?.academic_year || 'Academic Year'}` },
+      ),
+    );
 
-    const title: any = {
-      text: 'FEE STRUCTURE',
-      fontSize: 20,
-      bold: true,
-      color: '#1e3a8a',
-      alignment: 'center',
-      margin: [0, 0, 0, 2],
-    };
+    // Title
+    content.push(this.pdfStyling.buildTitle('FEE STRUCTURE', 'Price List by Student'));
 
-    const generatedAt = new Date(data.generated_at).toLocaleDateString('en-KE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    // Metadata
+    content.push(
+      this.pdfStyling.buildMetadata(data.generated_at, [
+        {
+          label: 'Academic Year',
+          value: children[0]?.academic_year || 'N/A',
+        },
+      ]),
+    );
 
-    const generatedDate: any = {
-      text: `Generated: ${generatedAt}`,
-      fontSize: 8,
-      color: C.slate400,
-      alignment: 'center',
-      margin: [0, 0, 0, 12],
-    };
+    // Summary cards
+    content.push(
+      this.pdfStyling.buildSummaryRow([
+        { label: 'Students', value: String(children.length), icon: '👥' },
+        { label: 'Total Fees', value: fm(data.grand_total), color: C.primary, icon: '💰' },
+        { label: 'Academic Year', value: `${children[0]?.term || ''}`, icon: '📅' },
+      ]),
+    );
 
-    const summaryCard = (label: string, value: string, valueColor = C.slate900): any => ({
-      stack: [
-        { text: label, fontSize: 9, color: C.slate600, margin: [0, 0, 0, 2] },
-        { text: value, fontSize: 15, bold: true, color: valueColor },
-      ],
-      alignment: 'center',
-      margin: [0, 10, 0, 10],
-    });
-
-    const summaryRow: any = {
-      layout: {
-        hLineWidth: () => 0.5,
-        vLineWidth: () => 0.5,
-        hLineColor: () => C.slate200,
-        vLineColor: () => C.slate200,
-        paddingLeft: () => 8,
-        paddingRight: () => 8,
-        paddingTop: () => 2,
-        paddingBottom: () => 2,
-      },
-      table: {
-        widths: ['*', '*', '*'],
-        body: [
-          [
-            summaryCard('Children', String(children.length)),
-            summaryCard('Total Fees', fm(data.grand_total), C.primary),
-            summaryCard('Period', `${children[0].term} — ${children[0].academic_year}`),
-          ],
-        ],
-      },
-      margin: [0, 0, 0, 20],
-    };
-
-    const childSections: any[] = [];
-
+    // Student fee structures
     for (const child of children) {
-      const tableBody: any[][] = [
-        [
-          { text: 'CATEGORY', bold: true, fontSize: 8, color: C.blue800, margin: [6, 5, 6, 5] },
-          { text: 'AMOUNT', bold: true, fontSize: 8, color: C.blue800, alignment: 'right', margin: [6, 5, 6, 5] },
-          { text: 'FREQUENCY', bold: true, fontSize: 8, color: C.blue800, margin: [6, 5, 6, 5] },
-          { text: 'DESCRIPTION', bold: true, fontSize: 8, color: C.blue800, margin: [6, 5, 6, 5] },
+      // Child header
+      content.push({
+        stack: [
+          {
+            text: `${child.student_name}`,
+            fontSize: 13,
+            bold: true,
+            color: C.primaryDark,
+            margin: [0, 0, 0, 4],
+          },
+          {
+            columns: [
+              { text: `Class: ${child.class_name} • Year: ${child.year_level}`, fontSize: 8, color: C.slate600 },
+              {
+                text: `Total: ${fm(child.total_fee)}`,
+                fontSize: 10,
+                bold: true,
+                color: C.primary,
+                alignment: 'right',
+              },
+            ],
+            margin: [0, 0, 0, 12],
+          },
         ],
-      ];
+        margin: [0, 16, 0, 0],
+      });
 
-      for (let i = 0; i < child.fee_categories.length; i++) {
-        const cat = child.fee_categories[i];
-        const fill = i % 2 === 0 ? null : C.blue50;
-        tableBody.push([
-          { text: cat.category, bold: true, fontSize: 9, color: C.slate900, margin: [6, 4, 6, 4], fillColor: fill },
-          { text: fm(cat.amount), fontSize: 9, color: C.slate900, alignment: 'right', margin: [6, 4, 6, 4], fillColor: fill },
-          { text: cat.frequency, fontSize: 9, color: C.slate600, margin: [6, 4, 6, 4], fillColor: fill },
-          { text: cat.description || '—', fontSize: 9, color: C.slate600, margin: [6, 4, 6, 4], fillColor: fill },
-        ]);
-      }
-
-      tableBody.push([
-        { text: 'TOTAL', bold: true, fontSize: 9, color: C.primary, margin: [6, 5, 6, 5], fillColor: '#f1f5f9' },
-        { text: fm(child.total_fee), bold: true, fontSize: 9, color: C.primary, alignment: 'right', margin: [6, 5, 6, 5], fillColor: '#f1f5f9' },
-        { text: '', fillColor: '#f1f5f9' },
-        { text: '', fillColor: '#f1f5f9' },
+      // Fee categories table
+      const feeRows = child.fee_categories.map((cat) => [
+        { text: cat.category, fontSize: 9, bold: true },
+        { text: fm(cat.amount), alignment: 'right', fontSize: 9 },
+        { text: cat.frequency, fontSize: 8 },
+        { text: cat.description || '—', fontSize: 8, color: C.slate600 },
       ]);
 
-      childSections.push(
-        {
-          layout: {
-            hLineWidth: (i: number) => (i === 0 || i === 1 || i === tableBody.length - 1 ? 0.5 : 0.3),
-            vLineWidth: () => 0,
-            hLineColor: () => C.slate200,
-            paddingLeft: () => 0,
-            paddingRight: () => 0,
-            paddingTop: () => 0,
-            paddingBottom: () => 0,
-          },
-          table: {
-            widths: ['*', 80, 70, '*'],
-            body: tableBody,
-            headerRows: 1,
-          },
-          margin: [0, 0, 0, 20],
-        },
-      );
+      // Add total row
+      feeRows.push([
+        { text: 'TOTAL', fontSize: 10, bold: true, color: C.primary } as any,
+        { text: fm(child.total_fee), alignment: 'right', fontSize: 10, bold: true, color: C.primary } as any,
+        { text: '', fontSize: 8 },
+        { text: '', fontSize: 8 },
+      ]);
 
-      childSections.push({
-        text: `${child.student_name} — ${child.class_name}  |  ${child.year_level}  |  Total: ${fm(child.total_fee)}`,
-        fontSize: 11,
-        bold: true,
-        color: C.primaryDark,
-        margin: [0, 0, 0, 6],
+      content.push(
+        this.pdfStyling.buildTable(
+          ['CATEGORY', 'AMOUNT', 'FREQUENCY', 'DESCRIPTION'],
+          feeRows,
+          { columnWidths: ['*', 80, 70, '*'] as any, striped: true, highlightLastRow: true },
+        ),
+      );
+    }
+
+    // Grand total section if multiple students
+    if (children.length > 1) {
+      content.push({
+        stack: [
+          {
+            canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2, lineColor: C.primary }],
+            margin: [0, 12, 0, 12],
+          },
+          {
+            columns: [
+              { text: '📊 TOTAL FEES (All Students)', bold: true, fontSize: 12, color: C.primary },
+              {
+                text: fm(data.grand_total),
+                bold: true,
+                fontSize: 14,
+                color: C.primary,
+                alignment: 'right',
+              },
+            ],
+          },
+        ],
+        margin: [0, 8, 0, 0],
       });
     }
 
-    // Remove the last child header (it was added before the table for all but last is wrong)
-    // Actually, let me rethink the order. Child header first, then table.
-    // Let me rebuild childSections properly.
-
-    childSections.length = 0;
-
-    for (const child of children) {
-      const tableBody: any[][] = [
-        [
-          { text: 'CATEGORY', bold: true, fontSize: 8, color: C.blue800, margin: [6, 5, 6, 5] },
-          { text: 'AMOUNT', bold: true, fontSize: 8, color: C.blue800, alignment: 'right', margin: [6, 5, 6, 5] },
-          { text: 'FREQUENCY', bold: true, fontSize: 8, color: C.blue800, margin: [6, 5, 6, 5] },
-          { text: 'DESCRIPTION', bold: true, fontSize: 8, color: C.blue800, margin: [6, 5, 6, 5] },
-        ],
-      ];
-
-      for (let i = 0; i < child.fee_categories.length; i++) {
-        const cat = child.fee_categories[i];
-        const fill = i % 2 === 0 ? null : C.blue50;
-        tableBody.push([
-          { text: cat.category, bold: true, fontSize: 9, color: C.slate900, margin: [6, 4, 6, 4], fillColor: fill },
-          { text: fm(cat.amount), fontSize: 9, color: C.slate900, alignment: 'right', margin: [6, 4, 6, 4], fillColor: fill },
-          { text: cat.frequency, fontSize: 9, color: C.slate600, margin: [6, 4, 6, 4], fillColor: fill },
-          { text: cat.description || '—', fontSize: 9, color: C.slate600, margin: [6, 4, 6, 4], fillColor: fill },
-        ]);
-      }
-
-      tableBody.push([
-        { text: 'TOTAL', bold: true, fontSize: 9, color: C.primary, margin: [6, 5, 6, 5], fillColor: '#f1f5f9' },
-        { text: fm(child.total_fee), bold: true, fontSize: 9, color: C.primary, alignment: 'right', margin: [6, 5, 6, 5], fillColor: '#f1f5f9' },
-        { text: '', fillColor: '#f1f5f9' },
-        { text: '', fillColor: '#f1f5f9' },
-      ]);
-
-      childSections.push(
-        {
-          text: `${child.student_name} — ${child.class_name}`,
-          fontSize: 12,
-          bold: true,
-          color: C.primaryDark,
-          margin: [0, 0, 0, 4],
-        },
-        {
-          columns: [
-            { text: `Year: ${child.year_level}`, fontSize: 8, color: C.slate600 },
-            { text: `Total: ${fm(child.total_fee)}`, fontSize: 8, color: C.primary, alignment: 'right' },
-          ],
-          margin: [0, 0, 0, 8],
-        },
-        {
-          layout: {
-            hLineWidth: (i: number) => (i === 0 || i === 1 || i === tableBody.length - 1 ? 0.5 : 0.3),
-            vLineWidth: () => 0,
-            hLineColor: () => C.slate200,
-            paddingLeft: () => 0,
-            paddingRight: () => 0,
-            paddingTop: () => 0,
-            paddingBottom: () => 0,
-          },
-          table: {
-            widths: ['*', 80, 70, '*'],
-            body: tableBody,
-            headerRows: 1,
-          },
-          margin: [0, 0, 0, 20],
-        },
-      );
-    }
-
-    const grandTotalSection: any = children.length > 1
-      ? {
-          stack: [
-            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: C.primary }], margin: [0, 8, 0, 8] },
-            {
-              columns: [
-                { text: 'Grand Total All Children', bold: true, fontSize: 12, color: C.primary },
-                { text: fm(data.grand_total), bold: true, fontSize: 14, color: C.primary, alignment: 'right' },
-              ],
-            },
-          ],
-          margin: [0, 8, 0, 0],
-        }
-      : null;
-
-    return {
-      info: {
-        title: `Fee Structure - ${school.name}`,
-        author: school.name,
-        subject: 'Fee Structure',
-        keywords: 'fee, structure, school, finance',
-        creator: 'Mnara ERP Parent Portal',
-      },
-      pageSize: 'A4',
-      pageMargins: [40, 60, 40, 60],
-      content: [
-        headerBar,
-        title,
-        generatedDate,
-        summaryRow,
-        ...childSections,
-        ...(grandTotalSection ? [grandTotalSection] : []),
-      ],
-      footer: (currentPage: number, pageCount: number) => ({
-        stack: [
-          { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 0.3, lineColor: C.slate200 }] },
-          {
-            columns: [
-              { text: `Page ${currentPage} of ${pageCount}`, fontSize: 7, color: C.slate400, alignment: 'center', margin: [0, 4, 0, 0] },
-            ],
-          },
-          { text: 'Generated by Mnara ERP Parent Portal', fontSize: 7, color: C.slate400, alignment: 'center' },
-        ],
-        margin: [40, 0, 40, 20],
-      }),
-      defaultStyle: {
-        font: 'Roboto',
-        fontSize: 10,
-        color: C.slate900,
-      },
-    };
+    return this.pdfStyling.buildDocumentDefinition(content, {
+      title: `Fee Structure - ${school.name}`,
+      subject: 'Fee Structure',
+      keywords: ['fee', 'structure', 'school', 'finance'],
+      schoolName: school.name,
+      fileName: 'fee-structure.pdf',
+    });
   }
 }

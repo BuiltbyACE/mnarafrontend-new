@@ -12,6 +12,7 @@ import {
   FeeStructureResponse,
   FeeStructurePdfResponse,
   SchoolInfo,
+  FeeStatementResponse,
   Announcement,
   Trip,
   Manifest,
@@ -83,6 +84,11 @@ export class ParentApiService {
 
   downloadFeeStructurePdf(): Observable<FeeStructurePdfResponse> {
     return this.http.get<FeeStructurePdfResponse>(`${this.baseUrl}/finance/fee-structure/generate-pdf/`);
+  }
+
+  // ─── Finance: Fee Statement (consolidated) ──────────────────────
+  getFeeStatement(): Observable<FeeStatementResponse> {
+    return this.http.get<FeeStatementResponse>(`${this.baseUrl}/finance/fee-statement/`);
   }
 
   // ─── Announcements ───────────────────────────────────────────────

@@ -1,0 +1,203 @@
+<div class="stmt-page">
+  <header class="stmt-header">
+    @if (schoolInfo()?.logo; as logoUrl) {
+      <img [src]="logoUrl" alt="School Logo" class="stmt-header-logo" />
+    } @else {
+      <mat-icon class="stmt-header-icon">receipt_long</mat-icon>
+    }
+    <div class="stmt-header-text">
+      <h1 class="stmt-header-title">{{ schoolInfo()?.name || 'Fee Statement' }}</h1>
+      <p class="stmt-header-sub">Invoices, balances and payment history for each child</p>
+    </div>
+    @if (children().length > 0 && !loading()) {
+      <div class="stmt-header-actions">
+        <button mat-stroked-button class="action-btn" (click)="viewOnlinePdf()" [disabled]="pdfLoading()">
+          <mat-icon>visibility</mat-icon>
+          View Online
+        </button>
+        <button mat-flat-button class="action-btn action-btn-primary" (click)="downloadPdf()" [disabled]="pdfLoading()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          {{ pdfLoading() ? 'Generating…' : 'Download PDF' }}
+        </button>
+      </div>
+    }
+  </header>
+
+  <div class="stmt-content">
+    @if (pdfError()) {
+      <div class="stmt-pdf-error">{{ pdfError() }}</div>
+    }
+    @if (loading()) {
+      <div class="stmt-loading">
+        <mat-spinner diameter="36"></mat-spinner>
+        <span>Loading fee statement…</span>
+      </div>
+    } @else if (error()) {
+      <div class="stmt-error">{{ error() }}</div>
+    } @else if (children().length > 0) {
+      <section class="stmt-summary-row">
+        <div class="stmt-summary-card">
+          <div class="stmt-summary-icon">
+            <mat-icon>payments</mat-icon>
+          </div>
+          <div class="stmt-summary-body">
+            <span class="stmt-summary-label">Total Invoiced</span>
+            <span class="stmt-summary-value">{{ formatCurrency(totalInvoiced()) }}</span>
+          </div>
+        </div>
+        <div class="stmt-summary-card">
+          <div class="stmt-summary-icon stmt-summary-icon-green">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+          <div class="stmt-summary-body">
+            <span class="stmt-summary-label">Total Paid</span>
+            <span class="stmt-summary-value stmt-summary-value-paid">{{ formatCurrency(totalPaid()) }}</span>
+          </div>
+        </div>
+        <div class="stmt-summary-card">
+          <div class="stmt-summary-icon stmt-summary-icon-red">
+            <mat-icon>warning</mat-icon>
+          </div>
+          <div class="stmt-summary-body">
+            <span class="stmt-summary-label">Outstanding</span>
+            <span class="stmt-summary-value" [class.stmt-summary-value-negative]="totalOutstanding() > 0">{{ formatCurrency(totalOutstanding()) }}</span>
+          </div>
+        </div>
+        @if (generatedAt()) {
+          <div class="stmt-summary-card">
+            <div class="stmt-summary-icon stmt-summary-icon-blue">
+              <mat-icon>calendar_today</mat-icon>
+            </div>
+            <div class="stmt-summary-body">
+              <span class="stmt-summary-label">Generated</span>
+              <span class="stmt-summary-value stmt-summary-value-date">{{ generatedAt() | date:'mediumDate' }}</span>
+            </div>
+          </div>
+        }
+      </section>
+
+      <section class="stmt-children-section">
+        <mat-tab-group animationDuration="200ms">
+          @for (child of children(); track child.student_id) {
+            <mat-tab [label]="child.student_name + ' — ' + child.class_name">
+              <div class="stmt-child-panel">
+                <div class="stmt-child-bar">
+                  <div class="stmt-child-bar-item">
+                    <span class="stmt-child-bar-label">Student</span>
+                    <span class="stmt-child-bar-value">{{ child.student_name }}</span>
+                  </div>
+                  <div class="stmt-child-bar-item">
+                    <span class="stmt-child-bar-label">School ID</span>
+                    <span class="stmt-child-bar-value">{{ child.school_id || '—' }}</span>
+                  </div>
+                  <div class="stmt-child-bar-item">
+                    <span class="stmt-child-bar-label">Year Level</span>
+                    <span class="stmt-child-bar-value">{{ child.year_level || '—' }}</span>
+                  </div>
+                  <div class="stmt-child-bar-item">
+                    <span class="stmt-child-bar-label">Status</span>
+                    <span class="stmt-child-bar-value">{{ child.enrollment_status || '—' }}</span>
+                  </div>
+                  <div class="stmt-child-bar-item stmt-child-bar-item-total">
+                    <span class="stmt-child-bar-label">Outstanding</span>
+                    <span class="stmt-child-bar-value stmt-child-bar-value-outstanding" [class.negative]="child.financial_summary.outstanding_balance > 0">
+                      {{ formatCurrency(child.financial_summary.outstanding_balance) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="stmt-child-summary-row">
+                  <div class="stmt-child-summary-item">
+                    <span class="stmt-child-summary-label">Total Invoiced</span>
+                    <span class="stmt-child-summary-value">{{ formatCurrency(child.financial_summary.total_invoiced) }}</span>
+                  </div>
+                  <div class="stmt-child-summary-item stmt-child-summary-item-paid">
+                    <span class="stmt-child-summary-label">Total Paid</span>
+                    <span class="stmt-child-summary-value stmt-child-summary-value-paid">{{ formatCurrency(child.financial_summary.total_paid) }}</span>
+                  </div>
+                  <div class="stmt-child-summary-item stmt-child-summary-item-due">
+                    <span class="stmt-child-summary-label">Balance</span>
+                    <span class="stmt-child-summary-value" [class.stmt-child-summary-value-due]="child.financial_summary.outstanding_balance > 0">
+                      {{ formatCurrency(child.financial_summary.outstanding_balance) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="stmt-tables">
+                  @if (child.invoices.length > 0) {
+                    <div class="stmt-table-section">
+                      <h3 class="stmt-table-title">Invoices</h3>
+                      <div class="stmt-table-wrap">
+                        <table class="stmt-table">
+                          <thead>
+                            <tr>
+                              <th>Fee Category</th>
+                              <th>Year / Term</th>
+                              <th>Amount Due</th>
+                              <th>Amount Paid</th>
+                              <th>Balance</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (inv of child.invoices; track inv.id) {
+                              <tr>
+                                <td class="stmt-td-cat">{{ inv.fee_category || '—' }}</td>
+                                <td>{{ inv.academic_year || '—' }} @if (inv.term) { / {{ inv.term }} }</td>
+                                <td class="stmt-td-mono">{{ formatCurrency(inv.amount_due) }}</td>
+                                <td class="stmt-td-mono">{{ formatCurrency(inv.amount_paid) }}</td>
+                                <td class="stmt-td-mono">{{ formatCurrency(inv.balance) }}</td>
+                                <td>
+                                  <span class="stmt-status-chip" [style.background]="STATUS_COLORS[inv.status] || '#94a3b8'">{{ inv.status }}</span>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="stmt-no-invoices">No invoices recorded for this student.</div>
+                  }
+
+                  @if (child.recent_payments.length > 0) {
+                    <div class="stmt-table-section">
+                      <h3 class="stmt-table-title">Recent Payments</h3>
+                      <div class="stmt-table-wrap">
+                        <table class="stmt-table">
+                          <thead>
+                            <tr>
+                              <th>Date</th>
+                              <th>Reference</th>
+                              <th>Amount</th>
+                              <th>Method</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (pmt of child.recent_payments; track pmt.id) {
+                              <tr>
+                                <td>{{ formatDate(pmt.transaction_date) }}</td>
+                                <td class="stmt-td-ref">{{ pmt.reference_code }}</td>
+                                <td class="stmt-td-mono">{{ formatCurrency(pmt.amount) }}</td>
+                                <td>{{ PAYMENT_METHOD_LABEL[pmt.payment_method] || pmt.payment_method }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </mat-tab>
+          }
+        </mat-tab-group>
+      </section>
+    } @else {
+      <div class="stmt-empty">
+        <mat-icon>info</mat-icon>
+        <span>No fee statement available for your children.</span>
+      </div>
+    }
+  </div>
+</div>

@@ -32,14 +32,13 @@ export const remoteRoutes: Route[] = [
       {
         path: 'finance',
         component: FinanceHubComponent,
-        children: [
-          { path: '', pathMatch: 'full', redirectTo: 'statement' },
-          {
-            path: 'statement',
-            loadComponent: () =>
-              import('./features/finance/statement/statement.component').then(m => m.StatementComponent),
-          },
-        ],
+      },
+
+      // Fee Statement (standalone page)
+      {
+        path: 'statement',
+        loadComponent: () =>
+          import('./features/finance/statement/statement.component').then(m => m.StatementComponent),
       },
 
       // Fee Structure (standalone page)
