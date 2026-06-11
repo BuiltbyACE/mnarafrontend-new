@@ -239,6 +239,19 @@ export interface FeeStatementResponse {
   generated_at: string;
 }
 
+export interface StkPushRequest {
+  phone: string;
+  invoice_ids: number[];
+}
+
+export interface StkPushResponse {
+  CheckoutRequestID: string;
+  ResponseDescription: string;
+  MerchantRequestID: string;
+  amount: number;
+  phone: string;
+}
+
 // ─── Announcements ────────────────────────────────────────────────
 export interface Announcement {
   id: number;

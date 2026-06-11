@@ -20,6 +20,8 @@ import {
   TransportRoute,
   FleetTelemetry,
   PrintableReportCardResponse,
+  StkPushRequest,
+  StkPushResponse,
 } from '../models/parent.models';
 
 @Injectable({ providedIn: 'root' })
@@ -97,6 +99,11 @@ export class ParentApiService {
   // ─── Finance: Fee Statement (consolidated) ──────────────────────
   getFeeStatement(): Observable<FeeStatementResponse> {
     return this.http.get<FeeStatementResponse>(`${this.baseUrl}/finance/fee-statement/`);
+  }
+
+  // ─── Finance: M-Pesa STK Push ───────────────────────────────────
+  initiateMpesaPayment(payload: StkPushRequest): Observable<StkPushResponse> {
+    return this.http.post<StkPushResponse>(`${this.baseUrl}/finance/payments/stk-push/`, payload);
   }
 
   // ─── Announcements ───────────────────────────────────────────────

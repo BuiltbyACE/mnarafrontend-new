@@ -19,12 +19,20 @@ export const financeRoutes: Route[] = [
       },
       {
         path: 'payables',
-        loadComponent: () =>
-          import('./pages/payables/payables-hub').then((m) => m.PayablesHubComponent),
+        loadComponent: () => import('./pages/payables/payables-hub').then(m => m.PayablesHubComponent)
+      },
+      {
+        path: 'reports',
+        loadComponent: () => import('./pages/reports/reporting-dashboard').then(m => m.ReportingDashboardComponent)
+      },
+      {
+        path: 'payroll',
+        loadComponent: () => import('./pages/staff/payroll-hub').then(m => m.PayrollHubComponent)
       },
       {
         path: 'students',
-        loadComponent: () => import('./pages/students/student-finance').then(m => m.StudentFinanceComponent),
+        loadComponent: () =>
+          import('./pages/students/student-finance').then((m) => m.StudentFinanceComponent),
       },
       {
         path: 'staff',
@@ -51,6 +59,11 @@ export const financeRoutes: Route[] = [
         path: 'ledger',
         loadComponent: () =>
           import('./pages/ledger/immutable-ledger').then((m) => m.ImmutableLedgerComponent),
+      },
+      {
+        path: 'chart-of-accounts',
+        loadComponent: () =>
+          import('./pages/ledger/chart-of-accounts').then((m) => m.ChartOfAccountsComponent),
       },
     ],
   },

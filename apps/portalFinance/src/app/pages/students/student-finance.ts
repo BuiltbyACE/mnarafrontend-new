@@ -108,7 +108,7 @@ import {
                   <ng-container matColumnDef="status">
                     <th mat-header-cell *matHeaderCellDef>Status</th>
                     <td mat-cell *matCellDef="let inv">
-                      <mat-chip-row [class]="'chip-' + (inv.status === 'PAID' ? 'paid' : inv.status === 'PARTIAL' ? 'partial' : 'pending')">
+                      <mat-chip-row class="custom-chip" [class]="'chip-' + (inv.status === 'PAID' ? 'paid' : inv.status === 'PARTIAL' ? 'partial' : 'pending')">
                         {{ inv.status }}
                       </mat-chip-row>
                     </td>
@@ -329,6 +329,11 @@ import {
     .service-icon-wrap.lunch mat-icon { color: #059669; }
     .service-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
     .service-value { font-size: 0.9375rem; font-weight: 700; color: #0f172a; }
+
+    .custom-chip { font-family: 'Inter', sans-serif !important; border: none !important; margin: 0 !important; }
+    .chip-paid { background: #d1fae5 !important; color: #059669 !important; font-weight: 700; font-size: 0.625rem; border: none; padding: 2px 8px; border-radius: 999px; }
+    .chip-partial { background: #fef3c7 !important; color: #d97706 !important; font-weight: 700; font-size: 0.625rem; border: none; padding: 2px 8px; border-radius: 999px; }
+    .chip-pending { background: #fee2e2 !important; color: #e11d48 !important; font-weight: 700; font-size: 0.625rem; border: none; padding: 2px 8px; border-radius: 999px; }
   `],
 })
 export class StudentFinanceDetailComponent {
@@ -477,8 +482,8 @@ export class StudentFinanceDetailComponent {
                 <th mat-header-cell *matHeaderCellDef>Status</th>
                 <td mat-cell *matCellDef="let s">
                   @if (summaryMap()[s.id]; as summary) {
-                    <mat-chip-row [class]="summary.financial_summary.outstanding_balance === 0 ? 'chip-paid' : 'chip-pending'">
-                      {{ summary.financial_summary.outstanding_balance === 0 ? 'CLEAR' : 'OWING' }}
+                    <mat-chip-row class="custom-chip" [class]="+summary.financial_summary.outstanding_balance <= 0 ? 'chip-paid' : 'chip-pending'">
+                      {{ +summary.financial_summary.outstanding_balance === 0 ? 'CLEAR' : (+summary.financial_summary.outstanding_balance < 0 ? 'OVERPAID' : 'OWING') }}
                     </mat-chip-row>
                   } @else {
                     <span class="text-muted">—</span>
@@ -599,6 +604,15 @@ export class StudentFinanceDetailComponent {
     .no-data p { margin: 0; font-size: 0.9375rem; }
 
     .text-muted { color: #94a3b8; }
+
+    .custom-chip { font-family: 'Inter', sans-serif !important; border: none !important; margin: 0 !important; }
+    .chip-paid { background: #d1fae5 !important; color: #059669 !important; font-weight: 700; font-size: 0.6875rem; border: none; padding: 4px 10px; border-radius: 999px; }
+    .chip-pending { background: #fee2e2 !important; color: #e11d48 !important; font-weight: 700; font-size: 0.6875rem; border: none; padding: 4px 10px; border-radius: 999px; }
+    
+    .chip-regular { background: #f1f5f9 !important; color: #475569 !important; font-weight: 600; font-size: 0.6875rem; padding: 4px 10px; border-radius: 999px; border: none !important; margin: 0 !important; }
+    .chip-scholarship { background: #fef3c7 !important; color: #d97706 !important; font-weight: 600; font-size: 0.6875rem; padding: 4px 10px; border-radius: 999px; border: none !important; margin: 0 !important; }
+    .chip-merit { background: #e0e7ff !important; color: #4338ca !important; font-weight: 600; font-size: 0.6875rem; padding: 4px 10px; border-radius: 999px; border: none !important; margin: 0 !important; }
+    .chip-needy { background: #dbeafe !important; color: #2563eb !important; font-weight: 600; font-size: 0.6875rem; padding: 4px 10px; border-radius: 999px; border: none !important; margin: 0 !important; }
   `],
 })
 export class StudentFinanceComponent implements OnInit {
@@ -631,7 +645,7 @@ export class StudentFinanceComponent implements OnInit {
   studentsWithBalance = computed(() => {
     return this.students().filter(s => {
       const summary = this.summaryMap()[s.id];
-      return summary && summary.financial_summary.outstanding_balance > 0;
+      return summary && +summary.financial_summary.outstanding_balance > 0;
     }).length;
   });
 

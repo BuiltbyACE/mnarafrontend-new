@@ -4,6 +4,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import type { TDocumentDefinitions } from 'pdfmake/interfaces';
@@ -14,13 +16,15 @@ import {
   SchoolInfo,
   STATUS_COLORS,
   PAYMENT_METHOD_LABEL,
+  FeeStatementResponse,
 } from '../../../models/parent.models';
+import { PaymentDialogComponent } from './payment-dialog.component';
 
 (pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 @Component({
   selector: 'app-statement',
-  imports: [DatePipe, MatIconModule, MatTabsModule, MatProgressSpinnerModule, MatButtonModule],
+  imports: [DatePipe, MatIconModule, MatTabsModule, MatProgressSpinnerModule, MatButtonModule, MatDialogModule, MatSnackBarModule],
   templateUrl: './statement.component.html',
   styleUrl: './statement.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,6 +32,8 @@ import {
 export class StatementComponent implements OnInit {
   private readonly api = inject(ParentApiService);
   private readonly pdfStyling = inject(PdfStylingService);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly children = signal<FeeStatementChild[]>([]);
   readonly schoolInfo = signal<SchoolInfo | null>(null);
@@ -122,6 +128,38 @@ export class StatementComponent implements OnInit {
       this.pdfError.set('Failed to generate PDF. Please try again.');
     }
     this.pdfLoading.set(false);
+  }
+
+  payForChild(child: FeeStatementChild): void {
+    if (child.financial_summary.outstanding_balance <= 0) return;
+
+    // Get IDs of pending/partial invoices
+    const pendingInvoices = child.invoices.filter(inv => inv.balance > 0);
+    const invoiceIds = pendingInvoices.map(inv => inv.id);
+
+    if (invoiceIds.length === 0) {
+      this.snackBar.open('No pending invoices found to pay.', 'Close', { duration: 3000 });
+      return;
+    }
+
+    const dialogRef = this.dialog.open(PaymentDialogComponent, {
+      width: '400px',
+      data: {
+        studentName: child.student_name,
+        totalAmount: child.financial_summary.outstanding_balance,
+        invoiceIds: invoiceIds
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(success => {
+      if (success) {
+        this.snackBar.open('Payment initiated! Check your phone to complete the transaction.', 'Close', {
+          duration: 5000,
+          panelClass: ['success-snackbar']
+        });
+        // We could optionally reload the statement here after a delay
+      }
+    });
   }
 
   private buildPdfDefinition(data: FeeStatementResponse): TDocumentDefinitions {
@@ -361,10 +399,4 @@ export class StatementComponent implements OnInit {
       fileName: 'fee-statement.pdf',
     });
   }
-}
-
-interface FeeStatementResponse {
-  children: FeeStatementChild[];
-  school_info: SchoolInfo;
-  generated_at: string;
 }

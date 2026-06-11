@@ -40,6 +40,37 @@ export interface LedgerEntryItem {
   created_at: string;
 }
 
+export interface ChartAccount {
+  id: number;
+  code: string;
+  name: string;
+  account_type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+  is_active: boolean;
+}
+
+export interface LedgerEntryLine {
+  id: number;
+  account: number;
+  account_name: string;
+  account_code: string;
+  is_debit: boolean;
+  amount: string;
+  description: string;
+  created_at: string;
+}
+
+export interface JournalEntry {
+  id: number;
+  reference: string;
+  date: string;
+  status: 'DRAFT' | 'PENDING_APPROVAL' | 'POSTED' | 'VOID';
+  description: string;
+  prepared_by_name: string;
+  approved_by_name: string;
+  lines: LedgerEntryLine[];
+  created_at: string;
+}
+
 export interface FullLedgerEntry {
   id: number;
   transaction_id: string;
@@ -58,7 +89,7 @@ export interface PurchaseRequisition {
   title: string;
   description: string;
   estimated_cost: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISBURSED';
   created_at: string;
 }
 
@@ -72,6 +103,8 @@ export interface Expense {
   recorded_by: number;
   recorded_by_name: string;
   created_at: string;
+  requisition_id?: number;
+  payment_method?: string;
 }
 
 export interface InventoryItem {
@@ -454,3 +487,47 @@ export const INVOICE_STATUS_COLOR: Record<string, string> = {
   WRITTEN_OFF: '#94a3b8',
   REFUNDED: '#94a3b8',
 };
+
+// ─── Financial Reports ────────────────────────────────────────
+
+export interface TrialBalanceItem {
+  code: string;
+  name: string;
+  type: string;
+  debit: number;
+  credit: number;
+  balance: number;
+}
+
+export interface TrialBalanceReport {
+  accounts: TrialBalanceItem[];
+  total_debits: number;
+  total_credits: number;
+}
+
+export interface IncomeStatementItem {
+  code: string;
+  name: string;
+  balance: number;
+}
+
+export interface IncomeStatementReport {
+  revenues: IncomeStatementItem[];
+  expenses: IncomeStatementItem[];
+  total_revenue: number;
+  total_expenses: number;
+  net_income: number;
+}
+
+export interface CashFlowItem {
+  category: string;
+  amount: number;
+}
+
+export interface CashFlowReport {
+  inflows: CashFlowItem[];
+  outflows: CashFlowItem[];
+  total_inflow: number;
+  total_outflow: number;
+  net_cash_flow: number;
+}

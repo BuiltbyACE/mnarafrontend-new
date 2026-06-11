@@ -10,6 +10,8 @@ import {
   PaginatedResponse, StaffDirectorySummary, StaffDirectoryResponse, StaffDetail,
   ParentDirectorySummary, ParentDirectoryItem, ParentDirectoryParams,
   ParentDetail, ParentPaymentsResponse,
+  ChartAccount, JournalEntry,
+  TrialBalanceReport, IncomeStatementReport, CashFlowReport
 } from '../models/finance.models';
 
 @Injectable({ providedIn: 'root' })
@@ -46,6 +48,16 @@ export class FinanceService {
   getTransactions(page = 1, pageSize = 50): Observable<PaginatedResponse<PaymentTransaction>> {
     const params = new HttpParams().set('page', page.toString()).set('page_size', pageSize.toString());
     return this.http.get<PaginatedResponse<PaymentTransaction>>(getApiUrl('/finance/transactions/'), { params });
+  }
+
+  getAccounts(): Observable<ChartAccount[]> {
+    return this.http.get<ChartAccount[] | PaginatedResponse<ChartAccount>>(getApiUrl('/finance/accounts/'))
+      .pipe(map(res => Array.isArray(res) ? res : res.results));
+  }
+
+  getJournalEntries(page = 1, pageSize = 50): Observable<PaginatedResponse<JournalEntry>> {
+    const params = new HttpParams().set('page', page.toString()).set('page_size', pageSize.toString());
+    return this.http.get<PaginatedResponse<JournalEntry>>(getApiUrl('/finance/journal-entries/'), { params });
   }
 
   // ─── Fee Balances (read-only) ──────────────────────────────
@@ -124,13 +136,18 @@ export class FinanceService {
     return this.http.post<Payslip>(getApiUrl(`/finance/payslips/${id}/mark_paid/`), {});
   }
 
+  generatePayroll(month: number, year: number): Observable<{status: string, created_count: number}> {
+    return this.http.post<{status: string, created_count: number}>(getApiUrl('/finance/payroll/generate/'), { month, year });
+  }
+
   // ─── Summary & Dashboard ───────────────────────────────────
   getFinanceSummary(): Observable<FinanceSummary> {
     return this.http.get<FinanceSummary>(getApiUrl('/finance/summary/'));
   }
 
-  getPrincipalDashboard(): Observable<PrincipalDashboardData> {
-    return this.http.get<PrincipalDashboardData>(getApiUrl('/finance/principal-dashboard/'));
+  getPrincipalDashboard(months: number = 6): Observable<PrincipalDashboardData> {
+    const params = new HttpParams().set('months', months.toString());
+    return this.http.get<PrincipalDashboardData>(getApiUrl('/finance/principal-dashboard/'), { params });
   }
 
   // ─── Student Profiles & Finance Summary ────────────────────
@@ -180,6 +197,36 @@ export class FinanceService {
   getParentPayments(id: number, page = 1, pageSize = 20): Observable<ParentPaymentsResponse> {
     const params = new HttpParams().set('page', page.toString()).set('page_size', pageSize.toString());
     return this.http.get<ParentPaymentsResponse>(getApiUrl(`/finance/parents/${id}/payments/`), { params });
+  }
+
+  // ─── Reminders & Manual Payments ──────────────────────────────
+  sendReminders(payload: { targets: number[], method: 'SMS' | 'EMAIL', message?: string }): Observable<any> {
+    return this.http.post(getApiUrl('/finance/reminders/'), payload);
+  }
+
+  recordManualPayment(payload: { invoice: number, amount: number, payment_method: string, reference_code: string }): Observable<PaymentTransaction> {
+    return this.http.post<PaymentTransaction>(getApiUrl('/finance/transactions/'), payload);
+  }
+
+  // ─── Financial Reports ───────────────────────────────────────
+  getTrialBalance(endDate?: string): Observable<TrialBalanceReport> {
+    let params = new HttpParams();
+    if (endDate) params = params.set('end_date', endDate);
+    return this.http.get<TrialBalanceReport>(getApiUrl('/finance/reports/trial-balance/'), { params });
+  }
+
+  getIncomeStatement(startDate?: string, endDate?: string): Observable<IncomeStatementReport> {
+    let params = new HttpParams();
+    if (startDate) params = params.set('start_date', startDate);
+    if (endDate) params = params.set('end_date', endDate);
+    return this.http.get<IncomeStatementReport>(getApiUrl('/finance/reports/income-statement/'), { params });
+  }
+
+  getCashFlow(startDate?: string, endDate?: string): Observable<CashFlowReport> {
+    let params = new HttpParams();
+    if (startDate) params = params.set('start_date', startDate);
+    if (endDate) params = params.set('end_date', endDate);
+    return this.http.get<CashFlowReport>(getApiUrl('/finance/reports/cash-flow/'), { params });
   }
 
   // ─── Helper: typed error handler ───────────────────────────

@@ -1,7 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FinanceService } from '../../services/finance.service';
 import { FORMAT_CURRENCY, FinanceSummary } from '../../models/finance.models';
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-finance-dashboard',
@@ -32,7 +35,7 @@ import { FORMAT_CURRENCY, FinanceSummary } from '../../models/finance.models';
           </div>
           <div class="kpi-content">
             <span class="kpi-label">Total Revenue</span>
-            <span class="kpi-value">{{ summary()?.total_revenue ? FORMAT_CURRENCY(summary()!.total_revenue) : 'Loading...' }}</span>
+            <span class="kpi-value">{{ summary()?.total_revenue !== undefined ? FORMAT_CURRENCY(summary()!.total_revenue) : 'Loading...' }}</span>
             <span class="kpi-trend positive">Collected this term</span>
           </div>
         </div>
@@ -58,7 +61,7 @@ import { FORMAT_CURRENCY, FinanceSummary } from '../../models/finance.models';
           </div>
           <div class="kpi-content">
             <span class="kpi-label">Total Expenses</span>
-            <span class="kpi-value">{{ summary()?.total_expenses ? FORMAT_CURRENCY(summary()!.total_expenses) : 'Loading...' }}</span>
+            <span class="kpi-value">{{ summary()?.total_expenses !== undefined ? FORMAT_CURRENCY(summary()!.total_expenses) : 'Loading...' }}</span>
             <span class="kpi-trend neutral">Operational expenses</span>
           </div>
         </div>
@@ -77,82 +80,58 @@ import { FORMAT_CURRENCY, FinanceSummary } from '../../models/finance.models';
         </div>
       </div>
 
+      <!-- Main Charts Row -->
       <div class="charts-row">
-        <div class="chart-card">
+        <!-- Cash Flow Chart -->
+        <div class="chart-card large">
           <div class="chart-header">
             <h3>Cash Flow Trend</h3>
-            <span class="chart-badge">Last 6 months</span>
+            <select class="period-select" (change)="onPeriodChange($event)">
+              <option value="3">Last 3 months</option>
+              <option value="6" selected>Last 6 months</option>
+              <option value="12">Last 12 months</option>
+            </select>
           </div>
           <div class="chart-body">
-            @if (dashboardData()?.cash_flow?.length) {
-              <div class="cashflow-list">
-                @for (cf of dashboardData()!.cash_flow; track cf.month) {
-                  <div class="cashflow-row">
-                    <span class="cf-month">{{ cf.month }}</span>
-                    <div class="cf-bars">
-                      <div class="cf-bar-track">
-                        <div class="cf-bar revenue" [style.width.%]="getBarWidth(cf.revenue, maxCashFlow)"></div>
-                      </div>
-                      <div class="cf-bar-track">
-                        <div class="cf-bar expense" [style.width.%]="getBarWidth(cf.expenses, maxCashFlow)"></div>
-                      </div>
-                    </div>
-                    <div class="cf-values">
-                      <span class="cf-revenue">{{ FORMAT_CURRENCY(cf.revenue) }}</span>
-                      <span class="cf-expense">{{ FORMAT_CURRENCY(cf.expenses) }}</span>
-                    </div>
-                  </div>
-                }
-              </div>
-            } @else {
-              <div class="placeholder-content">
-                <svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M3 3v18h18M7 16l4-4 4 4 5-5"/>
-                </svg>
-                <span class="placeholder-text">Cash Flow Chart — Coming Soon</span>
-                <span class="placeholder-hint">Integration with backend dashboard data</span>
-              </div>
-            }
-          </div>
-        </div>
-
-        <div class="chart-card">
-          <div class="chart-header">
-            <h3>Revenue Breakdown</h3>
-            <span class="chart-badge">This term</span>
-          </div>
-          <div class="chart-body">
-            @if (dashboardData()?.expense_summary?.length) {
-              <div class="revenue-list">
-                @for (item of dashboardData()!.expense_summary; track item.category) {
-                  <div class="revenue-item">
-                    <div class="revenue-left">
-                      <div class="revenue-dot" [style.background]="getCategoryColor(item.category)"></div>
-                      <span>{{ item.category }}</span>
-                    </div>
-                    <span class="revenue-amount">{{ FORMAT_CURRENCY(item.total) }}</span>
-                  </div>
-                }
-                <div class="revenue-total">
-                  <span>Total Revenue</span>
-                  <span class="font-bold">{{ summary()?.total_revenue ? FORMAT_CURRENCY(summary()!.total_revenue) : 'KES 0' }}</span>
-                </div>
-              </div>
-            } @else {
-              <div class="placeholder-content">
-                <svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                </svg>
-                <span class="placeholder-text">Revenue Chart — Coming Soon</span>
-                <span class="placeholder-hint">Data will display once connected</span>
-              </div>
-            }
+            <canvas #cashFlowCanvas></canvas>
           </div>
         </div>
       </div>
 
+      <!-- Secondary Charts Row -->
+      <div class="charts-row split">
+        <!-- Revenue Breakdown -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Revenue Breakdown</h3>
+            <span class="chart-badge">All Time</span>
+          </div>
+          <div class="chart-body doughnut-container">
+            @if (!dashboardData()?.revenue_breakdown?.length) {
+              <div class="empty-state">No data recorded</div>
+            }
+            <canvas #revenueCanvas></canvas>
+          </div>
+        </div>
+
+        <!-- Expense Breakdown -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Expense Breakdown</h3>
+            <span class="chart-badge">All Time</span>
+          </div>
+          <div class="chart-body doughnut-container">
+            @if (!dashboardData()?.expense_summary?.length) {
+              <div class="empty-state">No data recorded</div>
+            }
+            <canvas #expenseCanvas></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
       @if (dashboardData()?.recent_activity?.length) {
-        <div class="activity-card">
+        <div class="activity-card mt-6">
           <div class="chart-header">
             <h3>Recent Activity</h3>
             <span class="chart-badge">Latest transactions</span>
@@ -203,38 +182,20 @@ import { FORMAT_CURRENCY, FinanceSummary } from '../../models/finance.models';
     .kpi-trend.negative { color: #e11d48; }
     .kpi-trend.neutral { color: #64748b; }
 
-    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .charts-row { margin-bottom: 20px; }
+    .charts-row.split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .chart-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
     .chart-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; }
     .chart-header h3 { font-size: 0.9375rem; font-weight: 600; color: #0f172a; }
     .chart-badge { font-size: 0.6875rem; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; font-weight: 500; }
-    .chart-body { padding: 20px; min-height: 200px; }
+    .period-select { font-size: 0.75rem; color: #334155; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; outline: none; background: #f8fafc; cursor: pointer; }
+    .chart-body { padding: 20px; position: relative; height: 300px; width: 100%; }
+    .doughnut-container { display: flex; justify-content: center; align-items: center; position: relative; }
+    .empty-state { position: absolute; font-size: 0.875rem; color: #94a3b8; text-align: center; font-weight: 500; z-index: 10; }
+    
+    canvas { width: 100% !important; height: 100% !important; }
 
-    .placeholder-content { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #94a3b8; padding: 40px 0; }
-    .placeholder-icon { width: 40px; height: 40px; }
-    .placeholder-text { font-size: 0.875rem; font-weight: 500; }
-    .placeholder-hint { font-size: 0.75rem; }
-
-    .cashflow-list { display: flex; flex-direction: column; gap: 10px; }
-    .cashflow-row { display: grid; grid-template-columns: 70px 1fr 180px; gap: 12px; align-items: center; }
-    .cf-month { font-size: 0.75rem; font-weight: 600; color: #64748b; }
-    .cf-bars { display: flex; flex-direction: column; gap: 4px; }
-    .cf-bar-track { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
-    .cf-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
-    .cf-bar.revenue { background: #2563eb; }
-    .cf-bar.expense { background: #e11d48; }
-    .cf-values { display: flex; flex-direction: column; gap: 2px; font-size: 0.6875rem; font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
-    .cf-revenue { color: #2563eb; font-weight: 600; }
-    .cf-expense { color: #e11d48; font-weight: 600; }
-
-    .revenue-list { display: flex; flex-direction: column; gap: 12px; }
-    .revenue-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
-    .revenue-left { display: flex; align-items: center; gap: 10px; font-size: 0.875rem; color: #334155; }
-    .revenue-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .revenue-amount { font-size: 0.8125rem; font-weight: 600; color: #0f172a; font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
-    .revenue-total { display: flex; align-items: center; justify-content: space-between; padding-top: 8px; font-size: 0.875rem; color: #0f172a; }
-    .font-bold { font-weight: 700; }
-
+    .mt-6 { margin-top: 24px; }
     .activity-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
     .activity-list { padding: 12px 20px; }
     .activity-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.8125rem; }
@@ -247,12 +208,16 @@ import { FORMAT_CURRENCY, FinanceSummary } from '../../models/finance.models';
     .activity-time { font-size: 0.6875rem; color: #94a3b8; white-space: nowrap; }
 
     @media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .charts-row.split { grid-template-columns: 1fr; } }
     @media (max-width: 640px) { .kpi-grid { grid-template-columns: 1fr; } }
-  `],
+  `]
 })
-export class FinanceDashboardComponent implements OnInit {
+export class FinanceDashboardComponent implements OnInit, AfterViewInit {
   private financeService = inject(FinanceService);
+
+  @ViewChild('cashFlowCanvas') cashFlowCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('revenueCanvas') revenueCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('expenseCanvas') expenseCanvas!: ElementRef<HTMLCanvasElement>;
 
   summary = signal<FinanceSummary | null>(null);
   loading = signal(true);
@@ -260,11 +225,29 @@ export class FinanceDashboardComponent implements OnInit {
 
   FORMAT_CURRENCY = FORMAT_CURRENCY;
 
+  private cashFlowChart?: Chart;
+  private revenueChart?: Chart;
+  private expenseChart?: Chart;
+
+  // Modern UI Colors
+  private colors = [
+    '#3b82f6', // blue
+    '#10b981', // emerald
+    '#f59e0b', // amber
+    '#8b5cf6', // violet
+    '#ec4899', // pink
+    '#64748b', // slate
+  ];
+
   ngOnInit() {
     this.loadData();
   }
 
-  private loadData() {
+  ngAfterViewInit() {
+    // Charts will render once data loads
+  }
+
+  private loadData(months: number = 6) {
     this.loading.set(true);
 
     this.financeService.getFinanceSummary().subscribe({
@@ -272,21 +255,21 @@ export class FinanceDashboardComponent implements OnInit {
         this.summary.set(data);
         this.loading.set(false);
       },
-      error: () => {
-        this.summary.set({
-          total_revenue: '3522500.00',
-          total_pending: '345000.00',
-          total_expenses: '1380000.00',
-          outstanding_invoices: 3,
-        });
-        this.loading.set(false);
-      },
+      error: () => this.loading.set(false),
     });
 
-    this.financeService.getPrincipalDashboard().subscribe({
-      next: (data) => this.dashboardData.set(data),
+    this.financeService.getPrincipalDashboard(months).subscribe({
+      next: (data) => {
+        this.dashboardData.set(data);
+        setTimeout(() => this.renderCharts(), 0); // Render charts after view updates
+      },
       error: () => {},
     });
+  }
+
+  onPeriodChange(event: any) {
+    const months = parseInt(event.target.value, 10);
+    this.loadData(months);
   }
 
   netPosition = () => {
@@ -297,22 +280,129 @@ export class FinanceDashboardComponent implements OnInit {
     return FORMAT_CURRENCY((rev - exp).toString());
   };
 
-  getBarWidth(value: string, max: number): number {
-    const v = parseFloat(value) || 0;
-    return max > 0 ? (v / max) * 100 : 0;
+  private renderCharts() {
+    const data = this.dashboardData();
+    if (!data) return;
+
+    this.renderCashFlowChart(data.cash_flow || []);
+    this.renderRevenueChart(data.revenue_breakdown || []);
+    this.renderExpenseChart(data.expense_summary || []);
   }
 
-  get maxCashFlow(): number {
-    const cf = this.dashboardData()?.cash_flow;
-    if (!cf?.length) return 0;
-    return Math.max(...cf.flatMap((c: any) => [parseFloat(c.revenue) || 0, parseFloat(c.expenses) || 0]));
+  private renderCashFlowChart(cashFlow: any[]) {
+    if (!this.cashFlowCanvas?.nativeElement) return;
+    
+    if (this.cashFlowChart) this.cashFlowChart.destroy();
+
+    const labels = cashFlow.map(cf => cf.month);
+    const revenueData = cashFlow.map(cf => cf.revenue);
+    const expenseData = cashFlow.map(cf => cf.expenses);
+
+    this.cashFlowChart = new Chart(this.cashFlowCanvas.nativeElement, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Revenue',
+            data: revenueData,
+            backgroundColor: '#10b981', // emerald
+            borderRadius: 4,
+          },
+          {
+            label: 'Expenses',
+            data: expenseData,
+            backgroundColor: '#ef4444', // red
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: (context) => `${context.dataset.label}: KES ${context.raw}`
+            }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
   }
 
-  getCategoryColor(category: string): string {
-    const colors: Record<string, string> = {
-      PAYROLL: '#2563eb', FUEL: '#f59e0b', UTILITY: '#8b5cf6',
-      MAINTENANCE: '#10b981', SUPPLIES: '#ec4899', OTHER: '#64748b',
-    };
-    return colors[category] || '#64748b';
+  private renderRevenueChart(revenueBreakdown: any[]) {
+    if (!this.revenueCanvas?.nativeElement || !revenueBreakdown.length) return;
+    
+    if (this.revenueChart) this.revenueChart.destroy();
+
+    const labels = revenueBreakdown.map(r => r.category);
+    const data = revenueBreakdown.map(r => r.total);
+
+    this.revenueChart = new Chart(this.revenueCanvas.nativeElement, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: this.colors,
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { position: 'right' },
+          tooltip: {
+            callbacks: {
+              label: (context) => ` ${context.label}: KES ${context.raw}`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private renderExpenseChart(expenseSummary: any[]) {
+    if (!this.expenseCanvas?.nativeElement || !expenseSummary.length) return;
+    
+    if (this.expenseChart) this.expenseChart.destroy();
+
+    const labels = expenseSummary.map(e => e.category);
+    const data = expenseSummary.map(e => e.total);
+
+    this.expenseChart = new Chart(this.expenseCanvas.nativeElement, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: [...this.colors].reverse(),
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { position: 'right' },
+          tooltip: {
+            callbacks: {
+              label: (context) => ` ${context.label}: KES ${context.raw}`
+            }
+          }
+        }
+      }
+    });
   }
 }

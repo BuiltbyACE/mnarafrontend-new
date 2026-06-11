@@ -115,11 +115,18 @@
                     <span class="stmt-child-summary-label">Total Paid</span>
                     <span class="stmt-child-summary-value stmt-child-summary-value-paid">{{ formatCurrency(child.financial_summary.total_paid) }}</span>
                   </div>
-                  <div class="stmt-child-summary-item stmt-child-summary-item-due">
-                    <span class="stmt-child-summary-label">Balance</span>
-                    <span class="stmt-child-summary-value" [class.stmt-child-summary-value-due]="child.financial_summary.outstanding_balance > 0">
-                      {{ formatCurrency(child.financial_summary.outstanding_balance) }}
-                    </span>
+                  <div class="stmt-child-summary-item stmt-child-summary-item-due" style="display: flex; flex-direction: column; align-items: flex-end;">
+                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                      <span class="stmt-child-summary-label">Balance</span>
+                      <span class="stmt-child-summary-value" [class.stmt-child-summary-value-due]="child.financial_summary.outstanding_balance > 0">
+                        {{ formatCurrency(child.financial_summary.outstanding_balance) }}
+                      </span>
+                    </div>
+                    @if (child.financial_summary.outstanding_balance > 0) {
+                      <button mat-flat-button color="primary" style="margin-top: 12px; background-color: #059669;" (click)="payForChild(child)">
+                        <mat-icon>phone_iphone</mat-icon> Pay via M-Pesa
+                      </button>
+                    }
                   </div>
                 </div>
 
