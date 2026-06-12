@@ -24,8 +24,21 @@ export class AuthService {
   private router = inject(Router);
 
   /**
-   * Login with credentials
-   * Stores tokens in localStorage via tap and returns the full login response
+   * Authenticates a user using their credentials and stores the resulting JWT tokens.
+   * 
+   * This method sends a POST request to the backend login endpoint. Upon success,
+   * it intercepts the response to extract the `access` and `refresh` tokens, 
+   * storing them securely in the browser's localStorage via `TokenStorageService`.
+   * 
+   * @param {LoginRequest} credentials - The user's login details (email/phone/id and password).
+   * @returns {Observable<LoginResponse>} An observable containing the backend login response payload.
+   * @throws {Error} Throws an error if credentials are invalid (401), account inactive (403), or network failure.
+   * 
+   * @example
+   * this.authService.login({ email: 'admin@school.com', password: 'pwd' }).subscribe({
+   *   next: (res) => console.log('Login success'),
+   *   error: (err) => console.error(err)
+   * });
    */
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http
@@ -60,7 +73,19 @@ export class AuthService {
   }
 
   /**
-   * Fetch user context after login
+   * Fetches the authenticated user's contextual data from the backend.
+   * 
+   * This method uses the stored access token to request the `/me/` endpoint.
+   * It normalizes the backend response (which can vary based on user role) 
+   * into a standardized `UserContext` object required by the frontend portals.
+   * 
+   * @returns {Observable<UserContext>} An observable containing the normalized user profile and portal permissions.
+   * @throws {Error} Throws an error if no token exists, the session expired (401), or the server fails.
+   * 
+   * @example
+   * this.authService.fetchUserContext().subscribe(context => {
+   *   console.log('User is in portal:', context.portalKey);
+   * });
    */
   fetchUserContext(): Observable<UserContext> {
     const accessToken = this.tokenStorage.getAccessToken();
