@@ -1,5 +1,5 @@
 import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
@@ -12,8 +12,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { QuillModule } from 'ngx-quill';
 import { TeacherAssignmentService } from '../../../core/services/teacher-assignment.service';
-import { TeacherClassService } from '../../../core/services/teacher-class.service';
+import { WorkspacesService } from '../../classes/services/workspaces.service';
 import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shared/models/teacher.models';
 
 @Component({
@@ -24,22 +25,22 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
     MatCardModule, MatInputModule, MatFormFieldModule,
     MatDatepickerModule, MatNativeDateModule,
     MatSelectModule, MatButtonModule, MatIconModule,
-    MatSlideToggleModule, MatChipsModule, MatCheckboxModule,
+    MatSlideToggleModule, MatChipsModule, MatCheckboxModule, QuillModule,
   ],
   template: `
     <div class="page">
       <div class="page-header">
         <div>
-          <a class="back-link" routerLink="/teacher/assignments">
-            <mat-icon>arrow_back</mat-icon> Back to Assignments
+          <a class="back-link" [routerLink]="['/teacher/workspace', courseWorkspace]">
+            <mat-icon>arrow_back</mat-icon> Back to Workspace
           </a>
           <h1 class="page-title">Create Assignment</h1>
           <p class="page-subtitle">Set up a new assignment for your class</p>
         </div>
       </div>
 
-      <mat-card class="form-card">
-        <form #f="ngForm" (ngSubmit)="onSubmit()" class="assignment-form">
+      <form #f="ngForm" (ngSubmit)="onSubmit()" class="assignment-form">
+        <mat-card class="form-card">
           <div class="form-section">
             <h2 class="section-title">Basic Information</h2>
 
@@ -54,8 +55,8 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Course / Class</mat-label>
               <mat-select [(ngModel)]="courseWorkspace" name="courseWorkspace" required #courseModel="ngModel">
-                @for (c of classService.assignments(); track c.id) {
-                  <mat-option [value]="c.id">{{ c.subject }} — {{ c.class_name }} ({{ c.section }})</mat-option>
+                @for (ws of workspaceService.workspaces(); track ws.id) {
+                  <mat-option [value]="ws.id">{{ ws.subject_name }} — {{ ws.classroom_name }}</mat-option>
                 }
               </mat-select>
               @if (courseModel.invalid && courseModel.touched) {
@@ -66,19 +67,17 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
             <label class="field-label">Submission Type</label>
             <div class="type-chips">
               @for (t of submissionTypes; track t.value) {
-                <button type="button" class="type-chip" [class.active]="submissionType === t.value" [class]="t.value.toLowerCase()" (click)="submissionType = t.value">
+                <button type="button" class="type-chip {{ t.value.toLowerCase() }}" [class.active]="submissionType() === t.value" (click)="submissionType.set(t.value)">
                   <mat-icon>{{ t.icon }}</mat-icon>
                   {{ t.label }}
                 </button>
               }
             </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Instructions (optional)</mat-label>
-              <textarea matInput [(ngModel)]="instructions" name="instructions" rows="4" placeholder="Describe what students need to do..."></textarea>
-            </mat-form-field>
           </div>
+        </mat-card>
 
+        <mat-card class="form-card">
           <div class="form-section">
             <h2 class="section-title">Grading & Schedule</h2>
 
@@ -109,7 +108,7 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
               <span class="toggle-hint">Students will see the assignment right away</span>
             </div>
 
-            @if (submissionType === 'QUIZ') {
+            @if (submissionType() === 'QUIZ') {
               <div class="toggle-row">
                 <mat-slide-toggle [(ngModel)]="allowImmediateReview" name="allowImmediateReview" color="primary">
                   Allow immediate review
@@ -118,8 +117,31 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
               </div>
             }
           </div>
+        </mat-card>
 
-          @if (submissionType === 'QUIZ') {
+        @if (submissionType() !== 'QUIZ') {
+          <mat-card class="form-card">
+            <div class="form-section">
+              <h2 class="section-title">
+                {{ submissionType() === 'ONLINE_TEXT' ? 'Assignment Prompt' : 'Assignment Description & Prompt' }}
+              </h2>
+              <p class="section-hint">
+                {{ submissionType() === 'ONLINE_TEXT' ? 'Type the prompt or question students need to answer online.' : 'Provide detailed instructions or the prompt for the assignment.' }}
+              </p>
+              
+              <div class="quill-wrapper">
+                <quill-editor [(ngModel)]="instructions" name="instructions" 
+                              theme="snow"
+                              [modules]="quillModules"
+                              [styles]="{height: '250px'}"
+                              placeholder="Type the details here..."></quill-editor>
+              </div>
+            </div>
+          </mat-card>
+        }
+
+        @if (submissionType() === 'QUIZ') {
+          <mat-card class="form-card">
             <div class="form-section">
               <h2 class="section-title">Quiz Questions</h2>
               <p class="section-hint">Add questions and mark the correct option for each.</p>
@@ -154,7 +176,7 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
                         ></mat-checkbox>
                         <mat-form-field appearance="outline" class="option-input">
                           <mat-label>Option {{ oi + 1 }}</mat-label>
-                          <input matInput [(ngModel)]="opt.label" [name]="'q_' + qi + '_opt_' + oi" required>
+                          <input matInput [(ngModel)]="opt.option_text" [name]="'q_' + qi + '_opt_' + oi" required>
                         </mat-form-field>
                         @if (q.options.length > 2) {
                           <button type="button" class="remove-option-btn" (click)="removeOption(qi, oi)" mat-icon-button>
@@ -174,24 +196,24 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
                 <mat-icon>add_circle</mat-icon> Add Question
               </button>
             </div>
-          }
+          </mat-card>
+        }
 
           @if (service.error(); as err) {
             <div class="error-banner">{{ err }}</div>
           }
 
-          <div class="form-actions">
-            <button type="button" class="btn-cancel" routerLink="/teacher/assignments">Cancel</button>
-            <button type="submit" class="btn-submit" [disabled]="f.invalid || service.isCreating()">
-              @if (service.isCreating()) {
-                Creating...
-              } @else {
-                <mat-icon>check</mat-icon> Create Assignment
-              }
-            </button>
-          </div>
-        </form>
-      </mat-card>
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" [routerLink]="['/teacher/workspace', courseWorkspace]">Cancel</button>
+          <button type="submit" class="btn-submit" [disabled]="f.invalid || service.isCreating()">
+            @if (service.isCreating()) {
+              Creating...
+            } @else {
+              <mat-icon>check</mat-icon> Create Assignment
+            }
+          </button>
+        </div>
+      </form>
     </div>
   `,
   styles: [`
@@ -200,21 +222,27 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
       --s: #fff; --b: #f1f5f9; --t: #1e293b; --ts: #64748b; --bo: #e2e8f0;
       display: block; min-height: 100vh; background: var(--b); font-family: 'Inter', sans-serif; padding: 24px;
     }
-    .page { max-width: 800px; margin: 0 auto; }
+    .page { max-width: 1000px; margin: 0 auto; }
     .page-header { margin-bottom: 24px; }
     .back-link { display: inline-flex; align-items: center; gap: 4px; color: var(--p); text-decoration: none; font-size: 13px; font-weight: 500; margin-bottom: 8px; }
     .back-link mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .page-title { font-size: 1.5rem; font-weight: 700; color: var(--t); margin: 0; }
     .page-subtitle { font-size: 0.875rem; color: var(--ts); margin: 4px 0 0; }
-    .form-card { border-radius: 12px; border: 1px solid var(--bo); padding: 32px; }
-    .assignment-form { display: flex; flex-direction: column; gap: 28px; }
+    .assignment-form { display: flex; flex-direction: column; gap: 24px; }
+    .form-card { border-radius: 12px; border: 1px solid var(--bo); padding: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
     .form-section {}
-    .section-title { font-size: 1rem; font-weight: 600; color: var(--t); margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--bo); }
+    .section-title { font-size: 1.1rem; font-weight: 600; color: var(--t); margin: 0 0 20px; padding-bottom: 8px; border-bottom: 1px solid var(--bo); }
     .section-hint { font-size: 0.8125rem; color: var(--ts); margin: -12px 0 16px; }
     .full-width { width: 100%; }
     .half-width { width: 100%; }
     .row-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .field-label { font-size: 0.8125rem; font-weight: 500; color: var(--t); display: block; margin-bottom: 8px; }
+    .quill-wrapper { margin-bottom: 24px; border: 1px solid var(--bo); border-radius: 8px; background: #fff; }
+    quill-editor { display: block; min-height: 250px; width: 100%; }
+    ::ng-deep .ql-toolbar.ql-snow { border: none; border-bottom: 1px solid var(--bo); border-top-left-radius: 8px; border-top-right-radius: 8px; background: #f8fafc; font-family: 'Inter', sans-serif; padding: 10px 12px; }
+    ::ng-deep .ql-container.ql-snow { border: none; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem; min-height: 250px; background: #fff; }
+    ::ng-deep .ql-editor { min-height: 300px; padding: 24px 28px; line-height: 1.6; color: var(--t); }
+    ::ng-deep .ql-editor.ql-blank::before { font-style: normal; color: var(--ts); font-size: 0.95rem; }
     .type-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
     .type-chip {
       display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 100px;
@@ -244,17 +272,19 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
     .error-banner { padding: 12px 16px; background: #fee2e2; color: #991b1b; border-radius: 8px; font-size: 0.875rem; }
     .form-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 8px; }
     .btn-cancel { padding: 10px 24px; border: 1px solid var(--bo); border-radius: 8px; background: var(--s); color: var(--ts); font-size: 0.875rem; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; text-decoration: none; }
-    .btn-submit { display: inline-flex; align-items: center; gap: 6px; padding: 10px 24px; border: none; border-radius: 8px; background: var(--p); color: #fff; font-size: 0.875rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: background .15s; }
+    .btn-submit { display: inline-flex; align-items: center; gap: 6px; padding: 12px 28px; border: none; border-radius: 8px; background: var(--p); color: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: background .15s; }
     .btn-submit:hover { background: var(--pd); }
     .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-submit mat-icon { font-size: 20px; width: 20px; height: 20px; }
     .btn-submit mat-icon { font-size: 18px; width: 18px; height: 18px; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreateAssignmentComponent {
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   readonly service = inject(TeacherAssignmentService);
-  readonly classService = inject(TeacherClassService);
+  readonly workspaceService = inject(WorkspacesService);
 
   readonly submissionTypes = [
     { value: 'QUIZ', label: 'Quiz', icon: 'quiz' },
@@ -265,20 +295,35 @@ export class CreateAssignmentComponent {
 
   title = '';
   instructions = '';
-  submissionType: 'PHYSICAL' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'QUIZ' = 'ONLINE_TEXT';
+  submissionType = signal<'PHYSICAL' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'QUIZ'>('ONLINE_TEXT');
   maxScore = 100;
   dueDate: Date | null = null;
   courseWorkspace: number | null = null;
   isPublished = true;
   allowImmediateReview = false;
 
+  readonly quillModules = {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['clean'],
+    ]
+  };
+
   quizQuestions: (QuizQuestionPayload & { _uid: number })[] = [];
 
   private nextUid = 1;
 
   constructor() {
-    if (this.classService.assignments().length === 0) {
-      this.classService.fetchAssignments();
+    if (this.workspaceService.workspaces().length === 0) {
+      this.workspaceService.fetchMyWorkspaces().subscribe({
+        next: ws => this.workspaceService.workspaces.set(ws),
+        error: err => console.error('Error fetching workspaces:', err)
+      });
+    }
+    const wsId = this.route.snapshot.paramMap.get('id');
+    if (wsId) {
+      this.courseWorkspace = Number(wsId);
     }
   }
 
@@ -288,8 +333,8 @@ export class CreateAssignmentComponent {
       question_text: '',
       marks: 1,
       options: [
-        { label: '', is_correct: false },
-        { label: '', is_correct: false },
+        { option_text: '', is_correct: false },
+        { option_text: '', is_correct: false },
       ],
     }];
   }
@@ -300,7 +345,7 @@ export class CreateAssignmentComponent {
 
   addOption(qIndex: number): void {
     const q = this.quizQuestions[qIndex];
-    q.options = [...q.options, { label: '', is_correct: false }];
+    q.options = [...q.options, { option_text: '', is_correct: false }];
     this.quizQuestions = [...this.quizQuestions];
   }
 
@@ -322,23 +367,23 @@ export class CreateAssignmentComponent {
     const payload: CreateAssignmentPayload = {
       title: this.title,
       instructions: this.instructions,
-      submission_type: this.submissionType,
+      submission_type: this.submissionType(),
       max_score: this.maxScore,
       due_date: this.dueDate.toISOString().split('T')[0],
       is_published: this.isPublished,
       allow_immediate_review: this.allowImmediateReview,
-      course_workspace: this.courseWorkspace,
+      course: this.courseWorkspace,
     };
 
-    if (this.submissionType === 'QUIZ' && this.quizQuestions.length > 0) {
-      payload.quiz_questions = this.quizQuestions.map(q => ({
+    if (this.submissionType() === 'QUIZ' && this.quizQuestions.length > 0) {
+      payload.questions = this.quizQuestions.map(q => ({
         question_text: q.question_text,
         marks: q.marks,
-        options: q.options,
+        options: q.options.map(o => ({ option_text: o.option_text, is_correct: o.is_correct })),
       }));
     }
 
     this.service.createAssignment(payload);
-    this.router.navigate(['/teacher/assignments']);
+    this.router.navigate(['/teacher/workspace', payload.course]);
   }
 }

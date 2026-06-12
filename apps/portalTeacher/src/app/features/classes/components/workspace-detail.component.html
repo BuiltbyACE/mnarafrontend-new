@@ -81,63 +81,94 @@
           <div class="assignments-table-card">
             <div class="table-header">
               <h2 class="table-title">Assignments</h2>
-              <button mat-flat-button color="primary" class="create-btn">
+              <button mat-flat-button color="primary" class="create-btn" (click)="createAssignment()">
                 <mat-icon>add</mat-icon>
                 New Assignment
               </button>
             </div>
 
-            <div class="table-responsive">
-              <table class="assignments-table">
-                <thead>
-                  <tr>
-                    <th>Task Name</th>
-                    <th>Due Date</th>
-                    <th>Submissions</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (assignment of assignments(); track assignment.id) {
-                    <tr>
-                      <td>
-                        <div class="task-cell">
-                          <mat-icon class="task-icon">assignment</mat-icon>
-                          <span class="task-title">{{ assignment.title }}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span class="due-date" [class.overdue]="isOverdue(assignment.due_date)" [class.due-soon]="isDueSoon(assignment.due_date)">
-                          {{ formatDueDate(assignment.due_date) }}
-                        </span>
-                      </td>
-                      <td>
-                        <span class="submission-count">
-                          {{ assignment.submission_count }} / {{ ws.student_count }}
-                        </span>
-                      </td>
-                      <td>
-                        <span class="status-pill" [class]="getStatusClass(assignment.status)">
-                          {{ assignment.status | titlecase }}
-                        </span>
-                      </td>
-                      <td>
-                        <div class="action-buttons">
-                          <button mat-icon-button class="action-btn view-btn" title="View Submissions">
-                            <mat-icon>visibility</mat-icon>
-                          </button>
-                          <button mat-icon-button class="action-btn edit-btn" title="Edit">
-                            <mat-icon>edit</mat-icon>
-                          </button>
-                          <button mat-icon-button class="action-btn more-btn" title="More">
-                            <mat-icon>more_vert</mat-icon>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
+            <div class="filter-row">
+              <div class="filter-group">
+                <button class="filter-btn" [class.active]="activeFilter() === 'ALL'" (click)="setFilter('ALL')">All</button>
+                <button class="filter-btn" [class.active]="activeFilter() === 'QUIZ'" (click)="setFilter('QUIZ')">Quiz</button>
+                <button class="filter-btn" [class.active]="activeFilter() === 'ONLINE_TEXT'" (click)="setFilter('ONLINE_TEXT')">Online Text</button>
+                <button class="filter-btn" [class.active]="activeFilter() === 'FILE_UPLOAD'" (click)="setFilter('FILE_UPLOAD')">File Upload</button>
+                <button class="filter-btn" [class.active]="activeFilter() === 'PHYSICAL'" (click)="setFilter('PHYSICAL')">Physical</button>
+              </div>
+              <span class="result-count">{{ filteredAssignments().length }} assignment{{ filteredAssignments().length !== 1 ? 's' : '' }}</span>
+            </div>
+
+            <div class="table-wrapper">
+              <table mat-table [dataSource]="filteredAssignments()" class="assignments-mat-table">
+                <ng-container matColumnDef="title">
+                  <th mat-header-cell *matHeaderCellDef>Title</th>
+                  <td mat-cell *matCellDef="let a">
+                    <div class="title-cell">
+                      <mat-icon class="title-icon" [style.color]="typeIconColor(a.submission_type)">description</mat-icon>
+                      <span>{{ a.title }}</span>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="type">
+                  <th mat-header-cell *matHeaderCellDef>Type</th>
+                  <td mat-cell *matCellDef="let a">
+                    <span class="type-badge"
+                          [class.type-quiz]="a.submission_type === 'QUIZ'"
+                          [class.type-online-text]="a.submission_type === 'ONLINE_TEXT'"
+                          [class.type-file-upload]="a.submission_type === 'FILE_UPLOAD'"
+                          [class.type-physical]="a.submission_type === 'PHYSICAL'">
+                      {{ typeLabel(a.submission_type) }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="dueDate">
+                  <th mat-header-cell *matHeaderCellDef>Due Date</th>
+                  <td mat-cell *matCellDef="let a">
+                    <span class="due-date" [class.overdue]="isOverdue(a.due_date)">
+                      @if (isOverdue(a.due_date)) { <mat-icon class="overdue-icon">warning</mat-icon> }
+                      {{ a.due_date ? (a.due_date | date:'MMM d, y') : 'No due date' }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="submissions">
+                  <th mat-header-cell *matHeaderCellDef>Submissions</th>
+                  <td mat-cell *matCellDef="let a">
+                    <span class="submissions-count">{{ a.submissions_count }}/{{ ws.student_count }}</span>
+                    <div class="submissions-bar">
+                      <div class="submissions-fill" [style.width.%]="(a.submissions_count / ws.student_count) * 100"></div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <td mat-cell *matCellDef="let a">
+                    <span class="status-badge" [ngClass]="getStatusClass(a.is_published, a.status)">
+                      {{ !a.is_published ? 'DRAFT' : a.status }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef></th>
+                  <td mat-cell *matCellDef="let a">
+                    <button mat-icon-button [matMenuTriggerFor]="menu" class="actions-btn">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #menu="matMenu" class="teacher-menu">
+                      <button mat-menu-item (click)="viewAssignment(a)"><mat-icon>visibility</mat-icon> View</button>
+                      <button mat-menu-item (click)="editAssignment(a)"><mat-icon>edit</mat-icon> Edit</button>
+                      <button mat-menu-item (click)="viewSubmissions(a)"><mat-icon>assignment</mat-icon> Submissions</button>
+                      <button mat-menu-item (click)="deleteAssignment(a)"><mat-icon>delete</mat-icon> Delete</button>
+                    </mat-menu>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
               </table>
             </div>
           </div>
@@ -150,55 +181,150 @@
             <mat-icon class="spin">sync</mat-icon>
             <p>Loading resources&hellip;</p>
           </div>
-        } @else if (resources().length === 0) {
+        } @else if (filteredWorkspaceResources().length === 0 && resources().length === 0) {
           <div class="empty-state-card">
             <mat-icon class="empty-icon">folder_open</mat-icon>
             <h3>No resources uploaded</h3>
             <p>Upload lesson plans, slides, or reference materials.</p>
-            <button mat-flat-button color="primary" class="create-btn">
+            <button mat-flat-button color="primary" class="create-btn" (click)="uploadResource()">
               <mat-icon>upload</mat-icon>
               Upload Resource
             </button>
           </div>
         } @else {
-          <div class="resources-grid">
-            <div class="resources-header">
-              <h2 class="table-title">Lesson Resources</h2>
-              <button mat-flat-button color="primary" class="create-btn">
+          <div class="resources-container">
+            <div class="resources-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+              <h2 class="table-title" style="margin: 0; font-size: 1.25rem; font-weight: 600;">Lesson Resources</h2>
+              <button mat-flat-button color="primary" class="create-btn" (click)="uploadResource()">
                 <mat-icon>add</mat-icon>
-                Add Resource
+                Upload Resource
               </button>
             </div>
-            <div class="resource-cards">
-              @for (resource of resources(); track resource.id) {
-                <div class="resource-card">
-                  <div class="resource-icon-wrapper">
-                    <mat-icon class="resource-icon">{{ getFileIcon(resource.file_type) }}</mat-icon>
-                  </div>
-                  <div class="resource-info">
-                    <h4 class="resource-title">{{ resource.title }}</h4>
-                    <span class="resource-meta">{{ resource.file_type | titlecase }} &bull; {{ resource.uploaded_at | date:'d MMM y' }}</span>
-                  </div>
-                  <div class="resource-actions">
-                    <button mat-icon-button class="action-btn view-btn" title="View">
-                      <mat-icon>visibility</mat-icon>
-                    </button>
-                    <button mat-icon-button class="action-btn edit-btn" title="Edit">
-                      <mat-icon>edit</mat-icon>
-                    </button>
+
+            <div class="search-card" style="padding: 16px 20px; margin-bottom: 24px; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
+              <div class="search-row" style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
+                <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic" style="flex: 1; min-width: 240px;">
+                  <mat-icon matPrefix>search</mat-icon>
+                  <input matInput placeholder="Search resources..." [value]="resourceSearchQuery()" (input)="resourceSearchQuery.set($any($event.target).value)">
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="subject-field" subscriptSizing="dynamic" style="width: 200px;">
+                  <mat-label>Type</mat-label>
+                  <mat-select [value]="resourceTypeFilter()" (selectionChange)="resourceTypeFilter.set($event.value)">
+                    <mat-option value="All">All Types</mat-option>
+                    <mat-option value="DOCUMENT">Document</mat-option>
+                    <mat-option value="VIDEO">Video</mat-option>
+                    <mat-option value="LINK">Link</mat-option>
+                    <mat-option value="SLIDES">Slides</mat-option>
+                    <mat-option value="TEXTBOOK">Textbook</mat-option>
+                    <mat-option value="COURSEBOOK">Coursebook</mat-option>
+                    <mat-option value="PAST_PAPER">Past Paper</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="results-info" style="padding: 0 4px 16px; font-size: 0.8125rem; color: #64748b; font-weight: 500;">
+              <span>{{ filteredWorkspaceResources().length }} resource{{ filteredWorkspaceResources().length !== 1 ? 's' : '' }} found</span>
+            </div>
+
+            <div class="resource-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px;">
+              @for (r of filteredWorkspaceResources(); track r.id) {
+              <div class="resource-card-modern" style="border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; background: white; transition: box-shadow 0.15s ease;">
+                <div class="resource-icon-area" style="padding: 20px 0 20px 20px; flex-shrink: 0;">
+                  <div class="resource-icon icon-{{ r.type | lowercase }}" style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <mat-icon style="font-size: 24px; width: 24px; height: 24px;">{{ resourceTypeIcon(r.type) }}</mat-icon>
                   </div>
                 </div>
+                <div class="resource-body" style="padding: 20px; flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                  <div class="resource-header-inner" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 4px;">
+                    <h3 class="resource-title-modern" style="font-size: 0.9375rem; font-weight: 600; color: #1e293b; margin: 0; line-height: 1.3;">{{ r.title }}</h3>
+                    <span class="type-badge type-{{ r.type | lowercase }}" style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 100px; font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">
+                      {{ resourceTypeLabel(r.type) }}
+                    </span>
+                  </div>
+                  @if (r.description) {
+                    <p class="resource-desc-modern" style="font-size: 0.8125rem; color: #64748b; margin: 4px 0 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ r.description }}</p>
+                  }
+                  <div class="resource-meta-modern" style="display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 12px;">
+                    <span class="meta-item-modern" style="display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: #64748b;">
+                      <mat-icon style="font-size: 14px; width: 14px; height: 14px;">calendar_today</mat-icon>
+                      {{ r.created_at | date:'MMM d, y' }}
+                    </span>
+                    @if (!r.is_published) {
+                      <span class="draft-badge" style="font-size: 0.625rem; font-weight: 600; padding: 1px 6px; border-radius: 100px; background: #f3f4f6; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em;">Draft</span>
+                    }
+                  </div>
+                  <div class="resource-actions-modern" style="display: flex; gap: 8px; align-items: center; margin-top: auto;">
+                    @if (r.url) {
+                      <a class="btn-download" [href]="r.url" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 0.8125rem; font-weight: 500; cursor: pointer; text-decoration: none; font-family: 'Inter', sans-serif;">
+                        <mat-icon style="font-size: 18px; width: 18px; height: 18px;">open_in_new</mat-icon>
+                        Open
+                      </a>
+                    }
+                    <button mat-icon-button [matMenuTriggerFor]="menu" class="btn-icon" style="color: #64748b;">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #menu="matMenu">
+                      <button mat-menu-item><mat-icon>delete</mat-icon> Delete</button>
+                    </mat-menu>
+                  </div>
+                </div>
+              </div>
               }
             </div>
+
+            @if (filteredWorkspaceResources().length === 0 && resources().length > 0) {
+            <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; padding: 64px 24px; color: #64748b;">
+              <mat-icon class="empty-icon" style="font-size: 56px; width: 56px; height: 56px; margin-bottom: 16px; opacity: 0.3;">folder_open</mat-icon>
+              <p style="font-size: 0.9375rem; margin: 0;">No resources match your search criteria.</p>
+            </div>
+            }
           </div>
         }
       }
 
       @if (activeTab() === 'gradebook') {
-        <div class="placeholder-card">
-          <mat-icon>grade</mat-icon>
-          <h3>Gradebook</h3>
-          <p>Gradebook view will load here.</p>
+        <div class="gradebook-card" style="padding: 24px; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 class="table-title" style="margin: 0; font-size: 1.25rem; font-weight: 600;">Gradebook</h2>
+          </div>
+          @if (gradebook(); as gb) {
+            <div class="table-wrapper gradebook-wrapper" style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                  <tr style="border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 12px; font-weight: 600; color: #475569; position: sticky; left: 0; background: white; z-index: 1;">Student</th>
+                    @for (a of gb.assignments; track a.id) {
+                      <th style="padding: 12px; font-weight: 600; color: #475569; min-width: 100px;">
+                        <div style="font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;" [title]="a.title">{{ a.title }}</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8;">/ {{ a.max_score }}</div>
+                      </th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (student of gb.students; track student.id) {
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                      <td style="padding: 12px; position: sticky; left: 0; background: white; z-index: 1; font-weight: 500;">{{ student.name }}</td>
+                      @for (a of gb.assignments; track a.id) {
+                        <td style="padding: 12px; text-align: center;">
+                          @if (student.grades[a.id] === 'SUBMITTED') {
+                            <mat-icon style="color: #3b82f6; font-size: 18px; height: 18px; width: 18px;" title="Needs Grading">assignment_turned_in</mat-icon>
+                          } @else if (student.grades[a.id] !== null && student.grades[a.id] !== undefined) {
+                            <span style="font-weight: 600; color: #0f172a;">{{ student.grades[a.id] }}</span>
+                          } @else {
+                            <span style="color: #cbd5e1;">-</span>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p>Loading gradebook...</p>
+          }
         </div>
       }
 
@@ -206,15 +332,41 @@
         <div class="placeholder-card">
           <mat-icon>how_to_reg</mat-icon>
           <h3>Attendance</h3>
-          <p>Attendance tracking will load here.</p>
+          <p>Attendance tracking module will be implemented next.</p>
         </div>
       }
 
       @if (activeTab() === 'roster') {
-        <div class="placeholder-card">
-          <mat-icon>people</mat-icon>
-          <h3>Student Roster</h3>
-          <p>Student list will load here.</p>
+        <div class="roster-card" style="padding: 24px; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 class="table-title" style="margin: 0; font-size: 1.25rem; font-weight: 600;">Student Roster</h2>
+            <span style="color: #64748b; font-size: 0.875rem;">{{ roster().length }} students enrolled</span>
+          </div>
+          <div class="table-wrapper">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 2px solid #e2e8f0;">
+                  <th style="padding: 12px; font-weight: 600; color: #475569;">Admission #</th>
+                  <th style="padding: 12px; font-weight: 600; color: #475569;">Name</th>
+                  <th style="padding: 12px; font-weight: 600; color: #475569;">Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (student of roster(); track student.id) {
+                  <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 12px; color: #64748b;">{{ student.admission_number }}</td>
+                    <td style="padding: 12px; font-weight: 500;">{{ student.first_name }} {{ student.last_name }}</td>
+                    <td style="padding: 12px; color: #64748b;">{{ student.email }}</td>
+                  </tr>
+                }
+                @if (roster().length === 0) {
+                  <tr>
+                    <td colspan="3" style="padding: 24px; text-align: center; color: #64748b;">No students are currently enrolled in this class.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
       }
     </div>

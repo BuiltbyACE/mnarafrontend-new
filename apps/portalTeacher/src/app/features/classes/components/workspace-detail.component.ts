@@ -1,22 +1,31 @@
 import { Component, OnInit, signal, inject, computed, ChangeDetectionStrategy } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { switchMap, tap } from 'rxjs/operators';
 import { CommonModule, TitleCasePipe, DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTableModule } from '@angular/material/table';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import {
   WorkspacesService,
   CourseWorkspace,
   Assignment,
   Resource,
+  RosterStudent,
+  GradebookData,
 } from '../services/workspaces.service';
 
 type TabId = 'assignments' | 'resources' | 'gradebook' | 'attendance' | 'roster';
+type FilterType = 'ALL' | 'QUIZ' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'PHYSICAL';
 
 @Component({
   selector: 'app-workspace-detail',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, TitleCasePipe, DatePipe],
+  imports: [CommonModule, MatIconModule, MatButtonModule, TitleCasePipe, DatePipe, MatTableModule, MatMenuModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   templateUrl: './workspace-detail.component.html',
   styleUrls: ['./workspace-detail.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +41,39 @@ export class WorkspaceDetailComponent implements OnInit {
 
   readonly assignments = signal<Assignment[]>([]);
   readonly resources = signal<Resource[]>([]);
+  readonly roster = signal<RosterStudent[]>([]);
+  readonly gradebook = signal<GradebookData | null>(null);
   readonly isTabLoading = signal(false);
+
+  private router = inject(Router);
+
+  readonly activeFilter = signal<FilterType>('ALL');
+  readonly displayedColumns = ['title', 'type', 'dueDate', 'submissions', 'status', 'actions'];
+
+  readonly resourceSearchQuery = signal<string>('');
+  readonly resourceTypeFilter = signal<string>('All');
+
+  readonly filteredWorkspaceResources = computed(() => {
+    let items = this.resources();
+    const type = this.resourceTypeFilter();
+    if (type !== 'All') {
+      items = items.filter(r => r.type === type);
+    }
+    const query = this.resourceSearchQuery().toLowerCase().trim();
+    if (query) {
+      items = items.filter(r =>
+        r.title.toLowerCase().includes(query)
+      );
+    }
+    return items;
+  });
+
+  readonly filteredAssignments = computed(() => {
+    const filter = this.activeFilter();
+    const all = this.assignments();
+    if (filter === 'ALL') return all;
+    return all.filter(a => a.submission_type === filter);
+  });
 
   ngOnInit(): void {
     this.route.paramMap.pipe(
@@ -73,6 +114,14 @@ export class WorkspaceDetailComponent implements OnInit {
       next: (data) => this.resources.set(data),
       error: () => this.resources.set([]),
     });
+    this.workspacesService.getRoster(workspaceId).subscribe({
+      next: (data) => this.roster.set(data),
+      error: () => this.roster.set([]),
+    });
+    this.workspacesService.getGradebook(workspaceId).subscribe({
+      next: (data) => this.gradebook.set(data),
+      error: () => this.gradebook.set(null),
+    });
   }
 
   setActiveTab(tab: TabId): void {
@@ -80,37 +129,113 @@ export class WorkspaceDetailComponent implements OnInit {
   }
 
   getFileIcon(type: string): string {
+    if (!type) return 'attach_file';
     const map: Record<string, string> = {
       pdf: 'picture_as_pdf',
       video: 'play_circle',
       doc: 'article',
       link: 'link',
     };
-    return map[type] ?? 'attach_file';
+    return map[type.toLowerCase()] ?? 'attach_file';
   }
 
-  getStatusClass(status: string): string {
-    const map: Record<string, string> = {
-      published: 'status-published',
-      draft: 'status-draft',
-      closed: 'status-closed',
-    };
-    return map[status] ?? '';
+  getStatusClass(is_published: boolean, status: string): string {
+    if (!is_published) return 'status-draft';
+    if (status === 'GRADED') return 'status-closed';
+    return 'status-published';
   }
 
-  formatDueDate(dateStr: string): string {
+  formatDueDate(dateStr: string | null): string {
+    if (!dateStr) return 'No due date';
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  isDueSoon(dateStr: string): boolean {
+  isDueSoon(dateStr: string | null): boolean {
+    if (!dateStr) return false;
     const due = new Date(dateStr);
     const now = new Date();
     const diffDays = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return diffDays >= 0 && diffDays <= 3;
   }
 
-  isOverdue(dateStr: string): boolean {
+  isOverdue(dateStr: string | null): boolean {
+    if (!dateStr) return false;
     return new Date(dateStr) < new Date();
+  }
+
+  setFilter(filter: FilterType) {
+    this.activeFilter.set(filter);
+  }
+
+  typeLabel(type: string): string {
+    switch (type) {
+      case 'QUIZ': return 'Quiz';
+      case 'ONLINE_TEXT': return 'Online Text';
+      case 'FILE_UPLOAD': return 'File Upload';
+      case 'PHYSICAL': return 'Physical';
+      default: return type;
+    }
+  }
+
+  typeIconColor(type: string): string {
+    switch (type) {
+      case 'QUIZ': return '#7c3aed';
+      case 'ONLINE_TEXT': return '#2563eb';
+      case 'FILE_UPLOAD': return '#ea580c';
+      case 'PHYSICAL': return '#059669';
+      default: return '#64748b';
+    }
+  }
+
+  resourceTypeLabel(type: string): string {
+    const map: Record<string, string> = {
+      DOCUMENT: 'Document', VIDEO: 'Video', LINK: 'Link',
+      SLIDES: 'Slides', TEXTBOOK: 'Textbook', COURSEBOOK: 'Coursebook',
+      PAST_PAPER: 'Past Paper',
+    };
+    return map[type] ?? type;
+  }
+
+  resourceTypeIcon(type: string): string {
+    const map: Record<string, string> = {
+      DOCUMENT: 'article', VIDEO: 'play_circle', LINK: 'link',
+      SLIDES: 'slideshow', TEXTBOOK: 'menu_book', COURSEBOOK: 'menu_book',
+      PAST_PAPER: 'history_edu',
+    };
+    return map[type] ?? 'description';
+  }
+
+  createAssignment() {
+    const ws = this.workspace();
+    if (ws) this.router.navigate(['/teacher/workspace', ws.id, 'assignments', 'create']);
+  }
+
+  viewAssignment(a: Assignment) {
+    const ws = this.workspace();
+    if (ws) this.router.navigate(['/teacher/workspace', ws.id, 'assignments', a.id]);
+  }
+
+  editAssignment(a: Assignment) {
+    const ws = this.workspace();
+    if (ws) this.router.navigate(['/teacher/workspace', ws.id, 'assignments', a.id, 'edit']);
+  }
+
+  viewSubmissions(a: Assignment) {
+    const ws = this.workspace();
+    if (ws) this.router.navigate(['/teacher/workspace', ws.id, 'assignments', a.id, 'submissions']);
+  }
+
+  deleteAssignment(a: Assignment) {
+    // To be implemented
+  }
+
+  uploadResource() {
+    const ws = this.workspace();
+    if (ws) {
+      this.router.navigate(['/teacher/resources/upload'], {
+        queryParams: { courseId: ws.id }
+      });
+    }
   }
 }

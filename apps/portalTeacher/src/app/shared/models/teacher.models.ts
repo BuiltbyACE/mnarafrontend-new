@@ -94,14 +94,14 @@ export interface CreateAssignmentPayload {
   due_date: string;
   is_published: boolean;
   allow_immediate_review: boolean;
-  course_workspace: number;
-  quiz_questions?: QuizQuestionPayload[];
+  course: number;
+  questions?: QuizQuestionPayload[];
 }
 
 export interface QuizQuestionPayload {
   question_text: string;
   marks: number;
-  options: { label: string; is_correct: boolean }[];
+  options: { option_text: string; is_correct: boolean }[];
 }
 
 export interface CourseWorkspace {

@@ -489,3 +489,63 @@
     gap: 0.75rem;
   }
 }
+
+/* Assignments Mat Table Ported Styles */
+.filter-row { display: flex; justify-content: space-between; align-items: center; margin: 16px 20px; }
+.filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-btn {
+  padding: 6px 16px; border-radius: 100px; border: 1px solid var(--mnara-border);
+  background: var(--mnara-surface); color: var(--mnara-text-secondary);
+  font-size: 0.8125rem; font-weight: 500; cursor: pointer;
+  font-family: 'Inter', sans-serif; transition: all 0.15s ease;
+}
+.filter-btn:hover { border-color: var(--mnara-primary); color: var(--mnara-primary); }
+.filter-btn.active { background: #dbeafe; border-color: var(--mnara-primary); color: var(--mnara-primary); }
+.result-count { font-size: 0.8125rem; color: var(--mnara-text-secondary); font-weight: 500; }
+
+.table-wrapper { overflow-x: auto; }
+.assignments-mat-table { width: 100%; border-collapse: collapse; }
+.assignments-mat-table .mat-mdc-header-cell {
+  background: #f8fafc; color: var(--mnara-text-secondary); font-size: 0.75rem;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 12px 16px; border-bottom: 1px solid var(--mnara-border);
+}
+.assignments-mat-table .mat-mdc-cell {
+  padding: 14px 16px; font-size: 0.875rem; color: var(--mnara-text, #1e293b);
+  border-bottom: 1px solid #f1f5f9;
+}
+.table-row { transition: background 0.1s ease; }
+.table-row:hover { background: #f8fafc; }
+.table-row:last-child .mat-mdc-cell { border-bottom: none; }
+
+.title-cell { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.title-icon { font-size: 20px; width: 20px; height: 20px; }
+.type-badge {
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  border-radius: 100px; font-size: 0.6875rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.type-quiz { background: #ede9fe; color: #5b21b6; }
+.type-online-text { background: #dbeafe; color: #1d4ed8; }
+.type-file-upload { background: #ffedd5; color: #c2410c; }
+.type-physical { background: #d1fae5; color: #065f46; }
+
+.submissions-bar { width: 100px; height: 4px; background: #e2e8f0; border-radius: 4px; margin-top: 4px; overflow: hidden; }
+.submissions-fill { height: 100%; background: var(--mnara-primary); border-radius: 4px; transition: width 0.3s ease; }
+
+/* Lesson Resources Specific Styles */
+.icon-document { background: #dbeafe; color: #1d4ed8; }
+.icon-video { background: #fee2e2; color: #991b1b; }
+.icon-link { background: #e0e7ff; color: #3730a3; }
+.icon-slides { background: #ffedd5; color: #c2410c; }
+.icon-textbook { background: #d1fae5; color: #065f46; }
+.icon-coursebook { background: #d1fae5; color: #065f46; }
+.icon-past_paper { background: #ede9fe; color: #5b21b6; }
+
+.type-document { background: #dbeafe; color: #1d4ed8; }
+.type-video { background: #fee2e2; color: #991b1b; }
+.type-link { background: #e0e7ff; color: #3730a3; }
+.type-slides { background: #ffedd5; color: #c2410c; }
+.type-textbook { background: #d1fae5; color: #065f46; }
+.type-coursebook { background: #d1fae5; color: #065f46; }
+.type-past_paper { background: #ede9fe; color: #5b21b6; }

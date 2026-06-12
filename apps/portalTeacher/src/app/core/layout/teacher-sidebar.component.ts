@@ -138,25 +138,18 @@ export class TeacherSidebarComponent {
       items: [
         { label: 'My Classes', icon: 'school', route: '/teacher/classes' },
         { label: 'Timetable', icon: 'calendar_month', route: '/teacher/timetable' },
-        { label: 'Attendance', icon: 'fact_check', route: '/teacher/attendance' },
-        { label: 'Assignments', icon: 'assignment', route: '/teacher/assignments' },
-        { label: 'Grading & Exams', icon: 'quiz', route: '/teacher/grading' },
-        { label: 'Lesson Resources', icon: 'folder', route: '/teacher/resources' },
       ],
     },
     {
       label: 'Students',
       items: [
-        { label: 'Student Profiles', icon: 'people', route: '/teacher/students' },
         { label: 'Behaviour & Discipline', icon: 'gavel', route: '/teacher/behaviour' },
       ],
     },
     {
       label: 'Communication',
       items: [
-        { label: 'Messages', icon: 'chat', route: '/teacher/chat' },
         { label: 'Announcements', icon: 'campaign', route: '/teacher/announcements' },
-        { label: 'Meetings', icon: 'groups', route: '/teacher/meetings' },
       ],
     },
     {
@@ -170,7 +163,6 @@ export class TeacherSidebarComponent {
     {
       label: 'Utilities',
       items: [
-        { label: 'Notifications', icon: 'notifications', route: '/teacher/notifications' },
         { label: 'Settings', icon: 'settings', route: '/teacher/settings' },
       ],
     },

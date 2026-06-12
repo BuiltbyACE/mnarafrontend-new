@@ -1,5 +1,5 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { TeacherResourceService } from '../../../core/services/teacher-resource.service';
-import { TeacherClassService } from '../../../core/services/teacher-class.service';
+import { WorkspacesService } from '../../classes/services/workspaces.service';
 import type { ResourceType } from '../../../shared/models/teacher.models';
 
 @Component({
@@ -24,8 +24,8 @@ import type { ResourceType } from '../../../shared/models/teacher.models';
     <div class="page">
       <div class="page-header">
         <div>
-          <a class="back-link" routerLink="/teacher/resources">
-            <mat-icon>arrow_back</mat-icon> Back to Resources
+          <a class="back-link" style="cursor: pointer" (click)="goBack()">
+            <mat-icon>arrow_back</mat-icon> Back
           </a>
           <h1 class="page-title">Upload Resource</h1>
           <p class="page-subtitle">Add a new teaching material</p>
@@ -48,8 +48,8 @@ import type { ResourceType } from '../../../shared/models/teacher.models';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Course / Class</mat-label>
               <mat-select [(ngModel)]="courseId" name="courseId" required #courseModel="ngModel">
-                @for (c of classService.assignments(); track c.id) {
-                  <mat-option [value]="c.id">{{ c.subject }} — {{ c.class_name }} ({{ c.section }})</mat-option>
+                @for (c of classService.workspaces(); track c.id) {
+                  <mat-option [value]="c.id">{{ c.subject_name }} — {{ c.classroom_name }}</mat-option>
                 }
               </mat-select>
               @if (courseModel.invalid && courseModel.touched) {
@@ -111,7 +111,7 @@ import type { ResourceType } from '../../../shared/models/teacher.models';
           }
 
           <div class="form-actions">
-            <button type="button" class="btn-cancel" routerLink="/teacher/resources">Cancel</button>
+            <button type="button" class="btn-cancel" (click)="goBack()">Cancel</button>
             <button type="submit" class="btn-submit" [disabled]="f.invalid || service.isUploading()">
               @if (service.isUploading()) {
                 Uploading...
@@ -168,8 +168,9 @@ import type { ResourceType } from '../../../shared/models/teacher.models';
 })
 export class UploadResourceComponent {
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   readonly service = inject(TeacherResourceService);
-  readonly classService = inject(TeacherClassService);
+  readonly classService = inject(WorkspacesService);
 
   readonly resourceTypes: { value: ResourceType; label: string; icon: string }[] = [
     { value: 'DOCUMENT', label: 'Document', icon: 'article' },
@@ -190,9 +191,14 @@ export class UploadResourceComponent {
   externalUrl = '';
 
   constructor() {
-    if (this.classService.assignments().length === 0) {
-      this.classService.fetchAssignments();
+    if (this.classService.workspaces().length === 0) {
+      this.classService.fetchMyWorkspaces().subscribe();
     }
+    this.route.queryParams.subscribe(params => {
+      if (params['courseId']) {
+        this.courseId = Number(params['courseId']);
+      }
+    });
   }
 
   onFileSelected(event: Event): void {
@@ -214,6 +220,14 @@ export class UploadResourceComponent {
       external_url: this.uploadMode === 'url' ? this.externalUrl : undefined,
     });
 
-    this.router.navigate(['/teacher/resources']);
+    this.goBack();
+  }
+
+  goBack(): void {
+    if (this.courseId) {
+      this.router.navigate(['/teacher/workspace', this.courseId], { queryParams: { tab: 'resources' } });
+    } else {
+      this.router.navigate(['/teacher/classes']);
+    }
   }
 }

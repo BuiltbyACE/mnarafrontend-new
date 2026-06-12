@@ -9,7 +9,8 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AssignmentsService, AssignmentDTO, QuizQuestion } from '../../services/assignments.service';
+import { QuillModule } from 'ngx-quill';
+import { AssignmentsService, AssignmentDTO, QuizQuestion, ReviewQuizQuestion } from '../../services/assignments.service';
 
 type FilterKey = 'ALL' | 'PENDING' | 'SUBMITTED' | 'GRADED';
 
@@ -38,9 +39,18 @@ type FilterKey = 'ALL' | 'PENDING' | 'SUBMITTED' | 'GRADED';
                   <p class="question-text">{{ i + 1 }}. {{ q.question_text }}</p>
                   <span class="marks-badge">{{ q.marks }} Marks</span>
                 </div>
-                <mat-radio-group [(ngModel)]="q.selectedAnswer" class="options-group">
+                <mat-radio-group [(ngModel)]="q.selectedAnswer" class="options-group" [disabled]="isReview()">
                   @for (opt of q.options; track opt.id) {
-                    <mat-radio-button [value]="opt.id" class="option">{{ opt.option_text }}</mat-radio-button>
+                    <mat-radio-button [value]="opt.id" class="option"
+                      [class.correct]="isReview() && $any(opt).is_correct"
+                      [class.incorrect]="isReview() && q.selectedAnswer === opt.id && !$any(opt).is_correct">
+                      {{ opt.option_text }}
+                      @if (isReview() && $any(opt).is_correct) {
+                        <mat-icon class="status-icon success">check_circle</mat-icon>
+                      } @else if (isReview() && q.selectedAnswer === opt.id && !$any(opt).is_correct) {
+                        <mat-icon class="status-icon error">cancel</mat-icon>
+                      }
+                    </mat-radio-button>
                   }
                 </mat-radio-group>
               </mat-card-content>
@@ -54,8 +64,12 @@ type FilterKey = 'ALL' | 'PENDING' | 'SUBMITTED' | 'GRADED';
       }
 
       <div class="dialog-actions">
-        <button mat-button (click)="cancel()" [disabled]="submitting()">Cancel</button>
-        <button mat-raised-button color="primary" (click)="submit()" [disabled]="submitting() || questionsLoading()">Submit Answers</button>
+        @if (isReview()) {
+          <button mat-raised-button color="primary" (click)="cancel()">Close</button>
+        } @else {
+          <button mat-button (click)="cancel()" [disabled]="submitting()">Cancel</button>
+          <button mat-raised-button color="primary" (click)="submit()" [disabled]="submitting() || questionsLoading()">Submit Answers</button>
+        }
       </div>
     </div>
   `,
@@ -75,6 +89,11 @@ type FilterKey = 'ALL' | 'PENDING' | 'SUBMITTED' | 'GRADED';
     .loading-state, .error-state { display: flex; align-items: center; gap: 8px; padding: 24px; justify-content: center; color: #64748b; }
     .error-state p { color: #ef4444; margin: 0; }
     .submitting-overlay { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; color: #6366f1; }
+    .option.correct { color: #10b981; font-weight: 600; }
+    .option.incorrect { color: #ef4444; }
+    .status-icon { font-size: 16px; width: 16px; height: 16px; vertical-align: middle; margin-left: 8px; }
+    .status-icon.success { color: #10b981; }
+    .status-icon.error { color: #ef4444; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -97,13 +116,29 @@ export class AssignmentQuizDialogComponent {
   readonly questionsLoading = signal(false);
   readonly questionsError = signal<string | null>(null);
   readonly submitting = signal(false);
+  readonly isReview = signal(false);
 
   private dialog = inject(MatDialog);
   private service = inject(AssignmentsService);
 
-  setAssignment(a: AssignmentDTO) {
+  setAssignment(a: AssignmentDTO, reviewMode: boolean = false) {
     this.assignment.set(a);
-    this.fetchQuestions(a.id);
+    this.isReview.set(reviewMode);
+    
+    if (reviewMode && a.submission_id) {
+      this.fetchReview(a.submission_id);
+    } else {
+      this.fetchQuestions(a.id);
+    }
+  }
+
+  private fetchReview(submissionId: string): void {
+    this.questionsLoading.set(true);
+    this.questionsError.set(null);
+    this.service.fetchQuizReview(submissionId).subscribe({
+      next: (qs) => { this.questions.set(qs as any); this.questionsLoading.set(false); },
+      error: () => { this.questionsLoading.set(false); this.questionsError.set('Review not available yet.'); },
+    });
   }
 
   private fetchQuestions(assignmentId: string): void {
@@ -229,16 +264,16 @@ export class AssignmentUploadDialogComponent {
 
 @Component({
   selector: 'app-assignment-text-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatCardModule, FormsModule],
+  imports: [MatDialogModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatCardModule, FormsModule, QuillModule],
   template: `
     <div class="dialog">
       <h2>{{ assignment()?.title }}</h2>
       <p class="dialog-sub">{{ assignment()?.subject }}</p>
       <p class="dialog-desc">{{ assignment()?.description }}</p>
-      <mat-form-field appearance="outline" class="text-editor">
-        <mat-label>Write your answer here...</mat-label>
-        <textarea matInput rows="12" [(ngModel)]="textContent" placeholder="Type your response..."></textarea>
-      </mat-form-field>
+      <div class="quill-wrapper">
+        <label class="field-label">Write your answer here...</label>
+        <quill-editor [(ngModel)]="textContent" placeholder="Type your response..." [styles]="{height: '250px'}"></quill-editor>
+      </div>
       <div class="text-footer"><span class="word-count">{{ wordCount() }} words</span></div>
       @if (submitting()) {
         <div class="submitting-bar"><mat-spinner diameter="18" /><span>Submitting...</span></div>
@@ -254,7 +289,8 @@ export class AssignmentUploadDialogComponent {
     h2 { margin: 0; font-size: 1.3rem; font-weight: 700; color: #1e293b; }
     .dialog-sub { margin: 4px 0 8px; color: #64748b; }
     .dialog-desc { color: #475569; font-size: 0.9rem; margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; }
-    .text-editor { width: 100%; }
+    .quill-wrapper { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+    .field-label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; padding: 8px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; margin: 0; }
     .text-footer { display: flex; justify-content: flex-end; margin-top: 4px; }
     .word-count { font-size: 0.8rem; color: #94a3b8; }
     .submitting-bar { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; color: #6366f1; }
@@ -370,9 +406,15 @@ export class AssignmentTextDialogComponent {
                     <mat-icon>check_circle</mat-icon> Submitted
                   </button>
                 } @else if (a.status === 'graded') {
-                  <button mat-stroked-button disabled class="action-btn">
-                    <mat-icon>grading</mat-icon> Graded
-                  </button>
+                  @if (a.submission_type === 'QUIZ') {
+                    <button mat-stroked-button class="action-btn review-btn" (click)="openAssignment(a)">
+                      <mat-icon>preview</mat-icon> Review Quiz
+                    </button>
+                  } @else {
+                    <button mat-stroked-button disabled class="action-btn">
+                      <mat-icon>grading</mat-icon> Graded
+                    </button>
+                  }
                 }
               </mat-card-actions>
             </mat-card>
@@ -477,6 +519,8 @@ export class AssignmentTextDialogComponent {
 
     .action-btn { width: 100%; }
     .action-btn mat-icon { margin-right: 4px; }
+    .review-btn { background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; }
+    .review-btn:hover { background: #f1f5f9; }
 
     .empty-state {
       grid-column: 1 / -1; text-align: center; padding: 48px; color: #94a3b8;
@@ -518,18 +562,21 @@ export class AssignmentsComponent implements OnInit {
   }
 
   openAssignment(a: AssignmentDTO): void {
+    const isReview = a.status === 'graded';
     switch (a.submission_type) {
       case 'QUIZ': {
         const ref = this.dialog.open(AssignmentQuizDialogComponent, { width: '700px' });
-        ref.componentInstance.setAssignment(a);
+        ref.componentInstance.setAssignment(a, isReview);
         break;
       }
       case 'FILE_UPLOAD': {
+        if (isReview) return; // Only quiz review supported currently
         const ref = this.dialog.open(AssignmentUploadDialogComponent, { width: '600px' });
         ref.componentInstance.setAssignment(a);
         break;
       }
       case 'ONLINE_TEXT': {
+        if (isReview) return; // Only quiz review supported currently
         const ref = this.dialog.open(AssignmentTextDialogComponent, { width: '750px' });
         ref.componentInstance.setAssignment(a);
         break;

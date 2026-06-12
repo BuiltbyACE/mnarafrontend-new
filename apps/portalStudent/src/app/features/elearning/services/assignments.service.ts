@@ -13,6 +13,7 @@ export interface AssignmentDTO {
   status: 'pending' | 'submitted' | 'graded';
   score_awarded: number | null;
   max_score: number | null;
+  submission_id?: string;
 }
 
 export interface QuizOption {
@@ -26,6 +27,20 @@ export interface QuizQuestion {
   options: QuizOption[];
   marks: number;
   selectedAnswer?: string;
+}
+
+export interface ReviewQuizOption {
+  id: string;
+  option_text: string;
+  is_correct: boolean;
+}
+
+export interface ReviewQuizQuestion {
+  id: string;
+  question_text: string;
+  marks: number;
+  selectedAnswer?: string;
+  options: ReviewQuizOption[];
 }
 
 interface PaginatedResponse {
@@ -65,6 +80,10 @@ export class AssignmentsService {
   fetchQuizQuestions(assignmentId: string): Observable<QuizQuestion[]> {
     return this.http.get<{ results: QuizQuestion[] }>(getApiUrl(`/lms/assignments/${assignmentId}/questions/`))
       .pipe(map((res) => res.results));
+  }
+
+  fetchQuizReview(submissionId: string): Observable<ReviewQuizQuestion[]> {
+    return this.http.get<ReviewQuizQuestion[]>(getApiUrl(`/lms/submissions/${submissionId}/review-quiz/`));
   }
 
   submitQuiz(assignmentId: string, answers: { questionId: string; selectedAnswer: string }[]): Observable<void> {
