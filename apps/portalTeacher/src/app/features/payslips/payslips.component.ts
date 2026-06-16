@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -219,7 +219,7 @@ import { TeacherPayslipService } from '../../core/services/teacher-payslip.servi
     .status-badge.paid { background: #dcfce7; color: #166534; }
   `,
 })
-export class PayslipsComponent {
+export class PayslipsComponent implements OnInit {
   private payslipService = inject(TeacherPayslipService);
 
   displayedColumns = ['month', 'year', 'gross', 'net', 'status', 'action'];
@@ -227,6 +227,10 @@ export class PayslipsComponent {
   selectedYear = this.payslipService.selectedYear;
   filteredPayslips = this.payslipService.filteredPayslips;
   latestPayslip = this.payslipService.latestPayslip;
+
+  ngOnInit(): void {
+    this.payslipService.fetchPayslips();
+  }
 
   downloadPayslip(slip: Payslip): void {
     console.log('Download payslip:', slip.id, slip.month, slip.year);

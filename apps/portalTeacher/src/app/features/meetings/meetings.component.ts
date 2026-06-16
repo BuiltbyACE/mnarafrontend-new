@@ -1,4 +1,4 @@
-import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -208,11 +208,15 @@ import { TeacherMeetingService } from '../../core/services/teacher-meeting.servi
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MeetingsComponent {
+export class MeetingsComponent implements OnInit {
   private meetingService = inject(TeacherMeetingService);
 
   readonly viewMode = signal<'upcoming' | 'past'>('upcoming');
 
   readonly upcomingMeetings = this.meetingService.upcomingMeetings;
   readonly pastMeetings = this.meetingService.pastMeetings;
+
+  ngOnInit(): void {
+    this.meetingService.fetchMeetings();
+  }
 }

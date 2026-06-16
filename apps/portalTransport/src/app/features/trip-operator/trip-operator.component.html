@@ -1,0 +1,216 @@
+<div class="operator-screen">
+  <!-- Orchestrator Header -->
+  <header class="orchestrator-header">
+    <div class="header-left">
+      <div class="vehicle-badge">
+        <icon-bus [size]="22" />
+        <span>{{ deviceReg() }}</span>
+      </div>
+      <span class="trip-type-badge" [class]="tripTypeClass()">
+        {{ tripTypeLabel() }}
+      </span>
+    </div>
+    <div class="header-center">
+      <app-trip-status [status]="tripStatus()" />
+    </div>
+    <div class="header-right">
+      <button 
+        class="icon-btn logout-btn" 
+        (click)="onLogout()" 
+        aria-label="End Shift and Logout"
+        title="End Shift"
+      >
+        <icon-log-out [size]="22" />
+      </button>
+    </div>
+  </header>
+
+  <!-- Trip Context Panel -->
+  <section class="context-panel">
+    <!-- Route Info: Name and Stops Count -->
+    <div class="route-context">
+      <icon-navigation [size]="18" class="route-icon" />
+      <div class="route-details">
+        <span class="route-name">{{ trip()?.route_name || 'Route Not Assigned' }}</span>
+        <span class="route-meta">{{ routeStops().length }} stops</span>
+      </div>
+    </div>
+
+    <!-- Navigation Panel: Active during ON_ROUTE -->
+    @if (trip()?.status === 'ON_ROUTE' && nextStop(); as stop) {
+      <div class="navigation-panel" [class.loading]="routeLoading()">
+        <div class="nav-destination">
+          <icon-map-pin [size]="16" />
+          <span class="next-stop-label">Next: {{ stop.name }}</span>
+        </div>
+        
+        @if (routeLoading()) {
+          <div class="nav-calculating">
+            <span class="loading-dots">Calculating route</span>
+          </div>
+        } @else if (distanceToNextStop(); as distance) {
+          <div class="nav-metrics">
+            <div class="metric distance">
+              <span class="metric-value">{{ distance }}</span>
+              <span class="metric-unit">km</span>
+            </div>
+            <icon-arrow-right [size]="14" class="metric-separator" />
+            @if (etaToNextStop(); as eta) {
+              <div class="metric eta">
+                <icon-clock [size]="14" />
+                <span class="metric-value">{{ eta }}</span>
+              </div>
+            }
+          </div>
+        } @else if (routeError()) {
+          <div class="nav-error">
+            <span>{{ routeError() }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Crew Info -->
+    <div class="crew-context">
+      <div class="crew-item">
+        <strong>Driver:</strong> {{ trip()?.driver_name || 'N/A' }}
+      </div>
+      <div class="crew-item">
+        <strong>Conductor:</strong> {{ trip()?.conductor_name || 'N/A' }}
+      </div>
+    </div>
+  </section>
+
+  <!-- Primary Action Area -->
+  <section class="action-area">
+    @if (trip()?.status === 'SCHEDULED') {
+      <button 
+        class="action-btn start-trip-btn" 
+        (click)="onStartTrip()"
+        [disabled]="isLoading()"
+        aria-label="Start trip and begin GPS tracking"
+      >
+        <icon-play [size]="28" />
+        <span class="btn-primary-text">Start Trip</span>
+        <span class="btn-secondary-text">GPS tracking will activate</span>
+      </button>
+    }
+    @if (trip()?.status === 'ON_ROUTE') {
+      <button 
+        class="action-btn end-trip-btn" 
+        (click)="onEndTrip()"
+        [disabled]="isLoading()"
+        aria-label="End trip and stop GPS tracking"
+      >
+        <icon-square [size]="24" />
+        <span class="btn-primary-text">End Trip</span>
+        <span class="btn-secondary-text">Complete & sign off</span>
+      </button>
+    }
+    @if (trip()?.status === 'COMPLETED') {
+      <div class="trip-completed-banner" role="status">
+        <icon-radio [size]="24" />
+        <span>Trip Completed</span>
+        <small>Session ended successfully</small>
+      </div>
+    }
+  </section>
+
+  <!-- Dual-Panel Layout: Passengers & Stops -->
+  <main class="dual-panel-layout">
+    <!-- Left Panel: Route Timeline -->
+    <section class="panel-left">
+      <div class="panel-header">
+        <icon-map-pin [size]="18" />
+        <h2>Route Timeline</h2>
+      </div>
+      <div class="panel-content custom-scrollbar">
+        <app-route-stops 
+          [stops]="routeStops()" 
+          [currentStopId]="currentStopId()"
+          [completedStopIds]="completedStopIds()"
+          [routeName]="trip()?.route_name ?? 'Route'"
+        />
+      </div>
+    </section>
+
+    <!-- Right Panel: Passenger Manifest -->
+    <section class="panel-right">
+      <div class="panel-header">
+        <div class="header-title">
+          <icon-users [size]="18" />
+          <h2>Passengers</h2>
+        </div>
+        <div class="manifest-stats-badge" [class.complete]="allPassengersProcessed()">
+          <span class="stat-current">{{ processedCount() }}</span>
+          <span class="stat-separator">/</span>
+          <span class="stat-total">{{ totalCount() }}</span>
+        </div>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-track" role="progressbar" [attr.aria-valuenow]="processedCount()" [attr.aria-valuemax]="totalCount()">
+          <div class="progress-bar" [style.width.%]="processedPct()"></div>
+        </div>
+        <span class="progress-percentage">{{ processedPct() | number:'1.0-0' }}%</span>
+      </div>
+
+      <div class="panel-content custom-scrollbar" role="list" aria-label="Passenger manifest">
+        @for (passenger of sortedPassengers(); track passenger.id) {
+          <app-passenger-card
+            [passenger]="passenger"
+            [canBoard]="canPerformActions()"
+            [canAlight]="canPerformActions()"
+            (boarded)="onMarkBoarded($event)"
+            (alighted)="onMarkAlighted($event)"
+            role="listitem"
+          />
+        } @empty {
+          <div class="empty-state" role="status">
+            <icon-users [size]="48" />
+            <p>No passengers assigned</p>
+            <span>Contact dispatch if this seems incorrect</span>
+          </div>
+        }
+      </div>
+    </section>
+  </main>
+
+  <!-- Telemetry Status Bar -->
+  <footer class="telemetry-bar">
+    <div class="telemetry-left">
+      <div class="telemetry-status" [class.active]="gpsActive()" [class.error]="telemetryError()">
+        @if (gpsActive()) {
+          <icon-wifi [size]="16" />
+          <span>GPS Streaming</span>
+        } @else if (telemetryError()) {
+          <icon-wifi-off [size]="16" />
+          <span>{{ telemetryError() }}</span>
+        } @else {
+          <icon-wifi-off [size]="16" />
+          <span>GPS Standby</span>
+        }
+      </div>
+      
+      @if (bufferSize() > 0) {
+        <div class="buffer-indicator" title="Buffered positions awaiting sync">
+          <span class="buffer-count">{{ bufferSize() }}</span>
+          <span class="buffer-label">buffered</span>
+        </div>
+      }
+    </div>
+    
+    @if (lastPosition(); as pos) {
+      <div class="coordinates">
+        <span class="coord-value">{{ pos.latitude.toFixed(5) }}</span>
+        <span class="coord-sep">,</span>
+        <span class="coord-value">{{ pos.longitude.toFixed(5) }}</span>
+      </div>
+    }
+    
+    <div class="connection-pill" [class.connected]="gpsActive()">
+      <span class="pill-dot"></span>
+      <span class="pill-text">{{ gpsActive() ? 'LIVE' : 'OFFLINE' }}</span>
+    </div>
+  </footer>
+</div>

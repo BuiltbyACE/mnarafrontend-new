@@ -1,4 +1,8 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { finalize } from 'rxjs';
+import { getApiUrl } from '@sms/core/config';
+import { TokenStorageService } from '@sms/core/auth';
 
 export interface Message {
   id: string;
@@ -19,82 +23,34 @@ export interface Thread {
   unread: boolean;
 }
 
+interface RawConversation {
+  id: number;
+  title: string;
+  participant_names: string[];
+  last_message_preview: string;
+  last_message_at: string | null;
+  unread_count: number;
+}
+
+interface RawMessage {
+  id: number;
+  sender_id: number;
+  sender_name: string;
+  content: string;
+  created_at: string;
+}
+
+interface Paginated<T> { results?: T[]; }
+
 @Injectable({ providedIn: 'root' })
 export class TeacherMessageService {
-  readonly threads = signal<Thread[]>([
-    {
-      id: 'T1',
-      participants: ['School Admin'],
-      subject: 'Staff Meeting Agenda',
-      lastMessagePreview: 'Please find the agenda for tomorrow\'s staff meeting attached.',
-      lastTimestamp: '2026-05-17',
-      unread: true,
-      messages: [
-        { id: 'M1', senderId: 'admin', senderName: 'School Admin', content: 'Good morning, please find the agenda for tomorrow\'s staff meeting attached.', timestamp: '2026-05-17 08:30', isMine: false },
-        { id: 'M2', senderId: 'teacher', senderName: 'You', content: 'Thank you, I will review it before the meeting.', timestamp: '2026-05-17 08:45', isMine: true },
-        { id: 'M3', senderId: 'admin', senderName: 'School Admin', content: 'Also, please prepare your termly progress report for discussion.', timestamp: '2026-05-17 09:00', isMine: false },
-      ],
-    },
-    {
-      id: 'T2',
-      participants: ['Mrs. Wanjiku (HOD)'],
-      subject: 'Curriculum Review',
-      lastMessagePreview: 'The department heads have approved the new scheme of work.',
-      lastTimestamp: '2026-05-16',
-      unread: true,
-      messages: [
-        { id: 'M4', senderId: 'hod', senderName: 'Mrs. Wanjiku (HOD)', content: 'The department heads have approved the new scheme of work.', timestamp: '2026-05-16 14:00', isMine: false },
-        { id: 'M5', senderId: 'teacher', senderName: 'You', content: 'That\'s great news. When should we start implementing?', timestamp: '2026-05-16 14:15', isMine: true },
-        { id: 'M6', senderId: 'hod', senderName: 'Mrs. Wanjiku (HOD)', content: 'Starting next term. I will share the rollout plan shortly.', timestamp: '2026-05-16 14:30', isMine: false },
-        { id: 'M7', senderId: 'teacher', senderName: 'You', content: 'Noted. Looking forward to the plan.', timestamp: '2026-05-16 14:45', isMine: true },
-      ],
-    },
-    {
-      id: 'T3',
-      participants: ['Mr. & Mrs. Kamau (Parent)'],
-      subject: 'Brian\'s Academic Progress',
-      lastMessagePreview: 'Thank you for the update. We will work with Brian at home.',
-      lastTimestamp: '2026-05-15',
-      unread: false,
-      messages: [
-        { id: 'M8', senderId: 'teacher', senderName: 'You', content: 'Hello Mr. & Mrs. Kamau, I wanted to discuss Brian\'s recent performance in Mathematics.', timestamp: '2026-05-15 10:00', isMine: true },
-        { id: 'M9', senderId: 'parent', senderName: 'Mr. & Mrs. Kamau (Parent)', content: 'Hello, thank you for reaching out. We have noticed he has been struggling.', timestamp: '2026-05-15 10:30', isMine: false },
-        { id: 'M10', senderId: 'teacher', senderName: 'You', content: 'I recommend some extra tutoring sessions after school on Tuesdays and Thursdays.', timestamp: '2026-05-15 10:45', isMine: true },
-        { id: 'M11', senderId: 'parent', senderName: 'Mr. & Mrs. Kamau (Parent)', content: 'That sounds like a good plan. We will make sure he attends.', timestamp: '2026-05-15 11:15', isMine: false },
-        { id: 'M12', senderId: 'teacher', senderName: 'You', content: 'Perfect. I will start next Tuesday. I\'ll keep you updated on his progress.', timestamp: '2026-05-15 11:30', isMine: true },
-      ],
-    },
-    {
-      id: 'T4',
-      participants: ['Sports Department'],
-      subject: 'Inter-School Sports Tournament',
-      lastMessagePreview: 'We need your class list for the athletics trials tomorrow.',
-      lastTimestamp: '2026-05-14',
-      unread: false,
-      messages: [
-        { id: 'M13', senderId: 'sports', senderName: 'Sports Department', content: 'We need your class list for the athletics trials tomorrow.', timestamp: '2026-05-14 09:00', isMine: false },
-        { id: 'M14', senderId: 'teacher', senderName: 'You', content: 'I will send the list by end of day. How many students per event?', timestamp: '2026-05-14 09:30', isMine: true },
-        { id: 'M15', senderId: 'sports', senderName: 'Sports Department', content: 'Maximum 3 per event. The trials start at 8 AM on the main field.', timestamp: '2026-05-14 10:00', isMine: false },
-        { id: 'M16', senderId: 'teacher', senderName: 'You', content: 'Got it. Sending the list shortly.', timestamp: '2026-05-14 10:15', isMine: true },
-      ],
-    },
-    {
-      id: 'T5',
-      participants: ['Lab Technician'],
-      subject: 'Chemistry Lab Equipment',
-      lastMessagePreview: 'The Bunsen burners have been serviced and are ready for use.',
-      lastTimestamp: '2026-05-13',
-      unread: false,
-      messages: [
-        { id: 'M17', senderId: 'lab', senderName: 'Lab Technician', content: 'The Bunsen burners have been serviced and are ready for use.', timestamp: '2026-05-13 11:00', isMine: false },
-        { id: 'M18', senderId: 'teacher', senderName: 'You', content: 'Excellent. Can we also get the titration kits for next week\'s practical?', timestamp: '2026-05-13 11:30', isMine: true },
-        { id: 'M19', senderId: 'lab', senderName: 'Lab Technician', content: 'Yes, I have already prepared them. They are in the prep room.', timestamp: '2026-05-13 12:00', isMine: false },
-        { id: 'M20', senderId: 'teacher', senderName: 'You', content: 'Thank you. I will pick them up on Monday morning.', timestamp: '2026-05-13 12:15', isMine: true },
-      ],
-    },
-  ]);
+  private readonly http = inject(HttpClient);
+  private readonly tokenStorage = inject(TokenStorageService);
 
+  readonly threads = signal<Thread[]>([]);
   readonly activeThreadId = signal<string | null>(null);
+  readonly isLoading = signal(false);
+  readonly error = signal<string | null>(null);
 
   readonly activeThread = computed(() => {
     const id = this.activeThreadId();
@@ -102,29 +58,102 @@ export class TeacherMessageService {
     return this.threads().find(t => t.id === id) ?? null;
   });
 
+  loadThreads(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+    this.http.get<Paginated<RawConversation> | RawConversation[]>(getApiUrl('/communication/conversations/'))
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (res) => {
+          const rows = Array.isArray(res) ? res : (res.results ?? []);
+          this.threads.set(rows.map(c => this.mapThread(c)));
+        },
+        error: () => {
+          this.threads.set([]);
+          this.error.set('Failed to load conversations');
+        },
+      });
+  }
+
   selectThread(id: string): void {
     this.activeThreadId.set(id);
     this.threads.update(threads => threads.map(t => t.id === id ? { ...t, unread: false } : t));
+    this.loadMessages(id);
+    this.http.post(getApiUrl(`/communication/conversations/${id}/read/`), {}).subscribe({ error: () => {} });
+  }
+
+  private loadMessages(threadId: string): void {
+    const params = new HttpParams().set('page', '1').set('page_size', '50');
+    this.http.get<Paginated<RawMessage> | RawMessage[]>(
+      getApiUrl(`/communication/conversations/${threadId}/messages/`), { params },
+    ).subscribe({
+      next: (res) => {
+        const rows = Array.isArray(res) ? res : (res.results ?? []);
+        // Backend returns newest-first; show oldest-first in the thread.
+        const mapped = rows.map(m => this.mapMessage(m)).reverse();
+        this.threads.update(threads => threads.map(t =>
+          t.id === threadId ? { ...t, messages: mapped } : t,
+        ));
+      },
+      error: () => this.error.set('Failed to load messages'),
+    });
   }
 
   sendMessage(threadId: string, content: string): void {
-    if (!content.trim()) return;
-    const newMsg: Message = {
-      id: 'M' + Date.now(),
-      senderId: 'teacher',
-      senderName: 'You',
-      content: content.trim(),
-      timestamp: new Date().toLocaleDateString('en-CA'),
-      isMine: true,
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    this.http.post<RawMessage>(
+      getApiUrl(`/communication/conversations/${threadId}/messages/`),
+      { content: trimmed },
+    ).subscribe({
+      next: (msg) => {
+        const mapped = this.mapMessage(msg);
+        this.threads.update(threads => threads.map(t => {
+          if (t.id !== threadId) return t;
+          return {
+            ...t,
+            messages: [...t.messages, mapped],
+            lastMessagePreview: mapped.content,
+            lastTimestamp: mapped.timestamp,
+          };
+        }));
+      },
+      error: () => this.error.set('Failed to send message'),
+    });
+  }
+
+  private mapThread(c: RawConversation): Thread {
+    return {
+      id: String(c.id),
+      participants: c.participant_names?.length ? c.participant_names : ['Conversation'],
+      subject: c.title || (c.participant_names ?? []).join(', ') || 'Conversation',
+      messages: [],
+      lastMessagePreview: c.last_message_preview || '',
+      lastTimestamp: c.last_message_at ? new Date(c.last_message_at).toLocaleDateString('en-CA') : '',
+      unread: (c.unread_count ?? 0) > 0,
     };
-    this.threads.update(threads => threads.map(t => {
-      if (t.id !== threadId) return t;
-      return {
-        ...t,
-        messages: [...t.messages, newMsg],
-        lastMessagePreview: content,
-        lastTimestamp: newMsg.timestamp,
-      };
-    }));
+  }
+
+  private mapMessage(m: RawMessage): Message {
+    const myId = this.currentUserId();
+    return {
+      id: String(m.id),
+      senderId: String(m.sender_id),
+      senderName: m.sender_name,
+      content: m.content,
+      timestamp: m.created_at ? new Date(m.created_at).toLocaleString() : '',
+      isMine: myId != null && Number(m.sender_id) === myId,
+    };
+  }
+
+  private currentUserId(): number | null {
+    const token = this.tokenStorage.getAccessToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return typeof payload.user_id === 'number' ? payload.user_id : Number(payload.user_id) || null;
+    } catch {
+      return null;
+    }
   }
 }

@@ -24,6 +24,20 @@ export interface GradeSubmissionPayload {
   feedback?: string;
 }
 
+interface RawDashboard {
+  pending_grading: {
+    id: number;
+    title: string;
+    subject: string;
+    classroom: string;
+    submitted_count: number;
+    total_students: number;
+    due_date: string;
+  }[];
+  subject_averages: Record<string, number>;
+  grade_distribution: Record<string, number>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TeacherGradingService {
   private http = inject(HttpClient);
@@ -33,6 +47,44 @@ export class TeacherGradingService {
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly gradeSuccess = signal(false);
+
+  /** Loads the full teacher grading dashboard (pending grading, subject averages, grade distribution). */
+  fetchDashboard(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+    this.http.get<RawDashboard>(getApiUrl('/lms/grading/dashboard/'))
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (data) => {
+          this.pendingItems.set((data.pending_grading ?? []).map(p => ({
+            id: p.id,
+            title: p.title,
+            submission_count: p.submitted_count,
+            due_date: p.due_date,
+            subject: p.subject,
+            class_name: p.classroom,
+          })));
+
+          const averages = Object.entries(data.subject_averages ?? {})
+            .sort((a, b) => b[1] - a[1])
+            .map(([subject, average_score], idx) => ({
+              subject,
+              average_score,
+              class_rank: idx + 1,
+            }));
+          this.subjectAverages.set(averages);
+
+          const dist = data.grade_distribution ?? {};
+          const total = Object.values(dist).reduce((sum, n) => sum + (n ?? 0), 0);
+          this.gradeDistribution.set(Object.entries(dist).map(([grade, count]) => ({
+            grade,
+            count,
+            percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+          })));
+        },
+        error: () => this.error.set('Failed to load grading dashboard'),
+      });
+  }
 
   fetchGradeDistribution(subject?: string, examSeries?: string): void {
     let endpoint = '/lms/grade-distribution/';

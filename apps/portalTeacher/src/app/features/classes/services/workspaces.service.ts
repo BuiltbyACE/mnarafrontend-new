@@ -116,6 +116,13 @@ export class WorkspacesService {
     );
   }
 
+  toggleResourcePublish(resourceId: number): Observable<{ is_published: boolean }> {
+    return this.http.post<{ is_published: boolean }>(
+      getApiUrl(`/lms/lesson-resources/${resourceId}/toggle_publish/`),
+      {}
+    );
+  }
+
   getRoster(workspaceId: string | number): Observable<RosterStudent[]> {
     return this.http.get<{ roster: RosterStudent[] }>(getApiUrl(`/lms/workspaces/${workspaceId}/roster/`)).pipe(
       map(res => res.roster)

@@ -1,18 +1,34 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { finalize } from 'rxjs';
+import { getApiUrl } from '@sms/core/config';
 import { Payslip } from '../../shared/models/teacher.models';
+
+interface RawPayslip {
+  id: number;
+  month: number;
+  year: number;
+  gross_pay: string | number;
+  net_pay: string | number;
+  is_paid: boolean;
+}
+
+interface Paginated<T> { results?: T[]; }
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
 
 @Injectable({ providedIn: 'root' })
 export class TeacherPayslipService {
-  private readonly allPayslips = signal<Payslip[]>([
-    { id: 'p1', month: 'May', year: 2026, gross: 95000, net: 79000, deductions: 16000, status: 'paid' },
-    { id: 'p2', month: 'April', year: 2026, gross: 90000, net: 75600, deductions: 14400, status: 'paid' },
-    { id: 'p3', month: 'March', year: 2026, gross: 88000, net: 74000, deductions: 14000, status: 'paid' },
-    { id: 'p4', month: 'February', year: 2026, gross: 85000, net: 71800, deductions: 13200, status: 'paid' },
-    { id: 'p5', month: 'January', year: 2026, gross: 85000, net: 72000, deductions: 13000, status: 'paid' },
-    { id: 'p6', month: 'December', year: 2025, gross: 82000, net: 69600, deductions: 12400, status: 'paid' },
-  ]);
+  private readonly http = inject(HttpClient);
 
-  readonly selectedYear = signal(2026);
+  private readonly allPayslips = signal<Payslip[]>([]);
+  readonly isLoading = signal(false);
+  readonly error = signal<string | null>(null);
+
+  readonly selectedYear = signal(new Date().getFullYear());
 
   readonly filteredPayslips = computed(() =>
     this.allPayslips().filter(s => s.year === this.selectedYear())
@@ -21,4 +37,35 @@ export class TeacherPayslipService {
   readonly latestPayslip = computed(() =>
     this.allPayslips().length ? this.allPayslips()[0] : null
   );
+
+  fetchPayslips(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+    this.http.get<Paginated<RawPayslip> | RawPayslip[]>(getApiUrl('/finance/payslips/'))
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (res) => {
+          const rows = Array.isArray(res) ? res : (res.results ?? []);
+          this.allPayslips.set(rows.map(r => this.mapPayslip(r)));
+        },
+        error: () => {
+          this.allPayslips.set([]);
+          this.error.set('Failed to load payslips');
+        },
+      });
+  }
+
+  private mapPayslip(r: RawPayslip): Payslip {
+    const gross = Number(r.gross_pay) || 0;
+    const net = Number(r.net_pay) || 0;
+    return {
+      id: String(r.id),
+      month: MONTH_NAMES[(r.month ?? 1) - 1] ?? String(r.month),
+      year: r.year,
+      gross,
+      net,
+      deductions: Math.max(0, gross - net),
+      status: r.is_paid ? 'paid' : 'pending',
+    };
+  }
 }

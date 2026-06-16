@@ -20,7 +20,7 @@
           </button>
         </div>
 
-        @if (pdfError() && pdfLoading() === report.id) {
+        @if (pdfError()) {
           <div class="error-message">{{ pdfError() }}</div>
         }
 

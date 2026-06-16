@@ -37,8 +37,11 @@ export class ReportCardsComponent implements OnInit {
     });
 
     this.api.getReportCards().subscribe({
-      next: (r) => this.reports.set(r),
-      complete: () => this.loading.set(false),
+      next: (r) => {
+        this.reports.set(r);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

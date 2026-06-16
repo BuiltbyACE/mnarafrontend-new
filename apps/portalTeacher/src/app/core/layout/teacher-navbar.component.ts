@@ -1,10 +1,11 @@
-import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthStore } from '@sms/core/auth';
+import { TeacherAssignmentService } from '../services/teacher-assignment.service';
 
 @Component({
   selector: 'app-teacher-navbar',
@@ -21,7 +22,9 @@ import { AuthStore } from '@sms/core/auth';
         </button>
         <button class="icon-btn" aria-label="Notifications" [matMenuTriggerFor]="notifMenu">
           <mat-icon>notifications</mat-icon>
-          <span class="badge">3</span>
+          @if (unreadCount() > 0) {
+            <span class="badge">{{ unreadCount() }}</span>
+          }
         </button>
         <button class="icon-btn" aria-label="Messages">
           <mat-icon>chat</mat-icon>
@@ -154,9 +157,16 @@ import { AuthStore } from '@sms/core/auth';
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TeacherNavbarComponent {
+export class TeacherNavbarComponent implements OnInit {
   private router = inject(Router);
   private authStore = inject(AuthStore);
+  private assignmentService = inject(TeacherAssignmentService);
+  readonly unreadCount = this.assignmentService.unreadCount;
+
+  ngOnInit(): void {
+    this.authStore.restoreFromStorage();
+    this.assignmentService.fetchUnreadCount();
+  }
 
   readonly fullName = this.authStore.fullName;
   readonly identifier = this.authStore.identifier;

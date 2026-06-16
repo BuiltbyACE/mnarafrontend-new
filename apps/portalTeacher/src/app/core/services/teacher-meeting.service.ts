@@ -1,46 +1,31 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { finalize } from 'rxjs';
+import { getApiUrl } from '@sms/core/config';
 import { Meeting } from '../../shared/models/teacher.models';
+
+interface RawMeeting {
+  id: string;
+  title: string;
+  meeting_type: string;
+  scheduled_at: string;
+  status: string;
+  organizer: number;
+  organizer_name: string;
+  participant_count: number;
+  meeting_link: string | null;
+  location: string | null;
+}
+
+interface Paginated<T> { results?: T[]; }
 
 @Injectable({ providedIn: 'root' })
 export class TeacherMeetingService {
-  private readonly data = signal<Meeting[]>([
-    {
-      id: '1', title: 'All Staff Meeting – Term 2 Kick-off',
-      date: '2026-05-20', time: '14:00', endTime: '15:30',
-      organizer: 'Principal\'s Office', description: 'Opening meeting for Term 2. Agenda includes: term overview, new curriculum updates, staff welfare announcements, and departmental reports. All teaching and non-teaching staff are required to attend.',
-      attendeeCount: 48, joinUrl: 'https://meet.google.com/abc-defg-hij', location: 'School Hall',
-    },
-    {
-      id: '2', title: 'Science Department Meeting',
-      date: '2026-05-19', time: '11:00', endTime: '12:00',
-      organizer: 'Dr. Sarah Kimani', description: 'Weekly Science Department meeting to discuss lesson plans, lab schedules, and the upcoming science fair. Bring your termly schemes of work.',
-      attendeeCount: 12, location: 'Science Lab B',
-    },
-    {
-      id: '3', title: 'Parent-Teacher Conference – Form 2',
-      date: '2026-05-25', time: '09:00', endTime: '15:00',
-      organizer: 'Academic Affairs', description: 'Scheduled parent-teacher meetings for Form 2 parents. Each teacher will have a 15-minute slot per parent. Timetable will be shared by May 22nd.',
-      attendeeCount: 24, joinUrl: 'https://teams.microsoft.com/meeting/xyz', location: 'Various Classrooms',
-    },
-    {
-      id: '4', title: 'Sports Day Planning Committee',
-      date: '2026-05-22', time: '13:00', endTime: '14:00',
-      organizer: 'Mr. John Mwangi', description: 'Planning committee meeting for the annual Sports Day event scheduled for June 15th. Discuss logistics, events, and resource allocation.',
-      attendeeCount: 8, location: 'Staff Room',
-    },
-    {
-      id: '5', title: 'Term 1 Staff Meeting',
-      date: '2026-04-10', time: '14:00', endTime: '15:30',
-      organizer: 'Principal\'s Office', description: 'End of Term 1 staff meeting covering performance review, examination results analysis, and holiday assignments.',
-      attendeeCount: 52, location: 'School Hall',
-    },
-    {
-      id: '6', title: 'Department Heads Meeting',
-      date: '2026-04-05', time: '10:00', endTime: '11:30',
-      organizer: 'Deputy Principal', description: 'Meeting with all Heads of Department to review term 1 academic performance and plan for term 2. Budget proposals for term 2 to be submitted.',
-      attendeeCount: 9, location: 'Conference Room A',
-    },
-  ]);
+  private readonly http = inject(HttpClient);
+
+  private readonly data = signal<Meeting[]>([]);
+  readonly isLoading = signal(false);
+  readonly error = signal<string | null>(null);
 
   readonly allMeetings = this.data.asReadonly();
 
@@ -53,6 +38,35 @@ export class TeacherMeetingService {
   );
 
   fetchMeetings(): void {
-    // mock - data already loaded
+    this.isLoading.set(true);
+    this.error.set(null);
+    this.http.get<Paginated<RawMeeting> | RawMeeting[]>(getApiUrl('/communication/meetings/'))
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (res) => {
+          const rows = Array.isArray(res) ? res : (res.results ?? []);
+          this.data.set(rows.map(r => this.mapMeeting(r)));
+        },
+        error: () => {
+          this.data.set([]);
+          this.error.set('Failed to load meetings');
+        },
+      });
+  }
+
+  private mapMeeting(r: RawMeeting): Meeting {
+    const scheduled = r.scheduled_at ? new Date(r.scheduled_at) : null;
+    return {
+      id: String(r.id),
+      title: r.title,
+      date: r.scheduled_at,
+      time: scheduled
+        ? scheduled.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '',
+      organizer: r.organizer_name || 'School',
+      location: r.location ?? undefined,
+      attendeeCount: r.participant_count ?? 0,
+      joinUrl: r.meeting_link ?? undefined,
+    };
   }
 }

@@ -230,6 +230,18 @@ export class WorkspaceDetailComponent implements OnInit {
     // To be implemented
   }
 
+  toggleResourcePublish(r: Resource): void {
+    this.workspacesService.toggleResourcePublish(r.id).subscribe({
+      next: (res) => {
+        this.resources.update(list =>
+          list.map(item =>
+            item.id === r.id ? { ...item, is_published: res.is_published } : item
+          )
+        );
+      },
+    });
+  }
+
   uploadResource() {
     const ws = this.workspace();
     if (ws) {

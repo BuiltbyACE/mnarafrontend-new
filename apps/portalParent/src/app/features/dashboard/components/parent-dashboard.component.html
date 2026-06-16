@@ -86,7 +86,7 @@
         </mat-card-header>
         <mat-card-content>
           <div class="grades-list">
-            @for (academic of data.recent_academics; track academic.subject) {
+            @for (academic of data.recent_academics; track academic.subject + academic.assessment) {
               <div class="grade-item">
                 <span class="grade-subject">{{ academic.subject }}</span>
                 <span class="grade-term">{{ academic.assessment }}</span>
@@ -102,7 +102,7 @@
           </div>
         </mat-card-content>
         <mat-card-actions>
-          <a routerLink="academics/report-cards" class="view-link">
+          <a routerLink="/parent/academics/report-cards" class="view-link">
             View Full Report Card
             <mat-icon>arrow_forward</mat-icon>
           </a>
@@ -136,7 +136,7 @@
           </div>
         </mat-card-content>
         <mat-card-actions>
-          <a routerLink="announcements" class="view-link">
+          <a routerLink="/parent/announcements" class="view-link">
             View All Notices
             <mat-icon>arrow_forward</mat-icon>
           </a>

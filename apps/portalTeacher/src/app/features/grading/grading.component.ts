@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, inject, OnInit } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -259,30 +259,35 @@ interface SubjectAverage {
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GradingComponent {
+export class GradingComponent implements OnInit {
   private gradingService = inject(TeacherGradingService);
 
   readonly selectedSeries = signal<string>('Term 2 2026');
   readonly selectedSubject = signal<string>('All');
 
-  readonly pendingItems = signal([
-    { id: 1, title: 'Algebra Quiz 1', submissionCount: 22, dueDate: 'Jun 15, 2026', subject: 'Mathematics', class: 'Form 2A' },
-    { id: 2, title: 'Organic Chemistry Essay', submissionCount: 15, dueDate: 'Jun 28, 2026', subject: 'Chemistry', class: 'Form 4A' },
-    { id: 3, title: 'Thermodynamics Lab Report', submissionCount: 18, dueDate: 'Jun 22, 2026', subject: 'Physics', class: 'Form 3B' },
-    { id: 4, title: 'Genetics Research Project', submissionCount: 8, dueDate: 'Jul 10, 2026', subject: 'Biology', class: 'Form 1C' },
-  ]);
+  readonly pendingItems = computed<PendingItem[]>(() =>
+    this.gradingService.pendingItems().map(p => ({
+      id: p.id,
+      title: p.title,
+      submissionCount: p.submission_count,
+      dueDate: new Date(p.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      subject: p.subject,
+      class: p.class_name,
+    }))
+  );
 
   readonly gradeDistribution = this.gradingService.gradeDistribution;
 
-  readonly subjectAverages = signal([
-    { subject: 'Mathematics', averageScore: 72, classRank: 2 },
-    { subject: 'Physics', averageScore: 68, classRank: 3 },
-    { subject: 'Chemistry', averageScore: 74, classRank: 1 },
-    { subject: 'Biology', averageScore: 65, classRank: 4 },
-  ]);
+  readonly subjectAverages = computed<SubjectAverage[]>(() =>
+    this.gradingService.subjectAverages().map(s => ({
+      subject: s.subject,
+      averageScore: s.average_score,
+      classRank: s.class_rank,
+    }))
+  );
 
-  constructor() {
-    this.gradingService.fetchGradeDistribution();
+  ngOnInit(): void {
+    this.gradingService.fetchDashboard();
   }
 
   gradeItem(item: { id: number }) {

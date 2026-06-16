@@ -43,3 +43,27 @@ export interface CreateConversationPayload {
   recipient_ids?: number[];
   recipient_type?: string;
 }
+
+export enum AudienceType {
+  ALL = 'ALL',
+  STAFF = 'STAFF',
+  STUDENTS = 'STUDENTS',
+  PARENTS = 'PARENTS',
+  SPECIFIC_ROLES = 'SPECIFIC_ROLES',
+  YEAR_LEVEL_PARENTS = 'YEAR_LEVEL_PARENTS',
+}
+
+export interface OmnichannelPayload {
+  title: string;
+  body: string;
+  audience_type: AudienceType;
+  year_level_id?: number;
+  send_sms: boolean;
+  send_in_app: boolean;
+}
+
+export interface YearLevelOption {
+  id: number;
+  name: string;
+  order: number;
+}

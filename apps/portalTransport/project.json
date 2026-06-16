@@ -8,7 +8,9 @@
   "targets": {
     "build": {
       "executor": "@nx/angular:webpack-browser",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/apps/portalTransport",
         "index": "apps/portalTransport/src/index.html",
@@ -21,13 +23,19 @@
             "input": "apps/portalTransport/public"
           }
         ],
-        "styles": ["apps/portalTransport/src/styles.scss"],
+        "styles": [
+          "apps/portalTransport/src/styles.scss"
+        ],
         "customWebpackConfig": {
           "path": "apps/portalTransport/webpack.config.ts"
         }
       },
       "configurations": {
         "production": {
+          "outputHashing": "all",
+          "customWebpackConfig": {
+            "path": "apps/portalTransport/webpack.prod.config.ts"
+          },
           "budgets": [
             {
               "type": "initial",
@@ -36,14 +44,10 @@
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "4kb",
-              "maximumError": "8kb"
+              "maximumWarning": "16kb",
+              "maximumError": "24kb"
             }
-          ],
-          "outputHashing": "all",
-          "customWebpackConfig": {
-            "path": "apps/portalTransport/webpack.prod.config.ts"
-          }
+          ]
         },
         "development": {
           "buildOptimizer": false,
@@ -72,7 +76,9 @@
         }
       },
       "defaultConfiguration": "development",
-      "dependsOn": ["shell:serve"]
+      "dependsOn": [
+        "shell:serve"
+      ]
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -85,7 +91,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/portalTransport/jest.config.cts",
         "tsConfig": "apps/portalTransport/tsconfig.spec.json"

@@ -58,18 +58,16 @@ export class ParentDashboardComponent implements OnInit {
   }
 
   getGradeBgColor(grade: string): string {
-    const g = grade.charAt(0).toUpperCase();
-    if (['A'].includes(g)) return '#dcfce7';
-    if (['B'].includes(g)) return '#dbeafe';
-    if (['C'].includes(g)) return '#fef3c7';
+    if (['A*', 'A'].includes(grade)) return '#dcfce7';
+    if (grade.startsWith('B')) return '#dbeafe';
+    if (grade.startsWith('C')) return '#fef3c7';
     return '#fee2e2';
   }
 
   getGradeTextColor(grade: string): string {
-    const g = grade.charAt(0).toUpperCase();
-    if (['A'].includes(g)) return '#166534';
-    if (['B'].includes(g)) return '#1e40af';
-    if (['C'].includes(g)) return '#92400e';
+    if (['A*', 'A'].includes(grade)) return '#166534';
+    if (grade.startsWith('B')) return '#1e40af';
+    if (grade.startsWith('C')) return '#92400e';
     return '#991b1b';
   }
 

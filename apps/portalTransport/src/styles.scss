@@ -1,1 +1,205 @@
-/* You can add global styles to this file, and also import other style files */
+/* ═══════════════════════════════════════════════════
+   Mnara Fleet Console — Tablet-first PWA Styles
+   Target: 7-inch vehicle-mounted tablet, touch-first,
+   high-contrast, low-glare dark theme.
+   ═══════════════════════════════════════════════════ */
+
+/* ─── CSS Design Tokens ─── */
+:root {
+  /* Core Colors */
+  --mn-primary: #0F172A;
+  --mn-surface: #1E293B;
+  --mn-surface-elevated: #334155;
+  --mn-accent: #0369A1;
+  --mn-accent-light: #0EA5E9;
+  --mn-success: #22C55E;
+  --mn-success-dark: #16A34A;
+  --mn-warning: #F59E0B;
+  --mn-error: #EF4444;
+  
+  /* Text Colors */
+  --mn-text-primary: #F8FAFC;
+  --mn-text-secondary: #94A3B8;
+  --mn-text-muted: #64748B;
+  
+  /* Spacing */
+  --touch-target-min: 44px;
+  --touch-target-ideal: 56px;
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  
+  /* Animation */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+}
+
+/* ─── Reset & Base ─── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-size: 16px;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: fixed;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  background: #0f172a;
+  color: #f1f5f9;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: fixed;
+}
+
+/* ─── Touch Target Sizing (≥44px per WCAG 2.2) ─── */
+.touch-btn {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 2px;
+}
+
+/* ─── Focus / Active ─── */
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ─── Prevent pull-to-refresh on tablet ─── */
+html, body {
+  overscroll-behavior-y: contain;
+}
+
+/* ─── Safe area insets for notched tablets ─── */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* ─── Input mode overrides (numeric keypad for PIN) ─── */
+input[inputmode="numeric"] {
+  -moz-appearance: textfield;
+}
+input[inputmode="numeric"]::-webkit-outer-spin-button,
+input[inputmode="numeric"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ─── Tablet Utility Classes ─── */
+
+/* Hidden scrollbar for touch interfaces */
+.custom-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* High-contrast focus states for outdoor visibility */
+.focus-ring:focus-visible {
+  outline: 3px solid var(--mn-accent-light);
+  outline-offset: 2px;
+}
+
+/* Touch-optimized button base */
+.btn-touch {
+  min-height: var(--touch-target-ideal);
+  min-width: var(--touch-target-min);
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  touch-action: manipulation;
+}
+
+.btn-touch:active {
+  transform: scale(0.98);
+}
+
+/* Glass morphism card for overlays */
+.glass-card {
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  border-radius: var(--radius-lg);
+}
+
+/* Status indicator pulse animation */
+.pulse-live {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .pulse-live {
+    animation: none;
+  }
+}
+
+/* High contrast mode for accessibility */
+@media (prefers-contrast: high) {
+  :root {
+    --mn-text-primary: #FFFFFF;
+    --mn-text-secondary: #E2E8F0;
+    --mn-surface: #000000;
+    --mn-surface-elevated: #1A1A1A;
+  }
+}

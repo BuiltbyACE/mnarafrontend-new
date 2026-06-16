@@ -25,6 +25,16 @@ export const remoteRoutes: Route[] = [
           import('../features/assignments/create/create-assignment.component').then(m => m.CreateAssignmentComponent),
       },
       {
+        path: 'workspace/:id/assignments/:aid/submissions',
+        loadComponent: () =>
+          import('../features/assignments/submissions/submissions-list.component').then(m => m.SubmissionsListComponent),
+      },
+      {
+        path: 'assignments/:id/submissions',
+        loadComponent: () =>
+          import('../features/assignments/submissions/submissions-list.component').then(m => m.SubmissionsListComponent),
+      },
+      {
         path: 'workspace/:id',
         loadComponent: () =>
           import('../features/classes/components/workspace-detail.component').then(m => m.WorkspaceDetailComponent),
@@ -41,6 +51,21 @@ export const remoteRoutes: Route[] = [
           import('../features/resources/upload/upload-resource.component').then(m => m.UploadResourceComponent),
       },
 
+      {
+        path: 'attendance',
+        loadComponent: () =>
+          import('../features/attendance/live-roster.component').then(m => m.LiveRosterComponent),
+      },
+      {
+        path: 'messages',
+        loadComponent: () =>
+          import('../features/messages/messages.component').then(m => m.MessagesComponent),
+      },
+      {
+        path: 'students',
+        loadComponent: () =>
+          import('../features/students/students.component').then(m => m.StudentsComponent),
+      },
       {
         path: 'behaviour',
         loadComponent: () =>

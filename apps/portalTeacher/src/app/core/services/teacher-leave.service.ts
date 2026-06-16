@@ -1,33 +1,84 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { finalize } from 'rxjs';
+import { getApiUrl } from '@sms/core/config';
 import { LeaveBalance, LeaveRequest } from '../../shared/models/teacher.models';
+
+interface RawLeaveBalance {
+  id: number;
+  staff_name?: string;
+  points_remaining: number;
+}
+
+interface RawLeaveRequest {
+  id: number;
+  leave_type: string;
+  leave_type_display?: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  created_at: string;
+}
+
+interface Paginated<T> { results?: T[]; }
 
 @Injectable({ providedIn: 'root' })
 export class TeacherLeaveService {
-  readonly leaveBalances = signal<LeaveBalance[]>([
-    { type: 'Sick Leave', total: 30, used: 8, remaining: 22 },
-    { type: 'Annual Leave', total: 24, used: 10, remaining: 14 },
-    { type: 'Personal Leave', total: 12, used: 3, remaining: 9 },
-  ]);
+  private readonly http = inject(HttpClient);
 
-  readonly leaveRequests = signal<LeaveRequest[]>([
-    { id: 'LR-001', leaveType: 'Annual Leave', startDate: '2026-06-15', endDate: '2026-06-20', status: 'approved', reason: 'Family vacation abroad', appliedOn: '2026-05-01' },
-    { id: 'LR-002', leaveType: 'Sick Leave', startDate: '2026-04-22', endDate: '2026-04-23', status: 'approved', reason: 'Medical appointment', appliedOn: '2026-04-21' },
-    { id: 'LR-003', leaveType: 'Personal Leave', startDate: '2026-05-10', endDate: '2026-05-10', status: 'approved', reason: 'Personal errand', appliedOn: '2026-05-05' },
-    { id: 'LR-004', leaveType: 'Annual Leave', startDate: '2026-07-01', endDate: '2026-07-10', status: 'pending', reason: 'End of term break', appliedOn: '2026-05-12' },
-    { id: 'LR-005', leaveType: 'Personal Leave', startDate: '2026-03-05', endDate: '2026-03-05', status: 'rejected', reason: 'Insufficient coverage in department', appliedOn: '2026-03-01' },
-    { id: 'LR-006', leaveType: 'Sick Leave', startDate: '2026-02-10', endDate: '2026-02-12', status: 'approved', reason: 'Flu recovery', appliedOn: '2026-02-09' },
-  ]);
-
+  readonly leaveBalances = signal<LeaveBalance[]>([]);
+  readonly leaveRequests = signal<LeaveRequest[]>([]);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
 
   fetchBalances(): void {
     this.isLoading.set(true);
-    setTimeout(() => this.isLoading.set(false), 200);
+    this.http.get<Paginated<RawLeaveBalance> | RawLeaveBalance[]>(getApiUrl('/staff/leave-balances/'))
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (res) => {
+          const rows = Array.isArray(res) ? res : (res.results ?? []);
+          // Backend models leave as a points system (3 max per year).
+          this.leaveBalances.set(rows.map(r => ({
+            type: 'Compassionate Leave',
+            total: 3,
+            used: Math.max(0, 3 - (r.points_remaining ?? 0)),
+            remaining: r.points_remaining ?? 0,
+          })));
+        },
+        error: () => {
+          this.leaveBalances.set([]);
+          this.error.set('Failed to load leave balances');
+        },
+      });
   }
 
   fetchRequests(): void {
     this.isLoading.set(true);
-    setTimeout(() => this.isLoading.set(false), 200);
+    this.http.get<Paginated<RawLeaveRequest> | RawLeaveRequest[]>(getApiUrl('/staff/leave-requests/'))
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (res) => {
+          const rows = Array.isArray(res) ? res : (res.results ?? []);
+          this.leaveRequests.set(rows.map(r => this.mapRequest(r)));
+        },
+        error: () => {
+          this.leaveRequests.set([]);
+          this.error.set('Failed to load leave requests');
+        },
+      });
+  }
+
+  private mapRequest(r: RawLeaveRequest): LeaveRequest {
+    const status = (r.status || '').toLowerCase();
+    return {
+      id: String(r.id),
+      leaveType: r.leave_type_display || r.leave_type,
+      startDate: r.start_date,
+      endDate: r.end_date,
+      status: (status === 'approved' || status === 'rejected' ? status : 'pending') as LeaveRequest['status'],
+      reason: '',
+      appliedOn: r.created_at,
+    };
   }
 }

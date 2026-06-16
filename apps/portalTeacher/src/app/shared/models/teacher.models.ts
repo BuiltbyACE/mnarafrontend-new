@@ -204,6 +204,44 @@ export interface Notification {
   read: boolean;
 }
 
+export interface SubmissionRecord {
+  id: number;
+  student: number;
+  student_name: string;
+  answers_payload: Record<string, unknown>;
+  submission_text: string;
+  uploaded_document: string | null;
+  auto_grade_score: number;
+  manual_grade_score: number;
+  score_awarded: number;
+  is_graded: boolean;
+  is_late: boolean;
+  is_draft: boolean;
+  teacher_feedback: string;
+  submitted_at: string | null;
+  graded_at: string | null;
+}
+
+export interface SubmissionsResponse {
+  assignment: {
+    id: number;
+    title: string;
+    submission_type: string;
+    max_score: number;
+    deadline: string;
+    status: string;
+    enrolled_count: number;
+    submitted_count: number;
+    graded_count: number;
+  };
+  submissions: SubmissionRecord[];
+  not_submitted: { id: number; full_name: string }[];
+}
+
+export interface UnreadCountResponse {
+  count: number;
+}
+
 export interface TeacherProfile {
   name: string;
   employeeId: string;

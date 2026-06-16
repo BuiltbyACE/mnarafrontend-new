@@ -8,18 +8,20 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { OperationsService, Announcement } from '../../services/operations.service';
 import { AnnouncementDialogComponent, AnnouncementDialogData } from '../announcement-dialog/announcement-dialog.component';
+import { OmnichannelComposerComponent } from '@sms/shared/ui';
 
 @Component({
   selector: 'app-announcements-table',
   standalone: true,
-  imports: [
+imports: [
     CommonModule, 
     FormsModule, 
     MatTableModule, 
     MatChipsModule, 
      MatButtonModule, 
      MatIconModule,
-     MatDialogModule
+     MatDialogModule,
+     OmnichannelComposerComponent,
    ],
   template: `
     <div class="table-container">
@@ -29,11 +31,21 @@ import { AnnouncementDialogComponent, AnnouncementDialogData } from '../announce
                   [ngModel]="searchQuery()" 
                   (ngModelChange)="searchQuery.set($event)" />
          </div>
-         <button mat-flat-button color="primary" (click)="openCreateDialog()">
-          <mat-icon>add</mat-icon>
-          Add Announcement
-        </button>
-      </div>
+         <div class="header-actions">
+           <button mat-stroked-button color="primary" (click)="showComposer.set(true)">
+            <mat-icon>campaign</mat-icon>
+            New Message
+          </button>
+          <button mat-flat-button color="primary" (click)="openCreateDialog()">
+            <mat-icon>add</mat-icon>
+            Add Announcement
+          </button>
+         </div>
+       </div>
+
+       @if (showComposer()) {
+        <ss-omnichannel-composer (closed)="showComposer.set(false)" />
+      }
 
       <table mat-table [dataSource]="filtered() || []" class="full-width-table mat-elevation-z2">
 
@@ -110,6 +122,7 @@ import { AnnouncementDialogComponent, AnnouncementDialogData } from '../announce
       margin-bottom: 16px;
       gap: 16px;
     }
+     .header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
      .search-field { flex: 1; max-width: 400px; }
      .search-field input {
        width: 100%;
@@ -140,7 +153,6 @@ export class AnnouncementsTableComponent implements OnInit {
   operationsService = inject(OperationsService);
   private dialog = inject(MatDialog);
 
-  // Mapped exactly to your HTML ng-containers
   displayedColumns: string[] = [
     'title', 
     'content', 
@@ -151,8 +163,8 @@ export class AnnouncementsTableComponent implements OnInit {
     'actions'
   ];
 
-  // The Signal holding what the user types in the search bar
   searchQuery = signal('');
+  showComposer = signal(false);
 
   // The Magic Computed Signal: Automatically filters the table instantly as you type
   filtered = computed(() => {

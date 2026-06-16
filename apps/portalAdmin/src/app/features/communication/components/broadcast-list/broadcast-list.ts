@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +7,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CommunicationService, Broadcast } from '../../services/communication.service';
+import { OmnichannelComposerComponent } from '@sms/shared/ui';
 
 @Component({
   selector: 'app-broadcast-list',
@@ -19,6 +20,7 @@ import { CommunicationService, Broadcast } from '../../services/communication.se
     MatTableModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    OmnichannelComposerComponent,
   ],
   template: `
     <div class="broadcast-container">
@@ -27,11 +29,15 @@ import { CommunicationService, Broadcast } from '../../services/communication.se
           <h1>Broadcasts</h1>
           <p class="subtitle">Create, dispatch, and monitor mass communications</p>
         </div>
-        <button mat-raised-button color="primary">
+        <button mat-raised-button color="primary" (click)="showComposer.set(true)">
           <mat-icon>add</mat-icon>
-          New Broadcast
+          New Message
         </button>
       </header>
+
+      @if (showComposer()) {
+        <ss-omnichannel-composer (closed)="showComposer.set(false)" />
+      }
 
       @if (service.error(); as err) {
         <div class="error-alert" role="alert">
@@ -209,6 +215,7 @@ export class BroadcastListComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly displayedColumns = ['title', 'audience', 'status', 'delivery', 'actions'];
+  readonly showComposer = signal(false);
 
   ngOnInit(): void {
     this.loadBroadcasts();

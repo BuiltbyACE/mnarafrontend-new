@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,6 +16,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { PrincipalDashboardService, PrincipalDashboardPayload } from '../../services/principal-dashboard.service';
+import { CalendarService } from '../../../../core/services/calendar.service';
 
 Chart.register(...registerables);
 
@@ -140,8 +140,8 @@ Chart.register(...registerables);
           </mat-card>
         </section>
 
-        <!-- Bottom Section - Operations Radar -->
-        <section class="operations-section">
+        <!-- Bottom Section - Operations Radar + Calendar -->
+        <section class="bottom-grid">
           <mat-card class="operations-card">
             <mat-card-header>
               <mat-icon mat-card-avatar class="section-icon">radar</mat-icon>
@@ -162,6 +162,55 @@ Chart.register(...registerables);
                   </div>
                 }
               </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="calendar-card">
+            <mat-card-header>
+              <mat-icon mat-card-avatar class="section-icon">calendar_month</mat-icon>
+              <mat-card-title>
+                <button mat-icon-button class="cal-nav" (click)="calendarService.previousMonth()">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+                <span>{{ calendarMonthLabel() }}</span>
+                <button mat-icon-button class="cal-nav" (click)="calendarService.nextMonth()">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+              </mat-card-title>
+              <mat-card-subtitle>{{ calendarEvents().length }} event(s)</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (calendarLoading()) {
+                <mat-progress-spinner diameter="24"></mat-progress-spinner>
+              } @else if (calendarEvents(); as events) {
+                <div class="calendar-grid">
+                  @for (day of ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; track day) {
+                    <span class="cal-day-header">{{ day }}</span>
+                  }
+                  @for (day of calendarDays(); track day) {
+                    <div class="cal-day" [class.has-event]="dayHasEvent(day)"
+                         [class.other-month]="day.month !== calendarMonth() - 1">
+                      <span class="day-num">{{ day.num }}</span>
+                      @if (dayHasEvent(day)) {
+                        <span class="day-dot"></span>
+                      }
+                    </div>
+                  }
+                </div>
+                @if (upcomingEvents().length > 0) {
+                  <mat-divider class="cal-divider"></mat-divider>
+                  <div class="upcoming-list">
+                    <span class="upcoming-title">Upcoming</span>
+                    @for (evt of upcomingEvents(); track evt.id) {
+                      <div class="upcoming-item">
+                        <span class="upcoming-dot" [style.background]="getEventColor(evt.type)"></span>
+                        <span class="upcoming-text">{{ evt.title }}</span>
+                        <span class="upcoming-date">{{ evt.date | date:'d MMM' }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              }
             </mat-card-content>
           </mat-card>
         </section>
@@ -477,9 +526,110 @@ Chart.register(...registerables);
       color: white;
     }
 
-    .operations-card {
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .operations-card,
+    .calendar-card {
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .cal-nav {
+      vertical-align: middle;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .cal-day-header {
+      font-size: 0.625rem;
+      font-weight: 600;
+      color: #64748b;
+      padding: 4px 0;
+      text-transform: uppercase;
+    }
+
+    .cal-day {
+      padding: 6px 0;
+      border-radius: 6px;
+      cursor: default;
+      position: relative;
+    }
+
+    .cal-day.other-month .day-num {
+      color: #cbd5e1;
+    }
+
+    .cal-day.has-event {
+      background: #eff6ff;
+    }
+
+    .day-num {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #0f172a;
+    }
+
+    .day-dot {
+      display: block;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #2563eb;
+      margin: 2px auto 0;
+    }
+
+    .cal-divider {
+      margin: 12px 0;
+    }
+
+    .upcoming-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .upcoming-title {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.05em;
+    }
+
+    .upcoming-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+    }
+
+    .upcoming-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .upcoming-text {
+      flex: 1;
+      color: #0f172a;
+      font-weight: 500;
+    }
+
+    .upcoming-date {
+      color: #64748b;
+      font-size: 0.6875rem;
     }
 
     .operations-log {
@@ -573,6 +723,10 @@ Chart.register(...registerables);
       .middle-grid {
         grid-template-columns: 1fr;
       }
+
+      .bottom-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 768px) {
@@ -599,73 +753,79 @@ Chart.register(...registerables);
 })
 export class AdminDashboardComponent implements OnInit {
   private readonly dashboardService = inject(PrincipalDashboardService);
-  private readonly http = inject(HttpClient);
+  readonly calendarService = inject(CalendarService);
 
   readonly dashboardData = signal<PrincipalDashboardPayload | null>(null);
   readonly isLoading = signal(true);
 
-  private readonly mockData: PrincipalDashboardPayload = {
-    adminName: 'Dr. Margaret Wanjiku',
-    lastRefresh: new Date().toISOString(),
-    kpis: {
-      totalStudents: 847,
-      totalStaff: 62,
-      totalClasses: 28,
-      feeCollection: 12.4,
-      activeIncidents: 3,
-      attendanceRate: 94.7,
-    },
-    financialHealth: {
-      collected: 8450000,
-      pending: 2130000,
-      overdue: 450000,
-      total: 10635000,
-    },
-    pendingApprovals: [
-      { id: 1, type: 'Leave Request', requester: 'Mr. James Ouma', description: 'Annual leave - 5 days', submittedAt: '2026-05-18T08:00:00Z', priority: 'medium' },
-      { id: 2, type: 'Expense Claim', requester: 'Ms. Grace Mwende', description: 'Teaching supplies - KES 15,000', submittedAt: '2026-05-18T09:30:00Z', priority: 'low' },
-      { id: 3, type: 'Event Request', requester: 'Sports Department', description: 'Inter-school athletics permit', submittedAt: '2026-05-18T10:15:00Z', priority: 'high' },
-      { id: 4, type: 'Curriculum Change', requester: 'Mr. Peter Kimani', description: 'Add coding elective - Form 2', submittedAt: '2026-05-17T14:00:00Z', priority: 'medium' },
-    ],
-    liveOperations: [
-      { id: 1, timestamp: '2026-05-18T08:15:00Z', type: 'warning', message: 'Form 3A Math is unsupervised', location: 'Room 104' },
-      { id: 2, timestamp: '2026-05-18T08:30:00Z', type: 'info', message: 'Bus Route 3 departed', location: 'Main Gate' },
-      { id: 3, timestamp: '2026-05-18T07:45:00Z', type: 'success', message: 'Fire drill completed - all clear', location: 'Playground' },
-      { id: 4, timestamp: '2026-05-18T09:00:00Z', type: 'alert', message: 'Lab 2 - Chemical spill reported', location: 'Science Block' },
-    ],
-    quickStats: [
-      { label: 'Fee Collection (M)', value: 12.4, change: 8.2, unit: 'KES' },
-      { label: 'Active Incidents', value: 3, change: -2, unit: '' },
-      { label: 'Attendance Rate', value: 94.7, change: 1.5, unit: '%' },
-      { label: 'Pending Approvals', value: 12, change: 4, unit: '' },
-    ],
-  };
+  readonly calendarEvents = this.calendarService.events;
+  readonly calendarLoading = this.calendarService.isLoading;
+  readonly calendarMonth = this.calendarService.currentMonth;
+  readonly calendarYear = this.calendarService.currentYear;
+
+  readonly calendarMonthLabel = computed(() => {
+    const month = this.calendarMonth();
+    const year = this.calendarYear();
+    return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  });
+
+  readonly calendarDays = computed(() => {
+    const month = this.calendarMonth();
+    const year = this.calendarYear();
+    const first = new Date(year, month - 1, 1);
+    const last = new Date(year, month, 0);
+    const startPad = (first.getDay() + 6) % 7;
+    const totalCells = Math.ceil((startPad + last.getDate()) / 7) * 7;
+    const days: { num: number; month: number; fullDate: string }[] = [];
+    for (let i = 0; i < totalCells; i++) {
+      const d = new Date(year, month - 1, -startPad + i + 1);
+      const fullDate = d.getMonth() === month - 1
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        : '';
+      days.push({ num: d.getDate(), month: d.getMonth(), fullDate });
+    }
+    return days;
+  });
+
+  readonly upcomingEvents = computed(() =>
+    this.calendarEvents()
+      .filter(e => e.date >= new Date().toISOString().split('T')[0])
+      .slice(0, 5)
+  );
+
+  constructor() {
+    this.calendarService.loadEvents();
+  }
 
   ngOnInit(): void {
-    console.log('AdminDashboardComponent: Initializing...');
     this.loadDashboard();
+  }
 
-    setTimeout(() => {
-      if (this.isLoading()) {
-        console.log('AdminDashboardComponent: Timeout - falling back to mock data');
-        this.dashboardData.set(this.mockData);
-        this.isLoading.set(false);
-      }
-    }, 5000);
+  dayHasEvent(day: { num: number; month: number; fullDate: string }): boolean {
+    if (!day.fullDate) return false;
+    return this.calendarService.hasEvents(day.fullDate);
+  }
+
+  getEventColor(type: string): string {
+    const colors: Record<string, string> = {
+      holiday: '#ef4444',
+      exam: '#f59e0b',
+      meeting: '#8b5cf6',
+      event: '#2563eb',
+      deadline: '#dc2626',
+      assembly: '#10b981',
+    };
+    return colors[type] || '#64748b';
   }
 
   private loadDashboard(): void {
-    console.log('AdminDashboardComponent: Loading dashboard from API');
     this.isLoading.set(true);
     this.dashboardService.getPrincipalSummary().subscribe({
       next: (data) => {
-        console.log('AdminDashboardComponent: API success');
         this.dashboardData.set(data);
         this.isLoading.set(false);
       },
-      error: (err) => {
-        console.error('AdminDashboardComponent: API error, using mock data:', err);
-        this.dashboardData.set(this.mockData);
+      error: () => {
         this.isLoading.set(false);
       },
     });
@@ -678,7 +838,7 @@ export class AdminDashboardComponent implements OnInit {
     return [
       { label: 'Total Students', value: k.totalStudents.toLocaleString(), icon: 'groups', colorClass: 'kpi-blue', change: '+12', changeType: 'positive' },
       { label: 'Total Staff', value: k.totalStaff.toString(), icon: 'badge', colorClass: 'kpi-indigo', change: '+3', changeType: 'positive' },
-      { label: 'Fee Collection', value: `KES ${k.feeCollection}M`, icon: 'account_balance', colorClass: 'kpi-green', change: '+8.2%', changeType: 'positive' },
+      { label: 'Fee Collection', value: this.formatCurrency(k.feeCollection), icon: 'account_balance', colorClass: 'kpi-green', change: '+8.2%', changeType: 'positive' },
       { label: 'Active Incidents', value: k.activeIncidents.toString(), icon: 'warning', colorClass: k.activeIncidents > 0 ? 'kpi-red-pulse' : 'kpi-green', change: k.activeIncidents > 0 ? 'Needs attention' : 'All clear', changeType: k.activeIncidents > 0 ? 'negative' : 'positive' },
     ];
   });

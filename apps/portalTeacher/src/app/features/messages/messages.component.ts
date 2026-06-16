@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { DatePipe, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -370,7 +370,7 @@ import { TeacherMessageService, Thread, Message } from '../../core/services/teac
     }
   `]
 })
-export class MessagesComponent {
+export class MessagesComponent implements OnInit {
   private messageService = inject(TeacherMessageService);
 
   readonly newMessage = signal('');
@@ -378,6 +378,10 @@ export class MessagesComponent {
   readonly threads = this.messageService.threads;
   readonly activeThreadId = this.messageService.activeThreadId;
   readonly activeThread = this.messageService.activeThread;
+
+  ngOnInit(): void {
+    this.messageService.loadThreads();
+  }
 
   getInitials(participants: string[]): string {
     return participants.map(p => p.charAt(0)).join('');

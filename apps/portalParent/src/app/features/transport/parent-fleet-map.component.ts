@@ -156,66 +156,6 @@ export class ParentFleetMapComponent implements OnInit, OnDestroy, AfterViewInit
         paint: { 'text-color': '#1e3a8a', 'text-halo-color': '#ffffff', 'text-halo-width': 2 }
       });
 
-      // ==========================================
-      // DEMO: HOME CHECKPOINT & GEOFENCE
-      // ==========================================
-      const schoolCoords = [36.77805933015456, -1.2822594212716916];
-      const homeCoords = [36.765848, -1.37878];
-
-      this.map.addSource('demo-home-source', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: [
-            {
-              type: 'Feature',
-              geometry: { type: 'Point', coordinates: homeCoords },
-              properties: { title: 'Home (Saeed)', icon: '🏠' }
-            }
-          ]
-        }
-      });
-
-      // Geofence Radius (Notification Trigger Zone)
-      this.map.addLayer({
-        id: 'home-geofence',
-        type: 'circle',
-        source: 'demo-home-source',
-        paint: {
-          'circle-radius': 90, 
-          'circle-color': '#10b981',
-          'circle-opacity': 0.15,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#10b981'
-        }
-      });
-
-      // Home Background Circle
-      this.map.addLayer({
-        id: 'home-circle',
-        type: 'circle',
-        source: 'demo-home-source',
-        paint: { 'circle-radius': 18, 'circle-color': '#8b5cf6', 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' }
-      });
-
-      // Home Emoji
-      this.map.addLayer({
-        id: 'home-emoji',
-        type: 'symbol',
-        source: 'demo-home-source',
-        layout: { 'text-field': '{icon}', 'text-size': 16, 'text-anchor': 'center', 'text-allow-overlap': true },
-        paint: { 'text-color': '#ffffff' }
-      });
-
-      // Home Label
-      this.map.addLayer({
-        id: 'home-text',
-        type: 'symbol',
-        source: 'demo-home-source',
-        layout: { 'text-field': '{title}', 'text-size': 12, 'text-anchor': 'top', 'text-offset': [0, 1.8], 'text-allow-overlap': true, 'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'] },
-        paint: { 'text-color': '#4c1d95', 'text-halo-color': '#ffffff', 'text-halo-width': 2 }
-      });
-
       this.map.addSource(this.ROUTE_SOURCE, {
         type: 'geojson',
         lineMetrics: true,

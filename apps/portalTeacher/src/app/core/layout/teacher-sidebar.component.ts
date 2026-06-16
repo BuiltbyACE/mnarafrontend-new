@@ -143,12 +143,15 @@ export class TeacherSidebarComponent {
     {
       label: 'Students',
       items: [
+        { label: 'Student Directory', icon: 'people', route: '/teacher/students' },
+        { label: 'Live Attendance', icon: 'fact_check', route: '/teacher/attendance' },
         { label: 'Behaviour & Discipline', icon: 'gavel', route: '/teacher/behaviour' },
       ],
     },
     {
       label: 'Communication',
       items: [
+        { label: 'Messages', icon: 'chat', route: '/teacher/messages' },
         { label: 'Announcements', icon: 'campaign', route: '/teacher/announcements' },
       ],
     },

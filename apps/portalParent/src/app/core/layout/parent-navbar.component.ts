@@ -26,6 +26,10 @@ export class ParentNavbarComponent {
   private readonly authStore = inject(AuthStore);
   readonly siblingState = inject(SiblingStateService);
 
+  constructor() {
+    this.authStore.restoreFromStorage();
+  }
+
   readonly fullName = this.authStore.fullName;
   readonly email = this.authStore.user()?.user?.email ?? '';
 

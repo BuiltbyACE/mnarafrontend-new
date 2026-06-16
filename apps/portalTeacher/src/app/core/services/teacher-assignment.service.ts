@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
-import { Assignment, CreateAssignmentPayload } from '../../shared/models/teacher.models';
+import { Assignment, CreateAssignmentPayload, SubmissionsResponse, UnreadCountResponse } from '../../shared/models/teacher.models';
 
 interface RawAssignment {
   id: number;
@@ -49,6 +49,12 @@ export class TeacherAssignmentService {
   readonly isCreating = signal(false);
   readonly error = signal<string | null>(null);
 
+  readonly submissionsResponse = signal<SubmissionsResponse | null>(null);
+  readonly submissionsLoading = signal(false);
+  readonly isGrading = signal(false);
+
+  readonly unreadCount = signal(0);
+
   fetchAssignments(): void {
     this.isLoading.set(true);
     this.error.set(null);
@@ -68,6 +74,49 @@ export class TeacherAssignmentService {
       .subscribe({
         next: () => this.fetchAssignments(),
         error: () => this.error.set('Failed to create assignment'),
+      });
+  }
+
+  fetchSubmissions(assignmentId: number): void {
+    this.submissionsLoading.set(true);
+    this.http.get<SubmissionsResponse>(
+      getApiUrl(`/lms/assignments/assignments/${assignmentId}/submissions/`)
+    ).pipe(finalize(() => this.submissionsLoading.set(false)))
+      .subscribe({
+        next: (data) => this.submissionsResponse.set(data),
+        error: () => this.error.set('Failed to load submissions'),
+      });
+  }
+
+  gradeSubmission(submissionId: number, manualScore: number, feedback: string): void {
+    this.isGrading.set(true);
+    this.http.post<{ message: string; score_awarded: number }>(
+      getApiUrl(`/lms/assignments/submissions/${submissionId}/grade/`),
+      { manual_grade_score: manualScore, teacher_feedback: feedback },
+    ).pipe(finalize(() => this.isGrading.set(false)))
+      .subscribe({
+        next: () => {
+          const resp = this.submissionsResponse();
+          if (resp) {
+            const sub = resp.submissions.find(s => s.id === submissionId);
+            if (sub) {
+              sub.is_graded = true;
+              sub.manual_grade_score = manualScore;
+              sub.score_awarded = (sub.auto_grade_score ?? 0) + manualScore;
+              sub.teacher_feedback = feedback;
+            }
+            this.submissionsResponse.set({ ...resp });
+          }
+        },
+        error: () => this.error.set('Failed to grade submission'),
+      });
+  }
+
+  fetchUnreadCount(): void {
+    this.http.get<UnreadCountResponse>(getApiUrl('/notifications/unread-count/'))
+      .subscribe({
+        next: (data) => this.unreadCount.set(data.count),
+        error: () => {},
       });
   }
 }

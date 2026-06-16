@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, DestroyRef, effect } from '@angular/core';
 import { DatePipe, LowerCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -98,6 +98,8 @@ type FilterKey = 'ALL' | 'PENDING' | 'SUBMITTED' | 'GRADED';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssignmentQuizDialogComponent {
+  private static readonly DRAFT_KEY_PREFIX = 'quiz_draft_';
+  private destroyRef = inject(DestroyRef);
   readonly assignment = signal<AssignmentDTO | null>(null);
   readonly questions = signal<QuizQuestion[]>([
     { id: 'q1', question_text: 'What is the value of x in 2x + 5 = 15?', marks: 2, options: [
@@ -120,15 +122,54 @@ export class AssignmentQuizDialogComponent {
 
   private dialog = inject(MatDialog);
   private service = inject(AssignmentsService);
+  private autoSaveTimer: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    effect(() => {
+      const qs = this.questions();
+      const a = this.assignment();
+      if (!a || this.isReview() || qs.length === 0) return;
+      const draftKey = AssignmentQuizDialogComponent.DRAFT_KEY_PREFIX + a.id;
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as Record<string, string>;
+          let changed = false;
+          this.questions.update(qs => qs.map(q => {
+            if (parsed[q.id]) {
+              changed = true;
+              return { ...q, selectedAnswer: parsed[q.id] };
+            }
+            return q;
+          }));
+        } catch {}
+      }
+    });
+  }
 
   setAssignment(a: AssignmentDTO, reviewMode: boolean = false) {
     this.assignment.set(a);
     this.isReview.set(reviewMode);
-    
+
     if (reviewMode && a.submission_id) {
       this.fetchReview(a.submission_id);
     } else {
       this.fetchQuestions(a.id);
+    }
+
+    if (!reviewMode) {
+      const timer = setInterval(() => {
+        const qs = this.questions();
+        if (qs.length === 0) return;
+        const selected: Record<string, string> = {};
+        for (const q of qs) {
+          if (q.selectedAnswer) selected[q.id] = q.selectedAnswer;
+        }
+        if (Object.keys(selected).length > 0) {
+          localStorage.setItem(AssignmentQuizDialogComponent.DRAFT_KEY_PREFIX + a.id, JSON.stringify(selected));
+        }
+      }, 30000);
+      this.destroyRef.onDestroy(() => clearInterval(timer));
     }
   }
 
@@ -159,6 +200,7 @@ export class AssignmentQuizDialogComponent {
     this.submitting.set(true);
     this.service.submitQuiz(a.id, answers).subscribe({
       next: () => {
+        localStorage.removeItem(AssignmentQuizDialogComponent.DRAFT_KEY_PREFIX + a.id);
         this.service.loadAssignments();
         this.dialog.closeAll();
       },
@@ -329,6 +371,23 @@ export class AssignmentTextDialogComponent {
   cancel() { this.dialog.closeAll(); }
 }
 
+function formatCountdown(ms: number): { text: string; urgent: boolean } {
+  if (ms <= 0) {
+    const past = Math.abs(ms);
+    const d = Math.floor(past / 86400000);
+    const h = Math.floor((past % 86400000) / 3600000);
+    if (d > 0) return { text: `Overdue by ${d}d ${h}h`, urgent: false };
+    return { text: `Overdue by ${h}h`, urgent: true };
+  }
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  if (d > 0) return { text: `${d}d ${h}h ${m}m`, urgent: false };
+  if (h > 0) return { text: `${h}h ${m}m ${s}s`, urgent: true };
+  return { text: `${m}m ${s}s`, urgent: true };
+}
+
 @Component({
   selector: 'app-assignments',
   imports: [
@@ -375,10 +434,12 @@ export class AssignmentTextDialogComponent {
                 <p class="card-subject">{{ a.subject }}</p>
                 <p class="card-desc">{{ a.description }}</p>
 
-                <div class="card-meta">
-                  <span class="due-label"><mat-icon>calendar_today</mat-icon>Due {{ a.due_date | date:'mediumDate' }}</span>
-                  <span class="status-chip" [class]="a.status">{{ a.status }}</span>
-                </div>
+                  <div class="card-meta">
+                    <span class="due-label" [class.urgent]="countdownText(a.due_date).urgent">
+                      <mat-icon>schedule</mat-icon>{{ countdownText(a.due_date).text }}
+                    </span>
+                    <span class="status-chip" [class]="a.status">{{ a.status }}</span>
+                  </div>
 
                 @if (a.status === 'graded' && a.score_awarded != null && a.max_score != null) {
                   <div class="score-row">
@@ -503,6 +564,7 @@ export class AssignmentTextDialogComponent {
       display: flex; align-items: center; gap: 4px;
       font-size: 0.75rem; color: #94a3b8;
     }
+    .due-label.urgent { color: #ef4444; font-weight: 600; }
     .due-label mat-icon { font-size: 14px; width: 14px; height: 14px; }
 
     .status-chip {
@@ -530,11 +592,14 @@ export class AssignmentTextDialogComponent {
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class AssignmentsComponent implements OnInit {
   readonly service = inject(AssignmentsService);
   readonly dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
 
   readonly activeFilter = signal<FilterKey>('ALL');
+  private countdownTicks = signal(0);
 
   readonly filters: { key: FilterKey; label: string; icon: string }[] = [
     { key: 'ALL', label: 'All', icon: 'assignment' },
@@ -549,8 +614,18 @@ export class AssignmentsComponent implements OnInit {
     return f === 'all' ? all : all.filter(a => a.status === f);
   });
 
+  readonly countdownText = (dueDate: string): { text: string; urgent: boolean } => {
+    this.countdownTicks(); // react to ticks
+    const ms = new Date(dueDate).getTime() - Date.now();
+    return formatCountdown(ms);
+  };
+
   ngOnInit(): void {
     this.service.loadAssignments();
+    const timer = setInterval(() => {
+      this.countdownTicks.update(v => v + 1);
+    }, 1000);
+    this.destroyRef.onDestroy(() => clearInterval(timer));
   }
 
   typeLabel(t: AssignmentDTO['submission_type']): string {

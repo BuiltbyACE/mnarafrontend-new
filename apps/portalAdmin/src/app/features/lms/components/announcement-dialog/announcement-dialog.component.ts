@@ -43,11 +43,10 @@ export interface AnnouncementDialogData {
           <label class="input-label">Audience</label>
           <select formControlName="audience">
             <option value="">Select Audience</option>
-            <option value="All">All</option>
-            <option value="Students">Students</option>
-            <option value="Staff">Staff</option>
-            <option value="Parents">Parents</option>
-            <option value="Teachers">Teachers</option>
+            <option value="ALL">Everyone</option>
+            <option value="STUDENTS">Students Only</option>
+            <option value="STAFF">Staff Only</option>
+            <option value="PARENTS">Parents Only</option>
           </select>
           @if (form.get('audience')?.hasError('required')) {
             <span class="error-text">Audience is required</span>

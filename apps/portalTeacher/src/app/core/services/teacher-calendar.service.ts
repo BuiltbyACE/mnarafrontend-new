@@ -11,20 +11,7 @@ export class TeacherCalendarService {
   readonly currentDate = signal(new Date());
   readonly events = signal<CalendarEvent[]>([]);
   readonly isLoading = signal(false);
-
-  private readonly eventsData: CalendarEvent[] = [
-    { id: 'e1', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 5), title: 'Mathematics Quiz', type: 'EXAM', time: '09:00' },
-    { id: 'e2', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 7), title: 'Staff Meeting', type: 'MEETING', time: '14:00' },
-    { id: 'e3', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 10), title: 'Form 2A Parent-Teacher Conference', type: 'EVENT', time: '08:00' },
-    { id: 'e4', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 12), title: 'Physics Lab Session', type: 'CLASS', time: '10:00' },
-    { id: 'e5', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 12), title: 'Submit Grade Reports', type: 'DEADLINE' },
-    { id: 'e6', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 15), title: 'Chemistry Practical Exam', type: 'EXAM', time: '09:00' },
-    { id: 'e7', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 18), title: 'Department Heads Meeting', type: 'MEETING', time: '11:00' },
-    { id: 'e8', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 20), title: 'Science Fair', type: 'EVENT', time: '09:00' },
-    { id: 'e9', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 22), title: 'End of Term Exam Prep Class', type: 'CLASS', time: '08:00' },
-    { id: 'e10', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 25), title: 'Final Exam Schedules Due', type: 'DEADLINE' },
-    { id: 'e11', date: this.formatDate(new Date().getFullYear(), new Date().getMonth(), 28), title: 'Board Meeting', type: 'MEETING', time: '10:00' },
-  ];
+  readonly error = signal<string | null>(null);
 
   readonly calendarDays = computed(() => {
     const d = this.currentDate();
@@ -51,6 +38,7 @@ export class TeacherCalendarService {
 
   fetchEvents(month: number, year: number): Observable<CalendarEvent[]> {
     this.isLoading.set(true);
+    this.error.set(null);
     const params = new HttpParams()
       .set('month', String(month + 1))
       .set('year', String(year));
@@ -58,11 +46,12 @@ export class TeacherCalendarService {
     return this.http.get<CalendarEvent[]>(this.baseUrl, { params }).pipe(
       tap({
         next: (events: CalendarEvent[]) => {
-          this.events.set(events);
+          this.events.set(events ?? []);
           this.isLoading.set(false);
         },
         error: () => {
-          this.events.set(this.eventsData);
+          this.events.set([]);
+          this.error.set('Failed to load calendar events');
           this.isLoading.set(false);
         },
       })
