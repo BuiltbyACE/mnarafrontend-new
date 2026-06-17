@@ -1,19 +1,20 @@
 /**
  * Mnara SMS — Login Page
- * Cloned pixel-for-pixel from reference design:
- *   - Rounded white "frame" card holding the whole composition
- *   - Left: blue gradient panel with a swelling/bulging right edge,
- *     bold uppercase headline, circular school photo, floating blue blobs
- *   - Right: white panel, "Sign In" heading, filled-gray inputs,
- *     navy Sign In button, outlined alt button, Sign Up footer row
+ * Premium clone of reference design:
+ *   - Soft pale backdrop holding a floating white "frame" card
+ *   - Left: organic-curved blue gradient panel (SVG clip-path, not a bolted-on
+ *     circle) with bold uppercase headline, circular school photo, blue blobs
+ *   - Right: white panel, large "Sign In" heading, filled-gray inputs,
+ *     deep-blue gradient Sign In button, outlined alt button, Sign Up row
  */
 
-// ─── Brand Colors (matched from reference) ───────────────────────────────────
-$blue-light:  #4FA3FB;       // gradient top-left
-$blue-mid:    #2B7CF6;       // gradient mid
-$blue-dark:   #0B3FAE;       // gradient bottom-right / blob fill
-$navy:        #14215C;       // Sign In button / dark navy accents
-$ink:         #1A1D29;       // "Sign In" heading text
+// ─── Brand Colors ──────────────────────────────────────────────────────────
+$blue-light:  #1F8CFF;       // gradient top-left
+$blue-mid:    #1565FF;       // gradient mid
+$blue-dark:   #003FBA;       // gradient bottom-right / blob fill
+$navy:        #0B2C6F;       // deep navy accents (links, checkbox)
+$ink:         #15181F;       // "Sign In" heading text
+$page-bg:     #E8EEFB;       // pale backdrop behind the floating card
 $gray-50:     #F1F2F5;       // input fill
 $gray-200:    #E3E5EA;
 $gray-400:    #9CA3AF;
@@ -21,25 +22,38 @@ $gray-500:    #6B7280;
 $gray-700:    #374151;
 $white:       #FFFFFF;
 
-// ─── PAGE SHELL ──────────────────────────────────────────────────────────────
+// ─── PAGE BACKDROP ───────────────────────────────────────────────────────────
 .login-page {
-  position: relative;
-  display: grid;
-  grid-template-columns: 49% 51%;
-  grid-template-rows: 1fr;
   min-height: 100vh;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $page-bg;
+  padding: 28px;
+  box-sizing: border-box;
+  font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+}
+
+// ─── FLOATING CARD FRAME ──────────────────────────────────────────────────────
+.login-frame {
+  position: relative;
+  width: 100%;
+  max-width: 1680px;
+  min-height: 860px;
+  display: grid;
+  grid-template-columns: 53.5% 46.5%;
+  grid-template-rows: 1fr;
   background: $white;
-  border-radius: 28px;
+  border-radius: 32px;
   overflow: hidden;
   box-shadow:
-    0 1px 2px rgba(15, 37, 96, 0.04),
-    0 24px 64px rgba(15, 37, 96, 0.16);
-  font-family: 'Inter', system-ui, sans-serif;
+    0 2px 4px rgba(4, 35, 95, 0.05),
+    0 24px 48px rgba(4, 35, 95, 0.14),
+    0 48px 96px rgba(4, 35, 95, 0.10);
 }
 
 // ─── DECORATIVE BLOBS ──────────────────────────────────────────────────────────
-// Bottom-left corner blob — large circle peeking from the page corner
 .blob-corner-bl {
   position: absolute;
   left: -150px;
@@ -48,11 +62,11 @@ $white:       #FFFFFF;
   height: 480px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, $blue-mid 0%, $blue-dark 100%);
+  box-shadow: 0 30px 60px rgba(0, 63, 186, 0.3);
   z-index: 3;
   pointer-events: none;
 }
 
-// Bottom-right corner blob — smaller circle peeking from the page corner
 .blob-corner-br {
   position: absolute;
   right: -110px;
@@ -61,46 +75,36 @@ $white:       #FFFFFF;
   height: 280px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, $blue-mid 0%, $blue-dark 100%);
+  box-shadow: 0 24px 48px rgba(0, 63, 186, 0.3);
   z-index: 3;
   pointer-events: none;
 }
 
-// Floating solid blob to the right of the school photo
 .blob-float {
   position: absolute;
-  left: 38%;
-  top: 52%;
+  left: 37%;
+  top: 53%;
   width: 230px;
   height: 230px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, $blue-mid 0%, $blue-dark 100%);
-  box-shadow: 0 20px 40px rgba(11, 63, 174, 0.35);
+  box-shadow:
+    0 24px 48px rgba(0, 63, 186, 0.32),
+    0 8px 16px rgba(0, 63, 186, 0.24);
   z-index: 1;
   pointer-events: none;
 }
 
-// ─── LEFT SECTION ────────────────────────────────────────────────────────────
+// ─── LEFT SECTION (organic-curved panel) ──────────────────────────────────────
 .left-section {
   position: relative;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, $blue-light 0%, $blue-mid 45%, $blue-dark 100%);
+  background: linear-gradient(135deg, $blue-light 0%, $blue-mid 50%, $blue-dark 100%);
+  clip-path: url(#leftPanelClip);
   padding: 3.5rem 3rem 4rem 4rem;
   overflow: visible;
-}
-
-// Bulge blob — makes the panel's right edge swell outward near the top
-.blob-bulge {
-  position: absolute;
-  top: -60px;
-  right: -140px;
-  width: 380px;
-  height: 380px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, $blue-light 0%, $blue-mid 60%, $blue-dark 100%);
-  z-index: 0;
-  pointer-events: none;
 }
 
 // Hero text
@@ -111,18 +115,20 @@ $white:       #FFFFFF;
 }
 
 .headline {
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-family: 'Poppins', sans-serif;
+  font-size: 2.75rem;
+  font-weight: 900;
   color: $white;
   text-transform: uppercase;
-  line-height: 1.15;
+  line-height: 1.12;
   margin: 0 0 0.5rem;
   letter-spacing: 0.01em;
 }
 
 .subheadline {
+  font-family: 'Poppins', sans-serif;
   font-size: 1.0625rem;
-  font-weight: 700;
+  font-weight: 800;
   color: $white;
   text-transform: uppercase;
   line-height: 1.3;
@@ -135,7 +141,7 @@ $white:       #FFFFFF;
   color: rgba(255, 255, 255, 0.92);
   line-height: 1.6;
   margin: 0 0 1rem;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .accent-line {
@@ -155,7 +161,9 @@ $white:       #FFFFFF;
   border-radius: 50%;
   overflow: hidden;
   border: 6px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 20px 48px rgba(11, 30, 80, 0.35);
+  box-shadow:
+    0 4px 10px rgba(4, 20, 60, 0.18),
+    0 24px 48px rgba(4, 20, 60, 0.38);
 }
 
 .school-img {
@@ -171,17 +179,18 @@ $white:       #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3rem 4rem;
+  padding: 2.5rem 4rem;
 }
 
 // ─── LOGIN CARD (flush content, no boxed card) ────────────────────────────────
 .login-card {
   width: 100%;
-  max-width: 440px;
+  max-width: 480px;
 }
 
 .card-title {
-  font-size: 2.5rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 2.875rem;
   font-weight: 800;
   color: $ink;
   margin: 0 0 0.5rem;
@@ -191,7 +200,8 @@ $white:       #FFFFFF;
 .card-sub {
   font-size: 0.9375rem;
   color: $gray-500;
-  margin: 0 0 1.75rem;
+  margin: 0 0 2rem;
+  font-weight: 500;
 }
 
 // ─── FORM ─────────────────────────────────────────────────────────────────────
@@ -203,18 +213,19 @@ $white:       #FFFFFF;
 // Filled gray input fields
 .input-field {
   width: 100%;
-  height: 60px;
+  height: 58px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   background: $gray-50;
   border-radius: 12px;
-  padding: 0 18px;
-  margin-bottom: 16px;
+  padding: 0 20px;
+  margin-bottom: 18px;
+  box-shadow: inset 0 1px 2px rgba(4, 20, 60, 0.04);
   transition: box-shadow 0.2s ease;
 
   &:focus-within {
-    box-shadow: 0 0 0 2px $blue-mid;
+    box-shadow: 0 0 0 2px $blue-mid, inset 0 1px 2px rgba(4, 20, 60, 0.04);
   }
 
   .field-icon {
@@ -231,12 +242,14 @@ $white:       #FFFFFF;
     border: none;
     outline: none;
     background: transparent;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 0.9375rem;
+    font-weight: 500;
     color: $ink;
 
     &::placeholder {
       color: $gray-400;
+      font-weight: 400;
     }
   }
 
@@ -262,7 +275,7 @@ $white:       #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 2px 0 22px;
+  margin: 2px 0 26px;
 }
 
 .remember-me {
@@ -270,6 +283,7 @@ $white:       #FFFFFF;
   align-items: center;
   gap: 10px;
   font-size: 0.875rem;
+  font-weight: 500;
   color: $gray-700;
   cursor: pointer;
   user-select: none;
@@ -325,29 +339,33 @@ $white:       #FFFFFF;
   }
 }
 
-// Sign In button — solid navy, full width
+// Sign In button — deep blue gradient, full width, dominant CTA
 .sign-in-btn {
   width: 100%;
   height: 58px;
-  background: $navy;
+  background: linear-gradient(135deg, $blue-mid 0%, $blue-dark 100%);
   color: $white;
   border: none;
   border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.0625rem;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
   letter-spacing: 0.01em;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 6px 18px rgba(20, 33, 92, 0.3);
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  box-shadow:
+    0 4px 8px rgba(0, 63, 186, 0.24),
+    0 12px 28px rgba(0, 63, 186, 0.38);
+  transition: box-shadow 0.2s ease, transform 0.15s ease, filter 0.2s ease;
   cursor: pointer;
 
   &:hover:not([disabled]) {
-    background: #1B2C7A;
-    box-shadow: 0 8px 22px rgba(20, 33, 92, 0.4);
+    filter: brightness(1.08);
+    box-shadow:
+      0 6px 12px rgba(0, 63, 186, 0.3),
+      0 16px 36px rgba(0, 63, 186, 0.46);
     transform: translateY(-1px);
   }
 
@@ -356,8 +374,9 @@ $white:       #FFFFFF;
   }
 
   &[disabled] {
-    opacity: 0.55;
+    opacity: 0.5;
     cursor: not-allowed;
+    box-shadow: none;
   }
 
   .btn-spinner ::ng-deep circle {
@@ -370,7 +389,7 @@ $white:       #FFFFFF;
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 20px 0;
+  margin: 22px 0;
 
   .divider-line {
     flex: 1;
@@ -394,14 +413,15 @@ $white:       #FFFFFF;
   color: $ink;
   border: 1.5px solid $ink;
   border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.0625rem;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.15s ease;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 
   &:hover {
     background: $gray-50;
+    box-shadow: 0 6px 16px rgba(4, 20, 60, 0.08);
     transform: translateY(-1px);
   }
 
@@ -415,6 +435,7 @@ $white:       #FFFFFF;
   text-align: center;
   margin: 1.75rem 0 0;
   font-size: 0.9375rem;
+  font-weight: 500;
   color: $gray-700;
 
   .signup-link {
@@ -431,16 +452,25 @@ $white:       #FFFFFF;
 
 // ─── RESPONSIVE ───────────────────────────────────────────────────────────────
 @media (max-width: 1024px) {
+  .login-frame {
+    grid-template-columns: 52% 48%;
+    min-height: 760px;
+  }
+
   .left-section {
     padding: 2.5rem 2rem 3rem 2.5rem;
   }
 
   .right-section {
-    padding: 2.5rem 2rem;
+    padding: 2rem;
   }
 
   .headline {
-    font-size: 2rem;
+    font-size: 2.125rem;
+  }
+
+  .card-title {
+    font-size: 2.375rem;
   }
 
   .photo-circle {
@@ -456,11 +486,18 @@ $white:       #FFFFFF;
 
 @media (max-width: 768px) {
   .login-page {
+    padding: 0;
+  }
+
+  .login-frame {
     grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
     border-radius: 20px;
+    min-height: auto;
   }
 
   .left-section {
+    clip-path: none;
     padding: 2.5rem 2rem;
     min-height: 320px;
   }
@@ -480,7 +517,6 @@ $white:       #FFFFFF;
 
   .blob-corner-bl,
   .blob-corner-br,
-  .blob-bulge,
   .blob-float {
     display: none;
   }
