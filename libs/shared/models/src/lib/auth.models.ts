@@ -38,13 +38,23 @@ export interface LoginRequest {
 
 /** Login response from API */
 export interface LoginResponse {
-  access_token: string;
-  refresh_token: string;
-  user: {
-    portalType: string;
-    name: string;
-    school_id: string;
-  };
+  access: string;
+  refresh: string;
+  access_token?: string;
+  refresh_token?: string;
+}
+
+/** JWT payload decoded from access token */
+export interface JwtPayload {
+  exp: number;
+  iat: number;
+  role?: string;
+  portal_key?: string;
+  full_name?: string;
+  email?: string;
+  school_id?: string;
+  permissions?: string[];
+  [key: string]: unknown;
 }
 
 /** Refresh token request */

@@ -44,6 +44,9 @@ export class PortalGuard implements CanActivate {
  * Prevents authenticated users from accessing login pages
  * Redirects to their portal if already logged in
  */
+@Injectable({
+  providedIn: 'root',
+})
 export class PublicGuard implements CanActivate {
   private authStore = inject(AuthStore);
   private router = inject(Router);

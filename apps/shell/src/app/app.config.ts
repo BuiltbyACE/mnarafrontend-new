@@ -13,7 +13,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(appRoutes),
-    provideHttpClient(withInterceptors([authErrorInterceptor, authInterceptorFn, adminErrorInterceptorFn])),
+    provideHttpClient(withInterceptors([authErrorInterceptor, adminErrorInterceptorFn, authInterceptorFn])),
     provideAnimationsAsync(),
   ],
 };

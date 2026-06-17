@@ -15,5 +15,8 @@ export { authGuard, permissionGuard } from './lib/auth.guard';
 export { PortalGuard, PublicGuard, publicGuard } from './lib/portal.guard';
 
 // Interceptors
-export { authInterceptorFn, AuthInterceptor } from './lib/auth.interceptor';
+export { authInterceptorFn } from './lib/auth.interceptor';
 export { adminErrorInterceptorFn, AdminErrorInterceptor } from './lib/admin-error.interceptor';
+
+// Token Refresh
+export { TokenRefreshService } from './lib/token-refresh.service';

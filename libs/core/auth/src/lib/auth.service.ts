@@ -149,6 +149,7 @@ export class AuthService {
           };
           return normalizedContext;
         }),
+        tap((context) => this.authStore.setUserContext(context)),
         catchError((error) => {
           if (error.status === 401) {
             return throwError(

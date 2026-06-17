@@ -58,9 +58,9 @@ export class WebSocketFleetService implements OnDestroy {
       return;
     }
 
-    // Build WebSocket URL
+    // Build WebSocket URL (no token in URL — sent as first message)
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${environment.apiBaseUrl.replace(/^https?:\/\//, '').replace(/\/api\/v1\/?$/, '')}/ws/fleet/live/?token=${token}`;
+    const wsUrl = `${wsProtocol}//${environment.apiBaseUrl.replace(/^https?:\/\//, '').replace(/\/api\/v1\/?$/, '')}/ws/fleet/live/`;
 
     try {
       this.ws = new WebSocket(wsUrl);
@@ -108,6 +108,11 @@ export class WebSocketFleetService implements OnDestroy {
 
     this.ws.onopen = () => {
       console.log('Fleet WebSocket connected');
+      // Send auth token as first message per WebSocket protocol
+      const token = this.tokenStorage.getAccessToken();
+      if (token) {
+        this.ws!.send(JSON.stringify({ type: 'auth', token }));
+      }
       this.isConnected.set(true);
       this.connectionError.set(null);
       this.reconnectAttempts = 0;

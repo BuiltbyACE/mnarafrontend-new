@@ -90,14 +90,14 @@ export class AuthStore {
   }
 
   setTokens(tokens: Tokens): void {
-    // Save to localStorage for API calls
+    // Save to sessionStorage for API calls
     this.tokenStorage.saveTokens(tokens);
     // Update signal state
     this.state.update((s) => ({ ...s, tokens }));
   }
 
   setUserContext(user: UserContext): void {
-    // Save to localStorage for cross-module access
+    // Save to sessionStorage for cross-module access
     this.tokenStorage.saveUserContext(user);
     // Update signal state
     this.state.update((s) => ({ ...s, user }));
@@ -116,14 +116,14 @@ export class AuthStore {
   }
 
   updateTokens(tokens: Tokens): void {
-    // Save to localStorage for API calls
+    // Save to sessionStorage for API calls
     this.tokenStorage.saveTokens(tokens);
     // Update signal state
     this.state.update((s) => ({ ...s, tokens }));
   }
 
   logout(): void {
-    // Clear from localStorage
+    // Clear from sessionStorage
     this.tokenStorage.clearAll();
     // Reset state
     this.state.set({
@@ -136,7 +136,7 @@ export class AuthStore {
   }
 
   /**
-   * Restore tokens AND user context from localStorage on app startup.
+   * Restore tokens AND user context from sessionStorage on app startup.
    * Critical for microfrontend remotes which start with a blank AuthStore
    * instance and must re-hydrate from storage before any guard can run.
    */
