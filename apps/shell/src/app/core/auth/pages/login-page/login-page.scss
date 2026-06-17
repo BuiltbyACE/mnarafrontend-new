@@ -1,121 +1,167 @@
 /**
  * Mnara SMS — Login Page
- * Cloned from reference screenshot:
- *   - Full-page light sky-blue/white gradient background
- *   - Left: dark-navy "Welcome" + royal-blue "Back!" + school image
- *   - Right: floating white card with clean inputs + solid blue button
- *   - Bottom: bold royal-blue wave with SafariStack branding
+ * Cloned pixel-for-pixel from reference design:
+ *   - Rounded white "frame" card holding the whole composition
+ *   - Left: blue gradient panel with a swelling/bulging right edge,
+ *     bold uppercase headline, circular school photo, floating blue blobs
+ *   - Right: white panel, "Sign In" heading, filled-gray inputs,
+ *     navy Sign In button, outlined alt button, Sign Up footer row
  */
 
-// ─── Brand Colors (exact from screenshot) ────────────────────────────────────
-$navy:        #0F2560;       // "Welcome" text color (dark navy)
-$blue:        #1D4ED8;       // "Back!" highlight, button, wave, accent
-$blue-light:  #2563EB;       // hover states
-$bg-from:     #EBF3FD;       // page background gradient start
-$bg-to:       #F8FBFF;       // page background gradient end
-$white:       #FFFFFF;
-$gray-50:     #F9FAFB;
-$gray-200:    #E5E7EB;
+// ─── Brand Colors (matched from reference) ───────────────────────────────────
+$blue-light:  #4FA3FB;       // gradient top-left
+$blue-mid:    #2B7CF6;       // gradient mid
+$blue-dark:   #0B3FAE;       // gradient bottom-right / blob fill
+$navy:        #14215C;       // Sign In button / dark navy accents
+$ink:         #1A1D29;       // "Sign In" heading text
+$gray-50:     #F1F2F5;       // input fill
+$gray-200:    #E3E5EA;
 $gray-400:    #9CA3AF;
 $gray-500:    #6B7280;
 $gray-700:    #374151;
-$gray-900:    #111827;
+$white:       #FFFFFF;
 
 // ─── PAGE SHELL ──────────────────────────────────────────────────────────────
 .login-page {
   position: relative;
   display: grid;
-  grid-template-columns: 55% 45%;
-  grid-template-rows: 1fr auto;
+  grid-template-columns: 49% 51%;
+  grid-template-rows: 1fr;
   min-height: 100vh;
   width: 100%;
-
-  // Light sky-blue gradient — the dominant background of the entire page
-  background: linear-gradient(135deg, $bg-from 0%, $bg-to 100%);
-  font-family: 'Inter', system-ui, sans-serif;
+  background: $white;
+  border-radius: 28px;
   overflow: hidden;
-
-  // Wave footer spans full bottom row
-  .wave-footer {
-    grid-column: 1 / -1;
-  }
+  box-shadow:
+    0 1px 2px rgba(15, 37, 96, 0.04),
+    0 24px 64px rgba(15, 37, 96, 0.16);
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
-// ─── DOT GRID (top-right decoration) ─────────────────────────────────────────
-.dot-grid {
+// ─── DECORATIVE BLOBS ──────────────────────────────────────────────────────────
+// Bottom-left corner blob — large circle peeking from the page corner
+.blob-corner-bl {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 280px;
-  height: 200px;
-  background-image: radial-gradient(circle, rgba(29, 78, 216, 0.18) 1.5px, transparent 1.5px);
-  background-size: 18px 18px;
+  left: -150px;
+  bottom: -200px;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, $blue-mid 0%, $blue-dark 100%);
+  z-index: 3;
   pointer-events: none;
-  z-index: 0;
+}
+
+// Bottom-right corner blob — smaller circle peeking from the page corner
+.blob-corner-br {
+  position: absolute;
+  right: -110px;
+  bottom: -120px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, $blue-mid 0%, $blue-dark 100%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+// Floating solid blob to the right of the school photo
+.blob-float {
+  position: absolute;
+  left: 38%;
+  top: 52%;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, $blue-mid 0%, $blue-dark 100%);
+  box-shadow: 0 20px 40px rgba(11, 63, 174, 0.35);
+  z-index: 1;
+  pointer-events: none;
 }
 
 // ─── LEFT SECTION ────────────────────────────────────────────────────────────
 .left-section {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  padding: 3rem 3rem 1rem 4rem;
-  overflow: hidden;
+  background: linear-gradient(135deg, $blue-light 0%, $blue-mid 45%, $blue-dark 100%);
+  padding: 3.5rem 3rem 4rem 4rem;
+  overflow: visible;
+}
+
+// Bulge blob — makes the panel's right edge swell outward near the top
+.blob-bulge {
+  position: absolute;
+  top: -60px;
+  right: -140px;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $blue-light 0%, $blue-mid 60%, $blue-dark 100%);
+  z-index: 0;
+  pointer-events: none;
 }
 
 // Hero text
 .hero-text {
   flex: 0 0 auto;
-  max-width: 420px;
-  margin-bottom: 1.5rem;
+  max-width: 460px;
+  margin-bottom: 2.5rem;
 }
 
 .headline {
-  font-size: 2.75rem;
+  font-size: 2.5rem;
   font-weight: 800;
-  color: $navy;
+  color: $white;
+  text-transform: uppercase;
   line-height: 1.15;
-  margin: 0 0 0.75rem;
-  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.01em;
+}
 
-  .blue-word {
-    color: $blue;
-  }
+.subheadline {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: $white;
+  text-transform: uppercase;
+  line-height: 1.3;
+  margin: 0 0 1rem;
+  letter-spacing: 0.01em;
 }
 
 .hero-sub {
   font-size: 0.9375rem;
-  color: $gray-700;
-  line-height: 1.65;
-  margin: 0 0 0.875rem;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.6;
+  margin: 0 0 1rem;
   font-weight: 400;
 }
 
 .accent-line {
-  width: 36px;
+  width: 40px;
   height: 3px;
-  background: $blue;
+  background: $white;
   border-radius: 2px;
 }
 
-// School building image
-.school-image-wrap {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  // Push image to bottom-center of left panel, slightly overlapping wave
-  padding-bottom: 80px;
+// Circular school photo
+.photo-circle {
+  position: relative;
+  z-index: 3;
+  width: 380px;
+  height: 380px;
+  max-width: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 6px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 20px 48px rgba(11, 30, 80, 0.35);
 }
 
 .school-img {
   width: 100%;
-  max-width: 520px;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 8px 32px rgba(29, 78, 216, 0.15));
-  border-radius: 12px;
+  height: 100%;
+  object-fit: cover;
 }
 
 // ─── RIGHT SECTION ────────────────────────────────────────────────────────────
@@ -125,157 +171,183 @@ $gray-900:    #111827;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3rem 4rem 3rem 2rem;
+  padding: 3rem 4rem;
 }
 
-// ─── LOGIN CARD ───────────────────────────────────────────────────────────────
+// ─── LOGIN CARD (flush content, no boxed card) ────────────────────────────────
 .login-card {
   width: 100%;
-  max-width: 480px;
-  background: $white;
-  border-radius: 20px;
-  padding: 3rem 3rem 2.5rem;
-  box-shadow:
-    0 2px 8px rgba(15, 37, 96, 0.06),
-    0 8px 24px rgba(15, 37, 96, 0.08),
-    0 24px 56px rgba(15, 37, 96, 0.08);
+  max-width: 440px;
 }
 
 .card-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: $navy;
-  margin: 0 0 0.25rem;
-  letter-spacing: -0.02em;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: $ink;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
 }
 
 .card-sub {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: $gray-500;
-  margin: 0 0 0.625rem;
-}
-
-.card-accent {
-  width: 32px;
-  height: 3px;
-  background: $blue;
-  border-radius: 2px;
-  margin-bottom: 1.75rem;
+  margin: 0 0 1.75rem;
 }
 
 // ─── FORM ─────────────────────────────────────────────────────────────────────
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
-// Override Angular Material outlined field to match screenshot
-.field {
+// Filled gray input fields
+.input-field {
   width: 100%;
-  margin-bottom: 14px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: $gray-50;
+  border-radius: 12px;
+  padding: 0 18px;
+  margin-bottom: 16px;
+  transition: box-shadow 0.2s ease;
 
-  // Field icon prefix color
+  &:focus-within {
+    box-shadow: 0 0 0 2px $blue-mid;
+  }
+
   .field-icon {
-    color: $gray-400;
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-    margin-right: 2px;
+    color: $gray-500;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    flex: none;
   }
 
-  .visibility-btn {
-    color: $gray-400;
-    &:hover { color: $gray-700; }
+  input {
+    flex: 1;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9375rem;
+    color: $ink;
+
+    &::placeholder {
+      color: $gray-400;
+    }
+  }
+
+  .show-btn {
+    flex: none;
+    border: none;
+    background: transparent;
+    color: $navy;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    padding: 4px 0;
+
+    &:hover {
+      color: $blue-mid;
+    }
   }
 }
 
-// Deep-override Material MDC tokens to match screenshot's clean white fields
-::ng-deep {
-  .login-card .mat-mdc-form-field {
-    width: 100%;
-
-    .mdc-text-field--outlined {
-      --mdc-outlined-text-field-container-shape: 10px;
-      --mdc-outlined-text-field-outline-color: #{$gray-200};
-      --mdc-outlined-text-field-hover-outline-color: #{$blue-light};
-      --mdc-outlined-text-field-focus-outline-color: #{$blue};
-      --mdc-outlined-text-field-input-text-color: #{$gray-900};
-      --mdc-outlined-text-field-input-text-placeholder-color: #{$gray-400};
-    }
-
-    .mat-mdc-form-field-subscript-wrapper {
-      display: none;
-    }
-
-    input.mat-mdc-input-element {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.9375rem;
-    }
-  }
-}
-
-// Form options row — matches screenshot exactly
+// Form options row
 .form-options {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 2px 0 4px;
+  margin: 2px 0 22px;
+}
 
-  ::ng-deep {
-    .mat-mdc-checkbox label {
-      font-size: 0.875rem;
-      color: $gray-700;
-      font-family: 'Inter', sans-serif;
-    }
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: $gray-700;
+  cursor: pointer;
+  user-select: none;
 
-    .mat-mdc-checkbox .mdc-checkbox {
-      --mdc-checkbox-selected-checkmark-color: #fff;
-      --mdc-checkbox-selected-focus-icon-color: #{$blue};
-      --mdc-checkbox-selected-hover-icon-color: #{$blue};
-      --mdc-checkbox-selected-icon-color: #{$blue};
-      --mdc-checkbox-selected-pressed-icon-color: #{$blue};
+  input[type='checkbox'] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .checkbox-box {
+    width: 19px;
+    height: 19px;
+    border: 2px solid $gray-400;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $white;
+    transition: background 0.15s ease, border-color 0.15s ease;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      color: $white;
+      opacity: 0;
+      transition: opacity 0.15s ease;
     }
   }
 
-  .forgot-link {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: $blue;
-    text-decoration: none;
-    transition: color 0.2s;
+  input[type='checkbox']:checked + .checkbox-box {
+    background: $navy;
+    border-color: $navy;
 
-    &:hover {
-      color: $navy;
-      text-decoration: underline;
+    mat-icon {
+      opacity: 1;
     }
   }
 }
 
-// Sign In button — solid royal blue, full width, arrow on right
+.forgot-link {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: $navy;
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: $blue-mid;
+    text-decoration: underline;
+  }
+}
+
+// Sign In button — solid navy, full width
 .sign-in-btn {
   width: 100%;
-  height: 52px;
-  margin-top: 18px !important;
-  background: $blue !important;
-  color: $white !important;
-  border-radius: 10px !important;
-  font-size: 1rem !important;
-  font-weight: 600 !important;
-  font-family: 'Inter', sans-serif !important;
+  height: 58px;
+  background: $navy;
+  color: $white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
   letter-spacing: 0.01em;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
-  border: none !important;
-  box-shadow: 0 4px 14px rgba(29, 78, 216, 0.3) !important;
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease !important;
+  box-shadow: 0 6px 18px rgba(20, 33, 92, 0.3);
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
   cursor: pointer;
 
   &:hover:not([disabled]) {
-    background: $blue-light !important;
-    box-shadow: 0 6px 20px rgba(29, 78, 216, 0.4) !important;
+    background: #1B2C7A;
+    box-shadow: 0 8px 22px rgba(20, 33, 92, 0.4);
     transform: translateY(-1px);
   }
 
@@ -291,21 +363,14 @@ $gray-900:    #111827;
   .btn-spinner ::ng-deep circle {
     stroke: $white;
   }
-
-  .btn-arrow {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-    margin-left: 4px;
-  }
 }
 
-// "or" divider
+// "Or" divider
 .or-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 14px;
+  margin: 20px 0;
 
   .divider-line {
     flex: 1;
@@ -315,146 +380,122 @@ $gray-900:    #111827;
 
   .or-text {
     font-size: 0.875rem;
-    color: $gray-400;
+    color: $gray-500;
     font-weight: 500;
     white-space: nowrap;
   }
 }
 
-// ─── WAVE FOOTER ─────────────────────────────────────────────────────────────
-.wave-footer {
-  position: relative;
-  height: 180px;
+// Alternate sign-in — outlined white button
+.alt-signin-btn {
   width: 100%;
-  z-index: 0;
-}
+  height: 58px;
+  background: $white;
+  color: $ink;
+  border: 1.5px solid $ink;
+  border-radius: 12px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
 
-.wave-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
+  &:hover {
+    background: $gray-50;
+    transform: translateY(-1px);
+  }
 
-.footer-band {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 90px;
-  background: $blue;
-  display: flex;
-  align-items: center;
-  padding: 0 4rem;
-}
-
-.footer-logo {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.logo-box {
-  width: 38px;
-  height: 38px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  span {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: $white;
-    font-family: 'Courier New', monospace;
-    letter-spacing: -0.5px;
+  &:active {
+    transform: translateY(0);
   }
 }
 
-.footer-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+// Sign up footer row
+.signup-row {
+  text-align: center;
+  margin: 1.75rem 0 0;
+  font-size: 0.9375rem;
+  color: $gray-700;
 
-  span {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.85);
-    font-family: 'Inter', sans-serif;
-    line-height: 1.4;
+  .signup-link {
+    color: $navy;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 
 // ─── RESPONSIVE ───────────────────────────────────────────────────────────────
 @media (max-width: 1024px) {
-  .login-page {
-    grid-template-columns: 50% 50%;
-  }
-
   .left-section {
-    padding: 2.5rem 2rem 1rem 3rem;
+    padding: 2.5rem 2rem 3rem 2.5rem;
   }
 
   .right-section {
-    padding: 2.5rem 2.5rem 2.5rem 1.5rem;
-  }
-
-  .headline {
-    font-size: 2.25rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .login-page {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
-  }
-
-  .left-section {
-    padding: 2.5rem 2rem 1rem;
-    min-height: 260px;
-  }
-
-  .school-image-wrap {
-    padding-bottom: 20px;
-  }
-
-  .right-section {
-    padding: 2rem 1.5rem;
-  }
-
-  .login-card {
-    max-width: 100%;
-    border-radius: 16px;
+    padding: 2.5rem 2rem;
   }
 
   .headline {
     font-size: 2rem;
   }
 
-  .dot-grid {
-    display: none;
+  .photo-circle {
+    width: 280px;
+    height: 280px;
   }
 
-  .footer-band {
-    padding: 0 2rem;
+  .blob-float {
+    width: 160px;
+    height: 160px;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    border-radius: 20px;
+  }
+
+  .left-section {
+    padding: 2.5rem 2rem;
+    min-height: 320px;
+  }
+
+  .photo-circle {
+    width: 220px;
+    height: 220px;
+  }
+
+  .right-section {
+    padding: 2rem 1.5rem;
+  }
+
+  .card-title {
+    font-size: 2rem;
+  }
+
+  .blob-corner-bl,
+  .blob-corner-br,
+  .blob-bulge,
+  .blob-float {
+    display: none;
   }
 }
 
 @media (max-width: 480px) {
-  .login-card {
-    padding: 1.75rem 1.5rem 1.5rem;
-    border-radius: 14px;
-    box-shadow: 0 2px 12px rgba(15, 37, 96, 0.08);
-  }
-
   .headline {
     font-size: 1.75rem;
   }
 
+  .subheadline {
+    font-size: 0.9375rem;
+  }
+
   .card-title {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
 }

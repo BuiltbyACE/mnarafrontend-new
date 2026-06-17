@@ -2,10 +2,6 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -20,10 +16,6 @@ import type { PortalType } from '@sms/shared/models';
     CommonModule,
     FormsModule,
     RouterLink,
-    MatCardModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
@@ -41,11 +33,16 @@ export class LoginPage {
   email = '';
   password = '';
   hidePassword = true;
+  rememberMe = false;
   isLoading = false;
   currentYear = new Date().getFullYear();
 
   togglePassword(): void {
     this.hidePassword = !this.hidePassword;
+  }
+
+  signInWithOther(): void {
+    this.snackBar.open('This sign-in method is not available yet.', 'Dismiss', { duration: 4000 });
   }
 
   onSubmit(): void {
