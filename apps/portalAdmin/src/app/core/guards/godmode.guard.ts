@@ -80,17 +80,14 @@ export const godModeGuard = (): boolean | UrlTree => {
   const permissions = authStore.userPermissions();
 
   if (permissions.includes('*')) {
-    console.log('GodModeGuard: Allowing - has * permission');
     return true;
   }
 
   if (authStore.isAuthenticated()) {
     // Authenticated but lacks god-mode permissions — not an admin.
-    console.log('GodModeGuard: Authenticated but not GodMode - redirecting to unauthorized');
     return router.parseUrl('/unauthorized');
   }
 
   // No tokens at all — send to login.
-  console.log('GodModeGuard: Not authenticated - redirecting to login');
   return router.parseUrl('/login');
 };

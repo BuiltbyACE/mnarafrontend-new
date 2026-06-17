@@ -7,3 +7,7 @@ export const environment = {
     refresh: '/accounts/auth/refresh/',
   },
 };
+
+export function getApiUrl(endpoint: string): string {
+  return `${environment.apiBaseUrl}${endpoint}`;
+}

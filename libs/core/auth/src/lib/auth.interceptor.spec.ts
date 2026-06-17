@@ -167,18 +167,18 @@ describe('authInterceptorFn', () => {
     });
   });
 
-  it('logs out and redirects to login when refresh fails', () => {
+  it('propagates refresh failure without logging out in the interceptor', () => {
     tokenStorage.getAccessToken.mockReturnValue('expired-token');
     authService.refreshToken.mockReturnValue(throwError(() => new Error('Refresh failed')));
-    jest.spyOn(router, 'navigate');
 
     TestBed.runInInjectionContext(() => {
       const req = new HttpRequest<unknown>('GET', '/api/v1/data');
       const next: HttpHandlerFn = () => throwError(() => ({ status: 401 }));
       return authInterceptorFn(req, next).subscribe({
         error: () => {
-          expect(authStore.logout).toHaveBeenCalled();
-          expect(router.navigate).toHaveBeenCalledWith(['/login']);
+          // authInterceptorFn should NOT call logout itself — that is the
+          // responsibility of authErrorInterceptor further up the chain.
+          expect(authStore.logout).not.toHaveBeenCalled();
         },
       });
     });

@@ -11,7 +11,6 @@ import {
   HttpHandlerFn,
 } from '@angular/common/http';
 import { Observable, throwError, catchError, switchMap, filter, take, finalize } from 'rxjs';
-import { Router } from '@angular/router';
 import { environment } from '@sms/core/config';
 import { AuthService } from './auth.service';
 import { TokenStorageService } from './token-storage.service';
@@ -28,7 +27,6 @@ export function authInterceptorFn(
   const authService = inject(AuthService);
   const tokenStorage = inject(TokenStorageService);
   const authStore = inject(AuthStore);
-  const router = inject(Router);
   const tokenRefresh = inject(TokenRefreshService);
 
   // Add Ngrok bypass header to ALL requests (prevents CORS issues with ngrok free tier)
@@ -58,7 +56,6 @@ export function authInterceptorFn(
           authService,
           tokenStorage,
           authStore,
-          router,
           tokenRefresh
         );
       }
@@ -78,7 +75,6 @@ function handle401Error(
   authService: AuthService,
   tokenStorage: TokenStorageService,
   authStore: AuthStore,
-  router: Router,
   tokenRefresh: TokenRefreshService
 ): Observable<HttpEvent<unknown>> {
   if (!tokenRefresh.isRefreshing) {
@@ -98,9 +94,7 @@ function handle401Error(
       }),
       catchError((refreshError) => {
         tokenRefresh.reset();
-        authStore.logout();
-        router.navigate(['/login']);
-
+        // Error propagates to authErrorInterceptor which handles logout + redirect
         return throwError(() => refreshError);
       }),
       finalize(() => {
