@@ -101,8 +101,8 @@ export class OperationsService {
   loadAnnouncements(): void {
     this.isLoading.set(true);
     this.error.set(null);
-    this.http.get<PaginatedResponse<Announcement>>(`${this.baseUrl}announcements/`).pipe(
-      map(res => res.results || []),
+    this.http.get<Announcement[] | PaginatedResponse<Announcement>>(`${this.baseUrl}announcements/`).pipe(
+      map(res => Array.isArray(res) ? res : res.results || []),
       catchError(err => this.handleError('Failed to load announcements', err))
     ).subscribe({
       next: data => { this.announcements.set(data); this.isLoading.set(false); },

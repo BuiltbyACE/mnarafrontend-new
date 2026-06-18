@@ -1,6 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, Subject, filter, map } from 'rxjs';
+import { Observable, Subject, filter, map, timer, Subscription } from 'rxjs';
 import { environment } from '@sms/core/config';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected';
@@ -10,6 +10,9 @@ export interface WsMessage {
   [key: string]: unknown;
 }
 
+const MAX_RECONNECT_DELAY = 30_000;
+const INITIAL_RECONNECT_DELAY = 1_000;
+
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
   private readonly http = inject(HttpClient);
@@ -17,7 +20,13 @@ export class RealtimeService {
   private ws: WebSocket | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly messageSubject = new Subject<WsMessage>();
+  private readonly _reconnected$ = new Subject<void>();
+  readonly reconnected$ = this._reconnected$.asObservable();
   private pingInterval: ReturnType<typeof setInterval> | null = null;
+
+  private currentToken: string | null = null;
+  private reconnectAttempts = 0;
+  private intentionalClose = false;
 
   readonly connectionState = signal<ConnectionState>('disconnected');
 
@@ -30,7 +39,12 @@ export class RealtimeService {
     );
 
   connect(token: string): void {
-    if (this.ws?.readyState === WebSocket.OPEN) return;
+    this.currentToken = token;
+    this.intentionalClose = false;
+
+    if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) {
+      return;
+    }
 
     this.connectionState.set('connecting');
     const wsBase = environment.apiBaseUrl.replace(/^http/, 'ws');
@@ -40,6 +54,8 @@ export class RealtimeService {
 
     this.ws.onopen = () => {
       this.connectionState.set('connected');
+      this.reconnectAttempts = 0;
+      this._reconnected$.next();
       this.startPing();
     };
 
@@ -53,6 +69,10 @@ export class RealtimeService {
     this.ws.onclose = () => {
       this.connectionState.set('disconnected');
       this.stopPing();
+      this.ws = null;
+      if (!this.intentionalClose && this.currentToken) {
+        this.scheduleReconnect();
+      }
     };
 
     this.ws.onerror = () => {
@@ -61,6 +81,7 @@ export class RealtimeService {
   }
 
   disconnect(): void {
+    this.intentionalClose = true;
     this.stopPing();
     this.stopReconnect();
     this.ws?.close();
@@ -71,6 +92,39 @@ export class RealtimeService {
   send(type: string, payload: Record<string, unknown> = {}): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type, ...payload }));
+    }
+  }
+
+  refreshToken(newToken: string): void {
+    this.currentToken = newToken;
+    const wasConnected = this.connectionState() === 'connected';
+    this.intentionalClose = true;
+    this.ws?.close();
+    this.ws = null;
+    this.intentionalClose = false;
+    if (wasConnected) {
+      this.connect(newToken);
+    }
+  }
+
+  private scheduleReconnect(): void {
+    this.stopReconnect();
+    const delay = Math.min(
+      INITIAL_RECONNECT_DELAY * Math.pow(2, this.reconnectAttempts),
+      MAX_RECONNECT_DELAY,
+    );
+    this.reconnectAttempts++;
+    this.reconnectTimer = setTimeout(() => {
+      if (this.currentToken) {
+        this.connect(this.currentToken);
+      }
+    }, delay);
+  }
+
+  private stopReconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
   }
 
@@ -85,21 +139,6 @@ export class RealtimeService {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
-    }
-  }
-
-  private stopReconnect(): void {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-  }
-
-  refreshToken(newToken: string): void {
-    const wasConnected = this.connectionState() === 'connected';
-    this.disconnect();
-    if (wasConnected) {
-      this.connect(newToken);
     }
   }
 }

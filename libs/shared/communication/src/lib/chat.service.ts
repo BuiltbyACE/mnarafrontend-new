@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, Subject, tap } from 'rxjs';
+import { Observable, Subject, tap, interval, Subscription } from 'rxjs';
 import { environment } from '@sms/core/config';
 import { Conversation, Message, CreateConversationPayload } from './communication.models';
 import { RealtimeService } from './realtime.service';
@@ -11,6 +11,8 @@ interface PaginatedResponse<T> {
   previous: string | null;
   results: T[];
 }
+
+const REFRESH_INTERVAL_MS = 30_000;
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
@@ -27,6 +29,8 @@ export class ChatService {
 
   private readonly _newMessage$ = new Subject<Message>();
   readonly newMessage$ = this._newMessage$.asObservable();
+
+  private refreshSub: Subscription | null = null;
 
   constructor() {
     this.realtime.onMessage<{ id: number; conversation_id: number; sender_id: number; sender_name: string; content: string; created_at: string }>('new_message')
@@ -58,6 +62,44 @@ export class ChatService {
           );
         }
       });
+
+    this.realtime.reconnected$.subscribe(() => {
+      this.refreshConversations();
+    });
+  }
+
+  startRefreshPump(): void {
+    if (!this.refreshSub) {
+      this.refreshSub = interval(REFRESH_INTERVAL_MS).subscribe(() => {
+        this.refreshConversations();
+      });
+    }
+  }
+
+  stopRefreshPump(): void {
+    this.refreshSub?.unsubscribe();
+    this.refreshSub = null;
+  }
+
+  refreshConversations(): void {
+    this.http.get<PaginatedResponse<Conversation>>(`${this.baseUrl}/conversations/`, {
+      params: new HttpParams().set('page', '1').set('page_size', '25'),
+    }).subscribe({
+      next: (res) => {
+        const existing = this.conversations();
+        const merged = res.results.map((fresh) => {
+          const old = existing.find((c) => c.id === fresh.id);
+          if (!old) return fresh;
+          const wasActive = old.id === this.activeConversationId();
+          return {
+            ...fresh,
+            unread_count: wasActive ? 0 : fresh.unread_count,
+          };
+        });
+        this.conversations.set(merged);
+        this.unreadTotal.set(merged.reduce((sum, c) => sum + c.unread_count, 0));
+      },
+    });
   }
 
   fetchConversations(page = 1): Observable<PaginatedResponse<Conversation>> {

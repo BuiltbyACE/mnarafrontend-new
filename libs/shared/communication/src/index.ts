@@ -8,3 +8,6 @@ export * from './lib/chat-conversation-list.component';
 export * from './lib/chat-message-area.component';
 export * from './lib/chat-hub.component';
 export * from './lib/chat-view.component';
+export * from './lib/notification.service';
+export * from './lib/notification-audio.service';
+export * from './lib/notification-settings.component';

@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthStore, TokenStorageService } from '@sms/core/auth';
+import { portalKeyToPortalType } from '@sms/shared/models';
 import { ChatService } from './chat.service';
 import { PresenceService } from './presence.service';
 
@@ -132,8 +133,9 @@ export class ChatMessageAreaComponent implements AfterViewChecked {
   private readonly tokenStorage = inject(TokenStorageService);
 
   get canReply(): boolean {
-    const role = this.tokenStorage.getUserContext()?.portalKey;
-    return role === 'ADMIN' || role === 'TEACHER' || role === 'STAFF';
+    const portalKey = this.tokenStorage.getUserContext()?.portalKey;
+    const role = portalKey ? portalKeyToPortalType(portalKey) : null;
+    return role === 'ADMIN' || role === 'STAFF';
   }
 
   readonly messageText = signal('');

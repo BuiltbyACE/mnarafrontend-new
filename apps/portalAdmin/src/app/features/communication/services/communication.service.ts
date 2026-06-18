@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError, finalize, switchMap, of, delay } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, catchError, throwError, finalize, of } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 
 interface PaginatedResponse<T> {
@@ -47,30 +47,6 @@ export interface CommunicationDashboardMetrics {
   upcoming_meetings: number;
   delivery_failures: number;
   parent_engagement_rate: number;
-}
-
-export interface ConversationThread {
-  id: string;
-  subject: string;
-  is_group: boolean;
-  unread_count: number;
-  last_message: string;
-  participant_names: string[];
-}
-
-export interface ChatMessage {
-  id: string;
-  thread: string;
-  sender_name: string;
-  body: string;
-  created_at: string;
-  is_read: boolean;
-}
-
-export interface ChatUser {
-  id: string;
-  name: string;
-  role: string;
 }
 
 export interface CreateBroadcastPayload {
@@ -400,102 +376,4 @@ export class CommunicationService {
     }, 300);
   }
 
-  // ═══════════════════════════════════════════════════════
-  // BROADCASTS
-  // ═══════════════════════════════════════════════════════
-
-  readonly threads = signal<ConversationThread[]>([]);
-  readonly activeThreadId = signal<string | null>(null);
-  readonly activeMessages = signal<ChatMessage[]>([]);
-  readonly isConversationsLoading = signal<boolean>(false);
-
-  getThreads(): void {
-    this.isConversationsLoading.set(true);
-    this.http
-      .get<ConversationThread[] | PaginatedResponse<ConversationThread>>(
-        getApiUrl('/communication/threads/')
-      )
-      .pipe(
-        finalize(() => this.isConversationsLoading.set(false)),
-        catchError((err) => {
-          const msg = err.error?.message || 'Failed to load threads';
-          return throwError(() => new Error(msg));
-        })
-      )
-      .subscribe({
-        next: (data) => {
-          const list = Array.isArray(data) ? data : data.results ?? [];
-          this.threads.set(list);
-        },
-      });
-  }
-
-  getMessages(threadId: string): void {
-    const params = new HttpParams().set('thread_id', threadId);
-    this.http
-      .get<ChatMessage[] | PaginatedResponse<ChatMessage>>(
-        getApiUrl('/communication/messages/'),
-        { params }
-      )
-      .pipe(
-        catchError((err) => {
-          const msg = err.error?.message || 'Failed to load messages';
-          return throwError(() => new Error(msg));
-        })
-      )
-      .subscribe({
-        next: (data) => {
-          const list = Array.isArray(data) ? data : data.results ?? [];
-          this.activeMessages.set(list);
-        },
-      });
-  }
-
-  sendMessage(threadId: string, body: string): Observable<ChatMessage> {
-    return this.http
-      .post<ChatMessage>(getApiUrl('/communication/messages/'), { thread: threadId, body })
-      .pipe(
-        catchError((err) => {
-          const msg = err.error?.message || 'Failed to send message';
-          return throwError(() => new Error(msg));
-        })
-      );
-  }
-
-  getAvailableUsers(): Observable<ChatUser[]> {
-    return of([
-      { id: '1', name: 'Brian Combs', role: 'Teacher' },
-      { id: '2', name: 'Alice Wanjiku', role: 'Teacher' },
-      { id: '3', name: 'James Ochieng', role: 'Principal' },
-      { id: '4', name: 'Grace Mwangi', role: 'Bursar' },
-      { id: '5', name: 'Peter Kamau', role: 'Teacher' },
-      { id: '6', name: 'Sarah Nyambura', role: 'Admin' },
-    ]).pipe(delay(300));
-  }
-
-  startNewConversation(
-    subject: string,
-    participantIds: string[],
-    initialMessage: string
-  ): Observable<ConversationThread> {
-    return this.http
-      .post<ConversationThread>(getApiUrl('/communication/threads/'), {
-        subject,
-        participant_ids: participantIds,
-      })
-      .pipe(
-        switchMap((thread) =>
-          this.http
-            .post<ChatMessage>(getApiUrl('/communication/messages/'), {
-              thread: thread.id,
-              body: initialMessage,
-            })
-            .pipe(switchMap(() => of(thread)))
-        ),
-        catchError((err) => {
-          const msg = err.error?.message || 'Failed to start conversation';
-          return throwError(() => new Error(msg));
-        })
-      );
-  }
 }

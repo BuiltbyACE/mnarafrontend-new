@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { NotificationService } from '../services/notification.service';
@@ -16,7 +16,7 @@ interface NavItem {
   styleUrls: ['./student-sidebar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StudentSidebarComponent {
+export class StudentSidebarComponent implements OnInit {
   private notif = inject(NotificationService);
 
   readonly navItems: NavItem[] = [
@@ -31,6 +31,10 @@ export class StudentSidebarComponent {
     { label: 'Clubs and activities', icon: 'groups', route: '/student/clubs' },
     { label: 'My profile', icon: 'person', route: '/student/profile' },
   ];
+
+  ngOnInit(): void {
+    this.notif.fetchAll();
+  }
 
   getBadge(route: string): number {
     return this.notif.getBadge(route);

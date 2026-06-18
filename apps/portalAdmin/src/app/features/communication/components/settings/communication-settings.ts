@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CommunicationService } from '../../services/communication.service';
+import { NotificationSettingsComponent } from '@sms/shared/communication';
 
 @Component({
   selector: 'app-communication-settings',
@@ -25,6 +26,7 @@ import { CommunicationService } from '../../services/communication.service';
     MatIconModule,
     MatDividerModule,
     MatTooltipModule,
+    NotificationSettingsComponent,
   ],
   template: `
     <div class="settings-page">
@@ -232,6 +234,13 @@ import { CommunicationService } from '../../services/communication.service';
                 </mat-card-content>
               </mat-card>
             </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- ═══ TAB 4: NOTIFICATION SOUNDS ═══ -->
+        <mat-tab label="Notification Sounds">
+          <ng-template matTabContent>
+            <app-notification-settings />
           </ng-template>
         </mat-tab>
       </mat-tab-group>
