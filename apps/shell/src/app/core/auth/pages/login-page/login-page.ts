@@ -67,8 +67,10 @@ export class LoginPage {
       )
       .subscribe({
         next: () => {
+          const navigateOpts = { replaceUrl: true };
+
           if (returnUrl) {
-            this.router.navigateByUrl(returnUrl);
+            this.router.navigateByUrl(returnUrl, navigateOpts);
             return;
           }
 
@@ -86,7 +88,7 @@ export class LoginPage {
 
           const targetRoute = portalType ? routes[portalType as PortalType] : null;
           if (targetRoute) {
-            this.router.navigate([targetRoute]);
+            this.router.navigate([targetRoute], navigateOpts);
           } else {
           this.snackBar.open('Unrecognized user role.', 'Dismiss', { duration: 5000 });
           }

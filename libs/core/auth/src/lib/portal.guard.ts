@@ -52,15 +52,13 @@ export class PublicGuard implements CanActivate {
   private router = inject(Router);
 
   canActivate(): boolean | UrlTree {
-    // If authenticated, redirect to portal
-    if (this.authStore.isAuthenticated() && this.authStore.user()) {
+    if (this.authStore.isAuthenticated()) {
       const portalRoute = this.authStore.getPortalRoute();
       if (portalRoute) {
         return this.router.createUrlTree([portalRoute]);
       }
+      return this.router.createUrlTree(['/']);
     }
-
-    // Not authenticated, allow access to public page
     return true;
   }
 }
@@ -73,11 +71,12 @@ export function publicGuard() {
     const authStore = inject(AuthStore);
     const router = inject(Router);
 
-    if (authStore.isAuthenticated() && authStore.user()) {
+    if (authStore.isAuthenticated()) {
       const portalRoute = authStore.getPortalRoute();
       if (portalRoute) {
         return router.createUrlTree([portalRoute]);
       }
+      return router.createUrlTree(['/']);
     }
 
     return true;

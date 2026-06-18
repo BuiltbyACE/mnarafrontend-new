@@ -103,7 +103,7 @@ describe('LoginPage', () => {
 
       component.onSubmit();
 
-      expect(router.navigateByUrl).toHaveBeenCalledWith('/teacher/class/101');
+      expect(router.navigateByUrl).toHaveBeenCalledWith('/teacher/class/101', { replaceUrl: true });
       expect(router.navigate).not.toHaveBeenCalled();
     });
 
@@ -118,7 +118,7 @@ describe('LoginPage', () => {
 
       component.onSubmit();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/student']);
+      expect(router.navigate).toHaveBeenCalledWith(['/student'], { replaceUrl: true });
     });
 
     it('shows snackbar for unrecognized portal type', () => {
@@ -196,7 +196,7 @@ describe('LoginPage', () => {
 
         component.onSubmit();
 
-        expect(router.navigate).toHaveBeenCalledWith([expectedRoute]);
+        expect(router.navigate).toHaveBeenCalledWith([expectedRoute], { replaceUrl: true });
       });
     });
   });

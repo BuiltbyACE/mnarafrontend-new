@@ -1,7 +1,7 @@
 import { Route } from '@angular/router';
 import { loadRemote } from '@module-federation/enhanced/runtime';
 import { LoginPage } from './core/auth/pages/login-page/login-page';
-import { authGuard } from '@sms/core/auth';
+import { authGuard, publicGuard } from '@sms/core/auth';
 
 type RemoteRoutes = { remoteRoutes: Route[] };
 
@@ -14,6 +14,7 @@ export const appRoutes: Route[] = [
   {
     path: 'login',
     component: LoginPage,
+    canActivate: [publicGuard],
   },
   {
     path: 'admin',
