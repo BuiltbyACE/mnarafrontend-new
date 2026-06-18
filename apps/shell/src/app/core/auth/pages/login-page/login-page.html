@@ -1,134 +1,148 @@
 <div class="login-page">
 
-  <!-- SVG clip-path defining the organic curved boundary of the blue panel -->
+  <!-- SVG clip-paths -->
   <svg width="0" height="0" style="position: absolute" aria-hidden="true">
     <defs>
+      <!-- Desktop: sweeping S-curve for the left panel -->
       <clipPath id="leftPanelClip" clipPathUnits="objectBoundingBox">
-        <path d="M0,0 L0.90,0 C0.96,0.03 0.96,0.16 0.90,0.22 L0.89,1 L0,1 Z" />
+        <path d="M0,0 L0.9,0 C 1.0,0.4 0.75,0.8 0,0.85 L0,0 Z" />
+      </clipPath>
+      <!-- Mobile: gentle downward curve for the top hero section -->
+      <clipPath id="mobilePanelClip" clipPathUnits="objectBoundingBox">
+        <path d="M0,0 H1 V0.75 C0.75,0.95 0.25,0.95 0,0.75 Z" />
       </clipPath>
     </defs>
   </svg>
 
-  <div class="login-frame">
+  <div class="login-scale-wrapper">
+    
+    <div class="login-frame">
 
-    <!-- Decorative blue blobs (corners + floating accent) -->
-    <div class="blob-corner-bl"></div>
-    <div class="blob-corner-br"></div>
-    <div class="blob-float"></div>
+      <!-- Dark blue sweeping background (Base layer) -->
+      <div class="bg-dark-blue"></div>
 
-    <!-- ────────── LEFT SECTION (organic blue panel) ────────── -->
-    <div class="left-section">
+      <!-- Inner bottom left blob (Light blue sphere) -->
+      <div class="blob-inner-bl"></div>
 
-      <!-- Hero text block -->
-      <div class="hero-text">
-        <h1 class="headline">Welcome Back!</h1>
-        <h2 class="subheadline">Access your School Management Portal</h2>
-        <p class="hero-sub">
-          Sign in to your account and continue<br>
-          your journey with us.
-        </p>
-        <div class="accent-line"></div>
+      <!-- Inner bottom right blob inside the card -->
+      <div class="blob-inner-br"></div>
+
+      <!-- Floating accent blob -->
+      <div class="blob-float"></div>
+
+      <!-- ────────── LEFT SECTION (content only) ────────── -->
+      <div class="left-section">
+        
+        <!-- Hero text block -->
+        <div class="hero-text">
+          <h1 class="headline">WELCOME BACK!</h1>
+          <h2 class="subheadline">ACCESS YOUR SCHOOL MANAGEMENT PORTAL</h2>
+          <p class="hero-sub">
+            Sign in to your account and continue<br>
+            your journey with us.
+          </p>
+          <div class="accent-line"></div>
+        </div>
+
+        <!-- Circular school photo -->
+        <div class="photo-circle">
+          <img
+            class="school-img"
+            src="/images/login.jpg"
+            alt="School Building"
+            onerror="this.style.display='none'"
+          />
+        </div>
       </div>
 
-      <!-- Circular school photo -->
-      <div class="photo-circle">
-        <img
-          class="school-img"
-          src="/images/school-building.jpg"
-          alt="School Building"
-          onerror="this.style.display='none'"
-        />
-      </div>
+      <!-- ────────── RIGHT SECTION (form) ────────── -->
+      <div class="right-section">
+        <div class="login-card">
 
-    </div>
+          <h2 class="card-title">Sign In</h2>
+          <p class="card-sub">Access your School Management Portal</p>
 
-    <!-- ────────── RIGHT SECTION (form) ────────── -->
-    <div class="right-section">
-      <div class="login-card">
+          <form class="login-form" (submit)="$event.preventDefault()">
 
-        <h2 class="card-title">Sign In</h2>
-        <p class="card-sub">Access your School Management Portal</p>
+            <!-- Email -->
+            <div class="input-field">
+              <mat-icon class="field-icon">person</mat-icon>
+              <input
+                type="email"
+                [(ngModel)]="email"
+                placeholder="Email Address"
+                name="email"
+                autocomplete="email"
+                (keydown.enter)="onKeyPress($event)"
+              />
+            </div>
 
-        <form class="login-form" (submit)="$event.preventDefault()">
+            <!-- Password -->
+            <div class="input-field">
+              <mat-icon class="field-icon">lock</mat-icon>
+              <input
+                [type]="hidePassword ? 'password' : 'text'"
+                [(ngModel)]="password"
+                placeholder="Password"
+                name="password"
+                autocomplete="current-password"
+                (keydown.enter)="onKeyPress($event)"
+              />
+              <button
+                type="button"
+                class="show-btn"
+                (click)="togglePassword()"
+              >{{ hidePassword ? 'SHOW' : 'HIDE' }}</button>
+            </div>
 
-          <!-- Email -->
-          <div class="input-field">
-            <mat-icon class="field-icon">person</mat-icon>
-            <input
-              type="email"
-              [(ngModel)]="email"
-              placeholder="Email Address"
-              name="email"
-              autocomplete="email"
-              (keydown.enter)="onKeyPress($event)"
-            />
-          </div>
+            <!-- Remember me / Forgot Password -->
+            <div class="form-options">
+              <label class="remember-me">
+                <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
+                <span class="checkbox-box">
+                  <mat-icon>check</mat-icon>
+                </span>
+                Remember me
+              </label>
+              <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+            </div>
 
-          <!-- Password -->
-          <div class="input-field">
-            <mat-icon class="field-icon">lock</mat-icon>
-            <input
-              [type]="hidePassword ? 'password' : 'text'"
-              [(ngModel)]="password"
-              placeholder="Password"
-              name="password"
-              autocomplete="current-password"
-              (keydown.enter)="onKeyPress($event)"
-            />
+            <!-- Sign In Button -->
             <button
-              type="button"
-              class="show-btn"
-              (click)="togglePassword()"
-            >{{ hidePassword ? 'SHOW' : 'HIDE' }}</button>
+              type="submit"
+              class="sign-in-btn"
+              (click)="onSubmit()"
+              [disabled]="!email || !password || isLoading"
+            >
+              @if (isLoading) {
+                <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+                <span>Signing in...</span>
+              } @else {
+                <span>Sign In</span>
+              }
+            </button>
+
+            <!-- Divider -->
+            <div class="divider">
+              <span class="line"></span>
+              <span class="text">Or</span>
+              <span class="line"></span>
+            </div>
+
+            <!-- Other Sign In -->
+            <button type="button" class="other-btn">
+              Sign in with other
+            </button>
+
+          </form>
+
+          <div class="signup-prompt">
+            Don't have an account? <a routerLink="/signup" class="signup-link">Sign Up</a>
           </div>
 
-          <!-- Remember me / Forgot Password -->
-          <div class="form-options">
-            <label class="remember-me">
-              <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
-              <span class="checkbox-box">
-                <mat-icon>check</mat-icon>
-              </span>
-              Remember me
-            </label>
-            <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
-          </div>
-
-          <!-- Sign In Button -->
-          <button
-            type="submit"
-            class="sign-in-btn"
-            (click)="onSubmit()"
-            [disabled]="!email || !password || isLoading"
-          >
-            @if (isLoading) {
-              <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
-              <span>Signing in...</span>
-            } @else {
-              <span>Sign In</span>
-            }
-          </button>
-
-          <!-- OR divider -->
-          <div class="or-divider">
-            <span class="divider-line"></span>
-            <span class="or-text">Or</span>
-            <span class="divider-line"></span>
-          </div>
-
-          <!-- Alternate sign-in -->
-          <button type="button" class="alt-signin-btn" (click)="signInWithOther()">
-            Sign in with other
-          </button>
-
-        </form>
-
-        <p class="signup-row">
-          Don't have an account? <a class="signup-link" (click)="$event.preventDefault()">Sign Up</a>
-        </p>
-
+        </div>
       </div>
-    </div>
 
+    </div>
   </div>
 </div>

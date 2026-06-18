@@ -35,14 +35,9 @@ export class LoginPage {
   hidePassword = true;
   rememberMe = false;
   isLoading = false;
-  currentYear = new Date().getFullYear();
 
   togglePassword(): void {
     this.hidePassword = !this.hidePassword;
-  }
-
-  signInWithOther(): void {
-    this.snackBar.open('This sign-in method is not available yet.', 'Dismiss', { duration: 4000 });
   }
 
   onSubmit(): void {
