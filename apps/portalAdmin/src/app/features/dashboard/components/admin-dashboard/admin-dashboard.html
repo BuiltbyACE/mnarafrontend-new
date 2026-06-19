@@ -1,0 +1,297 @@
+@if (isLoading()) {
+  <div class="loading-state">
+    <mat-spinner diameter="44"></mat-spinner>
+    <span class="loading-text">Loading Command Center…</span>
+  </div>
+} @else if (loadError()) {
+  <div class="error-state">
+    <mat-icon class="error-icon">cloud_off</mat-icon>
+    <span class="error-text">{{ loadError() }}</span>
+    <button mat-stroked-button (click)="refresh()">Retry</button>
+  </div>
+} @else if (dashboardData(); as data) {
+  <div class="command-center">
+
+    <!-- Hero -->
+    <header class="hero">
+      <div class="hero-bg">
+        <div class="hero-blob hero-blob-1"></div>
+        <div class="hero-blob hero-blob-2"></div>
+        <svg class="hero-skyline" viewBox="0 0 400 120" preserveAspectRatio="xMaxYMax meet" xmlns="http://www.w3.org/2000/svg">
+          <rect x="240" y="30" width="50" height="90" fill="rgba(255,255,255,0.08)"/>
+          <rect x="300" y="10" width="60" height="110" fill="rgba(255,255,255,0.12)"/>
+          <rect x="80" y="55" width="40" height="65" fill="rgba(255,255,255,0.06)"/>
+          <rect x="130" y="40" width="35" height="80" fill="rgba(255,255,255,0.09)"/>
+        </svg>
+      </div>
+
+      <div class="hero-content">
+        <div class="hero-left">
+          <h1 class="hero-greeting">{{ greeting() }}, {{ firstName() }} <span class="wave">👋</span></h1>
+          <p class="hero-title">Principal's Command Center</p>
+          <p class="hero-subtitle">Overview of Institutional Health · Last refresh {{ data.lastRefresh | date:'short' }}</p>
+        </div>
+
+        <div class="hero-right">
+          @if (healthScore() !== null) {
+            <div class="health-ring" [class]="healthStatus().className">
+              <svg viewBox="0 0 80 80" class="ring-svg">
+                <circle cx="40" cy="40" r="34" class="ring-track"></circle>
+                <circle cx="40" cy="40" r="34" class="ring-progress"
+                  [style.stroke-dasharray]="213.6"
+                  [style.stroke-dashoffset]="213.6 - (213.6 * (healthScore() ?? 0) / 100)">
+                </circle>
+              </svg>
+              <div class="ring-center">
+                <mat-icon>favorite</mat-icon>
+              </div>
+            </div>
+            <div class="health-info">
+              <span class="health-score">{{ healthScore() }}%</span>
+              <span class="health-label">Institution Health</span>
+              <span class="health-status-chip" [class]="healthStatus().className">{{ healthStatus().label }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- KPI Row -->
+    <section class="kpi-row">
+      @for (card of kpiCards(); track card.label) {
+        <mat-card class="kpi-card" [class]="card.colorClass">
+          <mat-card-content>
+            <div class="kpi-icon">
+              <mat-icon>{{ card.icon }}</mat-icon>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">{{ card.label }}</span>
+              <span class="kpi-value">{{ card.value }}</span>
+              <span class="kpi-caption" [class.positive]="card.captionClass === 'positive'" [class.negative]="card.captionClass === 'negative'">
+                {{ card.caption }}
+              </span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions">
+      <span class="quick-actions-label">
+        <mat-icon>bolt</mat-icon> Quick Actions
+      </span>
+      <div class="quick-actions-grid">
+        @for (action of quickActions; track action.label) {
+          <a class="quick-action-item" [class]="action.colorClass" [routerLink]="link(action.route)">
+            <div class="qa-icon"><mat-icon>{{ action.icon }}</mat-icon></div>
+            <div class="qa-text">
+              <span class="qa-label">{{ action.label }}</span>
+              <span class="qa-sub">{{ action.sub }}</span>
+            </div>
+          </a>
+        }
+      </div>
+    </section>
+
+    <!-- Middle Grid -->
+    <section class="middle-grid">
+      <mat-card class="financial-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">pie_chart</mat-icon>
+          <mat-card-title>Term Revenue Breakdown</mat-card-title>
+          <mat-card-subtitle>Financial health snapshot</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="doughnut-wrapper">
+            <div class="chart-container">
+              @if (feeChartConfig(); as config) {
+                <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
+              }
+            </div>
+            <div class="doughnut-center">
+              <span class="center-label">Total</span>
+              <span class="center-value">{{ formatCurrency(financialTotal()) }}</span>
+            </div>
+          </div>
+          <div class="financial-legend">
+            @for (row of financialBreakdown(); track row.label) {
+              <div class="legend-row">
+                <span class="legend-dot" [style.background]="row.color"></span>
+                <span class="legend-label">{{ row.label }}</span>
+                <span class="legend-value">{{ formatCurrency(row.value) }}</span>
+                <span class="legend-pct">{{ row.pct }}%</span>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="approvals-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">fact_check</mat-icon>
+          <mat-card-title>Action Queue</mat-card-title>
+          <mat-card-subtitle>Pending Approvals</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (data.pendingApprovals.length === 0) {
+            <div class="empty-row">
+              <mat-icon>task_alt</mat-icon>
+              <span>No pending approvals — you're all caught up.</span>
+            </div>
+          } @else {
+            <div class="approvals-list">
+              @for (approval of data.pendingApprovals; track approval.id) {
+                <div class="approval-item">
+                  <div class="approval-header">
+                    <span class="approval-type">{{ approval.type }}</span>
+                    <span class="approval-priority" [class]="getPriorityClass(approval.priority)">{{ approval.priority }}</span>
+                  </div>
+                  <div class="approval-body">
+                    <span class="approval-requester">{{ approval.requester }}</span>
+                    <span class="approval-desc">{{ approval.description }}</span>
+                  </div>
+                  <div class="approval-actions">
+                    <button mat-stroked-button class="action-btn review-btn" (click)="reviewApproval(approval)" [disabled]="processingId() === approval.id">
+                      <mat-icon>visibility</mat-icon> Review
+                    </button>
+                    <button mat-flat-button color="primary" class="action-btn approve-btn" (click)="approveApproval(approval)" [disabled]="processingId() === approval.id">
+                      @if (processingId() === approval.id) {
+                        <mat-spinner diameter="14"></mat-spinner>
+                      } @else {
+                        <mat-icon>check</mat-icon>
+                      }
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </section>
+
+    <!-- Bottom Grid -->
+    <section class="bottom-grid">
+      <mat-card class="operations-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">radar</mat-icon>
+          <mat-card-title>Operations Radar</mat-card-title>
+          <mat-card-subtitle>Live monitoring feed</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (data.liveOperations.length === 0) {
+            <div class="empty-row">
+              <mat-icon>sensors_off</mat-icon>
+              <span>No live operations reported.</span>
+            </div>
+          } @else {
+            <div class="operations-log">
+              @for (op of data.liveOperations; track op.id) {
+                <div class="operation-entry" [class]="getOperationColor(op.type)">
+                  <span class="op-time">[{{ formatTime(op.timestamp) }}]</span>
+                  <mat-icon class="op-icon">{{ getOperationIcon(op.type) }}</mat-icon>
+                  <span class="op-message">{{ op.message }}</span>
+                  <span class="op-location"><mat-icon class="loc-icon">place</mat-icon>{{ op.location }}</span>
+                </div>
+              }
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="calendar-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">calendar_month</mat-icon>
+          <mat-card-title>
+            <button mat-icon-button class="cal-nav" (click)="calendarService.previousMonth()">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <span>{{ calendarMonthLabel() }}</span>
+            <button mat-icon-button class="cal-nav" (click)="calendarService.nextMonth()">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </mat-card-title>
+          <mat-card-subtitle>{{ calendarEvents().length }} event(s)</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (calendarLoading()) {
+            <mat-progress-spinner diameter="24"></mat-progress-spinner>
+          } @else {
+            <div class="calendar-grid">
+              @for (day of ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; track day) {
+                <span class="cal-day-header">{{ day }}</span>
+              }
+              @for (day of calendarDays(); track day.fullDate + day.num) {
+                <div class="cal-day" [class.has-event]="dayHasEvent(day)" [class.other-month]="day.month !== calendarMonth() - 1">
+                  <span class="day-num">{{ day.num }}</span>
+                  @if (dayHasEvent(day)) {
+                    <span class="day-dot"></span>
+                  }
+                </div>
+              }
+            </div>
+            @if (upcomingEvents().length > 0) {
+              <mat-divider class="cal-divider"></mat-divider>
+              <div class="upcoming-list">
+                <span class="upcoming-title">Upcoming</span>
+                @for (evt of upcomingEvents(); track evt.id) {
+                  <div class="upcoming-item">
+                    <span class="upcoming-dot" [style.background]="getEventColor(evt.type)"></span>
+                    <span class="upcoming-text">{{ evt.title }}</span>
+                    <span class="upcoming-date">{{ evt.date | date:'d MMM' }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="empty-row compact">
+                <mat-icon>event_available</mat-icon>
+                <span>Nothing scheduled this month.</span>
+              </div>
+            }
+          }
+        </mat-card-content>
+      </mat-card>
+    </section>
+
+    <!-- Insights (pending real time-series endpoints) -->
+    <section class="insights-grid">
+      <mat-card class="insight-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">trending_up</mat-icon>
+          <mat-card-title>Fee Collection Trend</mat-card-title>
+          <mat-card-subtitle>Monthly collected vs target</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="insight-empty">
+            <mat-icon>insights</mat-icon>
+            <p>Monthly trend data isn't available from the API yet.</p>
+            <code>Needs: GET /analytics/dashboard/fee-trend/ (monthly series)</code>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="insight-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">show_chart</mat-icon>
+          <mat-card-title>Student Enrollment</mat-card-title>
+          <mat-card-subtitle>Year-to-date trend</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="insight-empty">
+            <mat-icon>insights</mat-icon>
+            <p>Enrollment history isn't available from the API yet.</p>
+            <code>Needs: GET /analytics/dashboard/enrollment-trend/ (monthly series)</code>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </section>
+  </div>
+} @else {
+  <div class="error-state">
+    <mat-icon class="error-icon">inbox</mat-icon>
+    <span class="error-text">No dashboard data available.</span>
+    <button mat-stroked-button (click)="refresh()">Retry</button>
+  </div>
+}

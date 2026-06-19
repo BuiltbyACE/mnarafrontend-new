@@ -62,6 +62,7 @@ export class AuthStore {
     }
     return userProfile?.firstName ?? this.state().identifier;
   });
+  readonly avatarUrl = computed(() => this.state().user?.user?.avatarUrl ?? null);
   readonly isGodMode = computed(() =>
     this.state().user?.permissions?.includes('*') ?? false
   );
