@@ -49,7 +49,7 @@ import { PrincipalDashboardService } from '../../features/dashboard/services/pri
         <!-- Wave Footer -->
         <div class="wave-footer">
           <svg class="wave-svg" viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#1e3a5f" d="M0,60 C180,0 360,120 540,60 C720,0 900,120 1080,60 C1260,0 1380,80 1440,60 L1440,120 L0,120 Z"/>
+            <path fill="#1d4ed8" d="M0,60 C180,0 360,120 540,60 C720,0 900,120 1080,60 C1260,0 1380,80 1440,60 L1440,120 L0,120 Z"/>
           </svg>
           <div class="footer-band">
             <div class="footer-left">
@@ -69,7 +69,7 @@ import { PrincipalDashboardService } from '../../features/dashboard/services/pri
       display: flex;
       height: 100vh;
       overflow: hidden;
-      background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
+      background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 60%, #DBEAFE 100%);
       font-family: 'Inter', system-ui, sans-serif;
     }
 
@@ -129,7 +129,7 @@ import { PrincipalDashboardService } from '../../features/dashboard/services/pri
       left: 0;
       right: 0;
       height: 50px;
-      background: #1e3a5f;
+      background: #1d4ed8;
       display: flex;
       align-items: center;
       justify-content: space-between;

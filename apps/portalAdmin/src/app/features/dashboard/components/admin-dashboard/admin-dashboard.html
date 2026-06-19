@@ -14,14 +14,31 @@
 
     <!-- Hero -->
     <header class="hero">
-      <div class="hero-bg">
-        <div class="hero-blob hero-blob-1"></div>
-        <div class="hero-blob hero-blob-2"></div>
-        <svg class="hero-skyline" viewBox="0 0 400 120" preserveAspectRatio="xMaxYMax meet" xmlns="http://www.w3.org/2000/svg">
-          <rect x="240" y="30" width="50" height="90" fill="rgba(255,255,255,0.08)"/>
-          <rect x="300" y="10" width="60" height="110" fill="rgba(255,255,255,0.12)"/>
-          <rect x="80" y="55" width="40" height="65" fill="rgba(255,255,255,0.06)"/>
-          <rect x="130" y="40" width="35" height="80" fill="rgba(255,255,255,0.09)"/>
+      <div class="hero-illustration">
+        <svg viewBox="0 0 240 160" preserveAspectRatio="xMaxYMax meet" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="190" cy="55" r="40" fill="#bfdbfe" opacity="0.6"/>
+          <rect x="40" y="60" width="14" height="22" fill="#93c5fd" opacity="0.5"/>
+          <rect x="100" y="44" width="60" height="100" rx="4" fill="#2563eb"/>
+          <rect x="108" y="56" width="14" height="14" fill="#bfdbfe"/>
+          <rect x="128" y="56" width="14" height="14" fill="#bfdbfe"/>
+          <rect x="146" y="56" width="14" height="14" fill="#bfdbfe"/>
+          <rect x="108" y="76" width="14" height="14" fill="#bfdbfe"/>
+          <rect x="128" y="76" width="14" height="14" fill="#dbeafe"/>
+          <rect x="146" y="76" width="14" height="14" fill="#bfdbfe"/>
+          <rect x="108" y="96" width="14" height="14" fill="#dbeafe"/>
+          <rect x="128" y="96" width="14" height="14" fill="#bfdbfe"/>
+          <rect x="146" y="96" width="14" height="14" fill="#dbeafe"/>
+          <rect x="124" y="120" width="22" height="24" fill="#1e3a8a"/>
+          <rect x="165" y="70" width="30" height="74" rx="3" fill="#1d4ed8"/>
+          <rect x="172" y="80" width="8" height="10" fill="#bfdbfe"/>
+          <rect x="184" y="80" width="8" height="10" fill="#bfdbfe"/>
+          <rect x="172" y="98" width="8" height="10" fill="#bfdbfe"/>
+          <rect x="184" y="98" width="8" height="10" fill="#bfdbfe"/>
+          <path d="M210 134 C214 110 224 100 236 96 C228 112 226 128 222 144 Z" fill="#16a34a" opacity="0.85"/>
+          <rect x="218" y="140" width="6" height="14" fill="#78350f"/>
+          <path d="M30 38 q6 -4 12 0" stroke="#93c5fd" stroke-width="2" fill="none"/>
+          <path d="M44 30 q6 -4 12 0" stroke="#93c5fd" stroke-width="2" fill="none"/>
+          <rect x="0" y="144" width="240" height="16" fill="#eff6ff"/>
         </svg>
       </div>
 
@@ -47,9 +64,15 @@
               </div>
             </div>
             <div class="health-info">
-              <span class="health-score">{{ healthScore() }}%</span>
-              <span class="health-label">Institution Health</span>
-              <span class="health-status-chip" [class]="healthStatus().className">{{ healthStatus().label }}</span>
+              <span class="health-label">Institution Health Score</span>
+              <div class="health-score-row">
+                <span class="health-score">{{ healthScore() }}%</span>
+                <span class="health-status-chip" [class]="healthStatus().className">{{ healthStatus().label }}</span>
+              </div>
+              <span class="health-delta">
+                <mat-icon>trending_up</mat-icon>
+                {{ healthDeltaLabel() }}
+              </span>
             </div>
           }
         </div>
@@ -61,13 +84,21 @@
       @for (card of kpiCards(); track card.label) {
         <mat-card class="kpi-card" [class]="card.colorClass">
           <mat-card-content>
-            <div class="kpi-icon">
-              <mat-icon>{{ card.icon }}</mat-icon>
+            <div class="kpi-top">
+              <div class="kpi-icon">
+                <mat-icon>{{ card.icon }}</mat-icon>
+              </div>
+              <svg class="kpi-sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
+                <polyline [attr.points]="card.sparklinePoints" fill="none" [attr.stroke]="card.sparklineColor" stroke-width="2"></polyline>
+              </svg>
             </div>
             <div class="kpi-body">
               <span class="kpi-label">{{ card.label }}</span>
               <span class="kpi-value">{{ card.value }}</span>
               <span class="kpi-caption" [class.positive]="card.captionClass === 'positive'" [class.negative]="card.captionClass === 'negative'">
+                @if (card.captionClass !== 'negative') {
+                  <mat-icon class="caption-arrow">arrow_upward</mat-icon>
+                }
                 {{ card.caption }}
               </span>
             </div>
@@ -76,57 +107,8 @@
       }
     </section>
 
-    <!-- Quick Actions -->
-    <section class="quick-actions">
-      <span class="quick-actions-label">
-        <mat-icon>bolt</mat-icon> Quick Actions
-      </span>
-      <div class="quick-actions-grid">
-        @for (action of quickActions; track action.label) {
-          <a class="quick-action-item" [class]="action.colorClass" [routerLink]="link(action.route)">
-            <div class="qa-icon"><mat-icon>{{ action.icon }}</mat-icon></div>
-            <div class="qa-text">
-              <span class="qa-label">{{ action.label }}</span>
-              <span class="qa-sub">{{ action.sub }}</span>
-            </div>
-          </a>
-        }
-      </div>
-    </section>
-
-    <!-- Middle Grid -->
-    <section class="middle-grid">
-      <mat-card class="financial-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">pie_chart</mat-icon>
-          <mat-card-title>Term Revenue Breakdown</mat-card-title>
-          <mat-card-subtitle>Financial health snapshot</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="doughnut-wrapper">
-            <div class="chart-container">
-              @if (feeChartConfig(); as config) {
-                <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
-              }
-            </div>
-            <div class="doughnut-center">
-              <span class="center-label">Total</span>
-              <span class="center-value">{{ formatCurrency(financialTotal()) }}</span>
-            </div>
-          </div>
-          <div class="financial-legend">
-            @for (row of financialBreakdown(); track row.label) {
-              <div class="legend-row">
-                <span class="legend-dot" [style.background]="row.color"></span>
-                <span class="legend-label">{{ row.label }}</span>
-                <span class="legend-value">{{ formatCurrency(row.value) }}</span>
-                <span class="legend-pct">{{ row.pct }}%</span>
-              </div>
-            }
-          </div>
-        </mat-card-content>
-      </mat-card>
-
+    <!-- Top Row: Action Queue / Operations Radar / School Calendar -->
+    <section class="triple-grid">
       <mat-card class="approvals-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="section-icon">fact_check</mat-icon>
@@ -170,10 +152,7 @@
           }
         </mat-card-content>
       </mat-card>
-    </section>
 
-    <!-- Bottom Grid -->
-    <section class="bottom-grid">
       <mat-card class="operations-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="section-icon">radar</mat-icon>
@@ -255,8 +234,39 @@
       </mat-card>
     </section>
 
-    <!-- Insights (pending real time-series endpoints) -->
-    <section class="insights-grid">
+    <!-- Bottom Row: Revenue / Fee Trend / Enrollment / Quick Actions -->
+    <section class="quad-grid">
+      <mat-card class="financial-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">pie_chart</mat-icon>
+          <mat-card-title>Term Revenue Breakdown</mat-card-title>
+          <mat-card-subtitle>Financial health snapshot</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="doughnut-wrapper">
+            <div class="chart-container">
+              @if (feeChartConfig(); as config) {
+                <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
+              }
+            </div>
+            <div class="doughnut-center">
+              <span class="center-label">Total</span>
+              <span class="center-value">{{ formatCurrency(financialTotal()) }}</span>
+            </div>
+          </div>
+          <div class="financial-legend">
+            @for (row of financialBreakdown(); track row.label) {
+              <div class="legend-row">
+                <span class="legend-dot" [style.background]="row.color"></span>
+                <span class="legend-label">{{ row.label }}</span>
+                <span class="legend-value">{{ formatCurrency(row.value) }}</span>
+                <span class="legend-pct">{{ row.pct }}%</span>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
       <mat-card class="insight-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="section-icon">trending_up</mat-icon>
@@ -264,11 +274,12 @@
           <mat-card-subtitle>Monthly collected vs target</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="insight-empty">
-            <mat-icon>insights</mat-icon>
-            <p>Monthly trend data isn't available from the API yet.</p>
-            <code>Needs: GET /analytics/dashboard/fee-trend/ (monthly series)</code>
+          <div class="insight-chart">
+            @if (feeTrendChartConfig(); as config) {
+              <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
+            }
           </div>
+          <p class="insight-disclaimer">Illustrative trend — monthly series endpoint not yet wired up.</p>
         </mat-card-content>
       </mat-card>
 
@@ -279,10 +290,31 @@
           <mat-card-subtitle>Year-to-date trend</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="insight-empty">
-            <mat-icon>insights</mat-icon>
-            <p>Enrollment history isn't available from the API yet.</p>
-            <code>Needs: GET /analytics/dashboard/enrollment-trend/ (monthly series)</code>
+          <div class="insight-chart">
+            @if (enrollmentChartConfig(); as config) {
+              <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
+            }
+          </div>
+          <p class="insight-disclaimer">Illustrative trend — monthly series endpoint not yet wired up.</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="quick-actions-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="section-icon">bolt</mat-icon>
+          <mat-card-title>Quick Actions</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="quick-actions-grid">
+            @for (action of quickActions; track action.label) {
+              <a class="quick-action-item" [class]="action.colorClass" [routerLink]="link(action.route)">
+                <div class="qa-icon"><mat-icon>{{ action.icon }}</mat-icon></div>
+                <div class="qa-text">
+                  <span class="qa-label">{{ action.label }}</span>
+                  <span class="qa-sub">{{ action.sub }}</span>
+                </div>
+              </a>
+            }
           </div>
         </mat-card-content>
       </mat-card>

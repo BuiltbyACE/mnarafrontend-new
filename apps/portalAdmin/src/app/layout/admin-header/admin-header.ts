@@ -98,7 +98,15 @@ interface SearchResult {
           <mat-icon class="date-icon">calendar_today</mat-icon>
           <div class="date-info">
             <span class="date-main">{{ currentDate | date:'MMM d, y' }}</span>
-            <span class="date-sub">{{ currentDate | date:'EEEE, h:mm a' }}</span>
+            <span class="date-sub">{{ currentDate | date:'EEEE' }}</span>
+          </div>
+        </div>
+
+        <div class="weather-block" title="Local weather — placeholder, no live feed wired up">
+          <mat-icon class="weather-icon">wb_sunny</mat-icon>
+          <div class="weather-info">
+            <span class="weather-temp">{{ weatherTempC }}&deg;C</span>
+            <span class="weather-city">{{ weatherCity }}</span>
           </div>
         </div>
 
@@ -113,8 +121,8 @@ interface SearchResult {
           <div class="user-info">
             <span class="user-name">{{ authStore.fullName() || 'Admin User' }}</span>
             <span class="user-id">{{ authStore.identifier() || '—' }}</span>
-            <span class="user-role">{{ authStore.roleName() || 'Admin' }}</span>
           </div>
+          <span class="user-role-chip">{{ authStore.roleName() || 'Admin' }}</span>
           <mat-icon class="user-chevron">expand_more</mat-icon>
         </div>
 
@@ -346,14 +354,15 @@ interface SearchResult {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding-right: 16px;
-      border-right: 1px solid #e2e8f0;
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: #eff6ff;
 
       .date-icon {
-        color: #94a3b8;
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
+        color: #1d4ed8;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
       }
 
       .date-info {
@@ -375,6 +384,53 @@ interface SearchResult {
       }
     }
 
+    .weather-block {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: #fffbeb;
+      cursor: default;
+
+      .weather-icon {
+        color: #f59e0b;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+
+      .weather-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+
+      .weather-temp {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .weather-city {
+        font-size: 0.6875rem;
+        color: #92400e;
+        margin-top: 2px;
+      }
+    }
+
+    .user-role-chip {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #1d4ed8;
+      background: #dbeafe;
+      padding: 3px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
     .user-block {
       display: flex;
       align-items: center;
@@ -390,7 +446,7 @@ interface SearchResult {
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #2563eb, #1e3a5f);
+        background: linear-gradient(135deg, #2563eb, #1e3a8a);
         overflow: hidden;
         display: flex;
         align-items: center;
@@ -424,11 +480,6 @@ interface SearchResult {
         color: #1e293b;
       }
 
-      .user-role {
-        font-size: 0.625rem;
-        color: #64748b;
-      }
-
       .user-id {
         font-size: 0.625rem;
         color: #94a3b8;
@@ -448,6 +499,10 @@ interface SearchResult {
 export class AdminHeaderComponent implements OnInit, OnDestroy {
   @Input() notificationCount = 0;
   @Output() toggleSidebar = new EventEmitter<void>();
+
+  // Static placeholder — no weather API wired up yet
+  readonly weatherTempC = 24;
+  readonly weatherCity = 'Nairobi';
 
   authStore = inject(AuthStore);
   private router = inject(Router);

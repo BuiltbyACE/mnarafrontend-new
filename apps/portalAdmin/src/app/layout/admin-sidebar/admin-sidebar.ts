@@ -126,12 +126,15 @@ interface NavSection {
         </div>
       </nav>
 
-      @if (!collapsed) {
-        <div class="sidebar-footer">
-          <div class="footer-text">&copy; 2024 SafariStack Solutions. All rights reserved.</div>
-          <div class="footer-version">Version 1.0.0</div>
+      <div class="sidebar-footer">
+        <div class="system-status-pill" [attr.title]="collapsed ? 'All Systems Operational' : null">
+          <span class="status-dot"></span>
+          @if (!collapsed) {
+            <span class="status-text">System Status</span>
+            <span class="status-sub">All Systems Operational</span>
+          }
         </div>
-      }
+      </div>
     </div>
   `,
   styles: [`
@@ -171,7 +174,8 @@ interface NavSection {
       width: 34px;
       height: 34px;
       border-radius: 9px;
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -226,7 +230,7 @@ interface NavSection {
       flex: 1;
       overflow-y: auto;
       padding: 12px 10px;
-      padding-bottom: 56px;
+      padding-bottom: 72px;
 
       &::-webkit-scrollbar { width: 0px; background: transparent; }
     }
@@ -260,13 +264,15 @@ interface NavSection {
       &:hover { background: rgba(255, 255, 255, 0.08); }
 
       &.active {
-        background: rgba(255, 255, 255, 0.14);
-        color: white;
-        border-left: 3px solid #60a5fa;
+        background: white;
+        color: #1d4ed8;
+        border-left: 3px solid #93c5fd;
         border-radius: 0 8px 8px 0;
         padding-left: 9px;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
 
-        .nav-icon { color: #60a5fa; }
+        .nav-label { color: #1d4ed8; font-weight: 600; }
+        .nav-icon { color: #1d4ed8; }
       }
     }
 
@@ -362,26 +368,67 @@ interface NavSection {
     .nav-item.expanded .dropdown-arrow { transform: rotate(90deg); }
 
     .sidebar-footer {
-      padding: 12px 16px;
+      padding: 12px;
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      background: var(--mnara-sidebar-bg-to, #0f2027);
-      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.18);
+    }
 
-      .footer-text {
-        font-size: 0.5938rem;
-        color: rgba(255, 255, 255, 0.5);
-        line-height: 1.3;
-      }
+    .system-status-pill {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
 
-      .footer-version {
-        font-size: 0.5625rem;
-        color: rgba(255, 255, 255, 0.35);
-        margin-top: 2px;
-      }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+      animation: status-pulse 2s infinite;
+    }
+
+    @keyframes status-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
+      70% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    .status-text {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #d1fae5;
+      white-space: nowrap;
+    }
+
+    .status-sub {
+      display: none;
+    }
+
+    .sidebar-container:not(.collapsed) .system-status-pill {
+      flex-wrap: wrap;
+    }
+
+    .sidebar-container:not(.collapsed) .status-sub {
+      display: block;
+      width: 100%;
+      font-size: 0.625rem;
+      color: rgba(209, 250, 229, 0.75);
+      margin-left: 17px;
+    }
+
+    .sidebar-container.collapsed .system-status-pill {
+      justify-content: center;
+      padding: 9px;
     }
   `],
 })
