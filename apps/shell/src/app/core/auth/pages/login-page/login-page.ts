@@ -8,6 +8,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { switchMap, finalize } from 'rxjs/operators';
 import { AuthStore, AuthService } from '@sms/core/auth';
 import type { PortalType } from '@sms/shared/models';
+import { getPortalRoute } from '@sms/shared/models';
 
 @Component({
   selector: 'app-login-page',
@@ -75,18 +76,7 @@ export class LoginPage {
           }
 
           const portalType = this.authStore.portalType();
-          const routes: Record<string, string> = {
-            ADMIN: '/admin',
-            SUPER_ADMIN: '/admin',
-            STAFF: '/admin',
-            TEACHER: '/teacher',
-            STUDENT: '/student',
-            PARENT: '/parent',
-            TRANSPORT: '/transport',
-            FINANCE: '/finance',
-          };
-
-          const targetRoute = portalType ? routes[portalType as PortalType] : null;
+          const targetRoute = portalType ? getPortalRoute(portalType as PortalType) : null;
           if (targetRoute) {
             this.router.navigate([targetRoute], navigateOpts);
           } else {

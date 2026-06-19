@@ -272,34 +272,15 @@ export class CredentialsPage implements OnInit {
             permissions: payload.permissions || [],
           });
 
-          // Navigate based on role
-          switch(portalType) {
-            case 'ADMIN':
-            case 'SUPER_ADMIN':
-            case 'STAFF':
-              this.router.navigate(['/admin']);
-              break;
-            case 'TEACHER':
-              this.router.navigate(['/teacher']);
-              break;
-            case 'STUDENT':
-              this.router.navigate(['/student']);
-              break;
-            case 'PARENT':
-              this.router.navigate(['/parent']);
-              break;
-            case 'TRANSPORT':
-              this.router.navigate(['/transport']);
-              break;
-            case 'FINANCE':
-              this.router.navigate(['/finance']);
-              break;
-            default:
-              console.error('No routing rule for portal type:', portalType);
-              setTimeout(() => {
-                this.snackBar.open('Unrecognized user role.', 'Dismiss', { duration: 5000 });
-              });
-              break;
+          // Navigate using store's portal route
+          const route = this.authStore.getPortalRoute();
+          if (route) {
+            this.router.navigate([route]);
+          } else {
+            console.error('No routing rule for portal type:', portalType);
+            setTimeout(() => {
+              this.snackBar.open('Unrecognized user role.', 'Dismiss', { duration: 5000 });
+            });
           }
 
           // Fire-and-forget fetchUserContext to populate full details
