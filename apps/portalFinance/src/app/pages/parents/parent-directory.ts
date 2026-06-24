@@ -143,6 +143,11 @@ import {
                 </td>
               </ng-container>
 
+              <ng-container matColumnDef="family_code">
+                <th mat-header-cell *matHeaderCellDef>Family Code</th>
+                <td mat-cell *matCellDef="let p" class="mono-cell">{{ p.family_code || '—' }}</td>
+              </ng-container>
+
               <ng-container matColumnDef="phone">
                 <th mat-header-cell *matHeaderCellDef>Phone</th>
                 <td mat-cell *matCellDef="let p">{{ p.phone }}</td>
@@ -284,7 +289,7 @@ export class ParentDirectoryComponent implements OnInit {
   parents = signal<ParentDirectoryItem[]>([]);
   summary = signal<ParentDirectorySummary | null>(null);
 
-  readonly displayedColumns = ['name', 'phone', 'email', 'children', 'invoiced', 'paid', 'outstanding', 'nav'];
+  readonly displayedColumns = ['name', 'family_code', 'phone', 'email', 'children', 'invoiced', 'paid', 'outstanding', 'nav'];
   readonly FORMAT_CURRENCY = FORMAT_CURRENCY;
 
   ngOnInit() {
@@ -299,7 +304,8 @@ export class ParentDirectoryComponent implements OnInit {
       list = list.filter(p =>
         `${p.first_name} ${p.last_name}`.toLowerCase().includes(q) ||
         (p.email && p.email.toLowerCase().includes(q)) ||
-        (p.phone && p.phone.includes(q))
+        (p.phone && p.phone.includes(q)) ||
+        (p.family_code && p.family_code.toLowerCase().includes(q))
       );
     }
     const sn = this.studentNameFilter().toLowerCase().trim();

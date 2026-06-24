@@ -12,10 +12,12 @@ import {
   ParentDetail, ParentPaymentsResponse,
   ChartAccount, JournalEntry,
   FamilyAccount, FamilyWallet, FamilyWalletTransaction, FamilyPaymentRequest, FamilyPaymentResponse,
+  FamilySummaryResponse,
   FeeWaiver, FeeWaiverRequest, WaiverReversalRequest, WaiverStats,
   MpesaTransaction, MpesaReceiptVerification,
   Allocation, AllocationFilterParams, WalletAllocationRequest,
-  TrialBalanceReport, IncomeStatementReport, CashFlowReport
+  TrialBalanceReport, IncomeStatementReport, CashFlowReport,
+  ReconciliationDashboard, FailedTransactionItem, UnallocatedItem,
 } from '../models/finance.models';
 
 @Injectable({ providedIn: 'root' })
@@ -260,6 +262,10 @@ export class FinanceService {
     return this.http.get<FamilyAccount>(getApiUrl(`/finance/families/${id}/`));
   }
 
+  getFamilySummary(id: number): Observable<FamilySummaryResponse> {
+    return this.http.get<FamilySummaryResponse>(getApiUrl(`/finance/families/${id}/summary/`));
+  }
+
   getFamilyWallet(id: number): Observable<FamilyWallet> {
     return this.http.get<FamilyWallet>(getApiUrl(`/finance/families/${id}/wallet/`));
   }
@@ -319,6 +325,28 @@ export class FinanceService {
   lookupMpesaReceipt(receipt: string): Observable<MpesaReceiptVerification> {
     const params = new HttpParams().set('receipt', receipt);
     return this.http.get<MpesaReceiptVerification>(getApiUrl('/finance/mpesa/lookup/'), { params });
+  }
+
+  // ─── Reconciliation Dashboard ─────────────────────────────────
+  getReconciliationDashboard(): Observable<ReconciliationDashboard> {
+    return this.http.get<ReconciliationDashboard>(getApiUrl('/finance/reconciliation/dashboard/'));
+  }
+
+  getFailedTransactions(params?: { date_from?: string; date_to?: string; phone?: string; transaction_type?: string }): Observable<PaginatedResponse<FailedTransactionItem>> {
+    let httpParams = new HttpParams();
+    if (params?.date_from) httpParams = httpParams.set('date_from', params.date_from);
+    if (params?.date_to) httpParams = httpParams.set('date_to', params.date_to);
+    if (params?.phone) httpParams = httpParams.set('phone', params.phone);
+    if (params?.transaction_type) httpParams = httpParams.set('transaction_type', params.transaction_type);
+    return this.http.get<PaginatedResponse<FailedTransactionItem>>(getApiUrl('/finance/reconciliation/failed/'), { params: httpParams });
+  }
+
+  getUnallocatedPayments(params?: { type?: string; date_from?: string; date_to?: string }): Observable<PaginatedResponse<UnallocatedItem>> {
+    let httpParams = new HttpParams();
+    if (params?.type) httpParams = httpParams.set('type', params.type);
+    if (params?.date_from) httpParams = httpParams.set('date_from', params.date_from);
+    if (params?.date_to) httpParams = httpParams.set('date_to', params.date_to);
+    return this.http.get<PaginatedResponse<UnallocatedItem>>(getApiUrl('/finance/reconciliation/unallocated/'), { params: httpParams });
   }
 
   // ─── Helper: typed error handler ───────────────────────────

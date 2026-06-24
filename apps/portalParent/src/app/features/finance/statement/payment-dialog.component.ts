@@ -12,7 +12,6 @@ import { ParentApiService } from '../../../services/parent-api.service';
 export interface PaymentDialogData {
   studentName: string;
   totalAmount: number;
-  invoiceIds: number[];
 }
 
 @Component({
@@ -56,7 +55,7 @@ export interface PaymentDialogData {
         <mat-form-field appearance="outline" class="phone-input">
           <mat-label>Safaricom Phone Number</mat-label>
           <input #phoneInput matInput [ngModel]="phone()" (input)="onPhoneChange(phoneInput.value)" placeholder="e.g. 254712345678" [disabled]="loading()">
-          <mat-hint>Format: 2547XXXXXXXX (debug: {{ phone() }} valid: {{ isValidPhone() }})</mat-hint>
+          <mat-hint>Format: 2547XXXXXXXX</mat-hint>
         </mat-form-field>
       }
     </mat-dialog-content>
@@ -158,7 +157,7 @@ export class PaymentDialogComponent {
 
     this.apiService.initiateMpesaPayment({
       phone: this.phone().trim(),
-      invoice_ids: this.data.invoiceIds
+      amount: this.data.totalAmount,
     }).subscribe({
       next: (res: any) => {
         this.loading.set(false);
@@ -166,7 +165,7 @@ export class PaymentDialogComponent {
       },
       error: (err: any) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.error || 'Failed to initiate M-Pesa payment. Please try again.');
+        this.errorMessage.set(err.error?.detail || err.error?.error || 'Failed to initiate M-Pesa payment. Please try again.');
       }
     });
   }

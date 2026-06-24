@@ -62,6 +62,45 @@ export interface FamilyAccount {
   created_at: string;
 }
 
+export interface FamilySummaryStudent {
+  id: number;
+  first_name: string;
+  last_name: string;
+  school_id: string | null;
+  invoices: FamilySummaryInvoice[];
+}
+
+export interface FamilySummaryInvoice {
+  id: number;
+  fee_title: string | null;
+  academic_year_name: string | null;
+  term_name: string | null;
+  amount_due: number;
+  amount_paid: number;
+  amount_waived: number;
+  balance: number;
+  status: string;
+  items: FamilySummaryItem[];
+}
+
+export interface FamilySummaryItem {
+  id: number;
+  description: string;
+  fee_category_name: string | null;
+  amount_due: number;
+  amount_paid: number;
+  amount_waived: number;
+  balance: number;
+  status: string;
+  _studentName?: string;
+}
+
+export interface FamilySummaryResponse {
+  family_id: number;
+  account_number: string;
+  students: FamilySummaryStudent[];
+}
+
 export interface WaiverStats {
   total_waivers: number;
   this_month: number;
@@ -79,7 +118,7 @@ export interface FeeWaiver {
   student_name: string;
   student_school_id: string;
   family: number | null;
-  family_account_number: string | null;
+  family_code: string | null;
   invoice: number;
   amount: number;
   waiver_type: 'SCHOLARSHIP' | 'SIBLING' | 'STAFF_CHILD' | 'HARDSHIP' | 'BOARD_APPROVED' | 'OTHER';
@@ -130,10 +169,10 @@ export interface WaiverReversalRequest {
 export interface MpesaTransaction {
   id: number;
   mpesa_receipt_number: string;
-  transaction_type: 'C2B' | 'STK';
+  transaction_type: 'C2B' | 'STK_PUSH';
   amount: number;
   phone: string;
-  status: 'PENDING' | 'VERIFIED' | 'FAILED';
+  status: 'INITIATED' | 'SUCCESS' | 'FAILED';
   verified_at: string | null;
   created_at: string;
 }
@@ -165,7 +204,7 @@ export interface Allocation {
   transaction_date: string;
   journal_entry_id: number | null;
   family: number;
-  family_account_number: string;
+  family_code: string;
   strategy: AllocationStrategy;
   total_allocated: number;
   wallet_credit: number;
@@ -255,7 +294,7 @@ export interface PaymentTransaction {
   id: number;
   invoice: number | null;
   family: number | null;
-  family_account_number: string | null;
+  family_code: string | null;
   student_name: string | null;
   amount: string;
   payment_method: 'MPESA' | 'BANK' | 'CASH' | 'CHEQUE' | 'WALLET';
@@ -492,7 +531,7 @@ export interface StudentFinancePayment {
   payment_method: string;
   reference_code: string;
   transaction_date: string;
-  family_account_number?: string | null;
+  family_code?: string | null;
   allocation?: Allocation | null;
 }
 
@@ -512,6 +551,7 @@ export interface StudentProfileMin {
   house_name?: string;
   category_name?: string;
   enrollment_status?: string;
+  family_code?: string | null;
 }
 
 export const FORMAT_CURRENCY = (amount: string | number | null | undefined, currency = 'KES'): string => {
@@ -656,6 +696,7 @@ export interface ParentDirectoryItem {
   phone: string;
   email: string;
   children_count: number;
+  family_code: string | null;
   total_invoiced: number;
   total_paid: number;
   total_outstanding: number;
@@ -769,4 +810,56 @@ export interface CashFlowReport {
   total_inflow: number;
   total_outflow: number;
   net_cash_flow: number;
+}
+
+// ─── Reconciliation Dashboard ────────────────────────────────────
+
+export interface ReconciliationDashboard {
+  failed_today: number;
+  failed_total: number;
+  failed_amount_total: string;
+  pending_verification: number;
+  initiated_stuck: number;
+  unallocated_payments: number;
+  unallocated_amount: string;
+  success_callback_no_payment: number;
+  c2b_total: number;
+  stk_push_total: number;
+  reconciliation_rate: number;
+}
+
+export interface FailedTransactionItem {
+  id: number;
+  checkout_request_id: string;
+  merchant_request_id: string;
+  transaction_type: string;
+  amount: string;
+  phone: string;
+  account_reference: string;
+  mpesa_receipt_number: string;
+  result_code: number | null;
+  result_desc: string;
+  transaction_date: string;
+  family: number | null;
+  status: string;
+  verified_at: string | null;
+  created_at: string;
+  age_hours: number;
+}
+
+export interface UnallocatedItem {
+  type: 'pending_payment' | 'orphan_callback' | 'stuck_initiated';
+  id: number;
+  amount: string;
+  created_at: string;
+  family: number | null;
+  family_code?: string;
+  payment_method?: string;
+  reference_number?: string;
+  notes?: string;
+  mpesa_receipt_number?: string;
+  phone?: string;
+  transaction_type?: string;
+  result_desc?: string;
+  checkout_request_id?: string;
 }

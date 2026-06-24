@@ -82,6 +82,10 @@ export const financeRoutes: Route[] = [
         path: 'fee-categories',
         loadComponent: () => import('./pages/fee-categories/fee-categories').then(m => m.FeeCategoriesComponent),
       },
+      {
+        path: 'reconciliation',
+        loadComponent: () => import('./pages/reconciliation/reconciliation').then(m => m.ReconciliationComponent),
+      },
     ],
   },
 ];

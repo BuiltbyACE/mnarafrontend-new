@@ -133,11 +133,7 @@ export class StatementComponent implements OnInit {
   payForChild(child: FeeStatementChild): void {
     if (child.financial_summary.outstanding_balance <= 0) return;
 
-    // Get IDs of pending/partial invoices
-    const pendingInvoices = child.invoices.filter(inv => inv.balance > 0);
-    const invoiceIds = pendingInvoices.map(inv => inv.id);
-
-    if (invoiceIds.length === 0) {
+    if (child.invoices.filter(inv => inv.balance > 0).length === 0) {
       this.snackBar.open('No pending invoices found to pay.', 'Close', { duration: 3000 });
       return;
     }
@@ -147,7 +143,6 @@ export class StatementComponent implements OnInit {
       data: {
         studentName: child.student_name,
         totalAmount: child.financial_summary.outstanding_balance,
-        invoiceIds: invoiceIds
       }
     });
 

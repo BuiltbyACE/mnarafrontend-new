@@ -425,7 +425,7 @@ export interface Allocation {
   transaction_date: string;
   journal_entry_id: number | null;
   family: number;
-  family_account_number: string;
+  family_code: string;
   strategy: AllocationStrategy;
   total_allocated: number;
   wallet_credit: number;

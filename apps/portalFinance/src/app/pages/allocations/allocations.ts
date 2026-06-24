@@ -107,7 +107,7 @@ interface AllocationViewModel extends Allocation {
                 <tr>
                   <td><span class="mono">#{{ allocation.id }}</span></td>
                   <td>{{ allocation.payment_reference }}</td>
-                  <td><span class="mono">{{ allocation.family_account_number }}</span></td>
+                  <td><span class="mono">{{ allocation.family_code }}</span></td>
                   <td><span class="strategy-tag" [class.wallet]="allocation.strategy === 'WALLET_OFFSET'">{{ strategyLabel(allocation.strategy) }}</span></td>
                   <td class="mono highlight">{{ FORMAT_CURRENCY(allocation.total_allocated) }}</td>
                   <td class="mono" [class.text-sunset]="allocation.wallet_credit > 0">{{ FORMAT_CURRENCY(allocation.wallet_credit) }}</td>
@@ -152,7 +152,7 @@ interface AllocationViewModel extends Allocation {
             <section class="drawer-meta">
               <div>
                 <span class="meta-label">Family</span>
-                <span class="meta-value">{{ selectedAllocation()?.family_account_number }}</span>
+                <span class="meta-value">{{ selectedAllocation()?.family_code }}</span>
               </div>
               <div>
                 <span class="meta-label">Allocated</span>
@@ -604,7 +604,7 @@ export class AllocationsComponent implements OnInit {
         const matchesStrategy = strategy === 'ALL' || item.strategy === strategy;
         const matchesTerm = !term ||
           item.payment_reference.toLowerCase().includes(term) ||
-          item.family_account_number.toLowerCase().includes(term) ||
+          item.family_code.toLowerCase().includes(term) ||
           (item.created_by_name ? item.created_by_name.toLowerCase().includes(term) : false);
         return matchesStrategy && matchesTerm;
       })

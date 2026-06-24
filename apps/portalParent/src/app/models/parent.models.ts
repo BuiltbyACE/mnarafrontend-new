@@ -227,6 +227,7 @@ export interface FeeStatementPayment {
 }
 
 export interface FeeStatementChild {
+  family_id: number | null;
   student_id: number;
   student_name: string;
   school_id: string | null;
@@ -246,15 +247,16 @@ export interface FeeStatementResponse {
 
 export interface StkPushRequest {
   phone: string;
-  invoice_ids: number[];
+  amount: number;
 }
 
 export interface StkPushResponse {
+  id: number;
   CheckoutRequestID: string;
-  ResponseDescription: string;
   MerchantRequestID: string;
   amount: number;
   phone: string;
+  status: string;
 }
 
 // ─── Announcements ────────────────────────────────────────────────

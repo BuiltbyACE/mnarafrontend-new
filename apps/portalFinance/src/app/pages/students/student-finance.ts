@@ -143,7 +143,7 @@ import {
                   </ng-container>
                   <ng-container matColumnDef="family">
                     <th mat-header-cell *matHeaderCellDef>Family</th>
-                    <td mat-cell *matCellDef="let p" class="mono-cell">{{ p.family_account_number || '—' }}</td>
+                    <td mat-cell *matCellDef="let p" class="mono-cell">{{ p.family_code || '—' }}</td>
                   </ng-container>
                   <ng-container matColumnDef="date">
                     <th mat-header-cell *matHeaderCellDef>Date</th>
@@ -448,6 +448,12 @@ export class StudentFinanceDetailComponent {
                 <td mat-cell *matCellDef="let s">{{ s.current_class_name }}</td>
               </ng-container>
 
+              <!-- Family Code Column -->
+              <ng-container matColumnDef="family_code">
+                <th mat-header-cell *matHeaderCellDef>Family Code</th>
+                <td mat-cell *matCellDef="let s" class="mono-cell">{{ s.family_code || '—' }}</td>
+              </ng-container>
+
               <!-- House Column -->
               <ng-container matColumnDef="house">
                 <th mat-header-cell *matHeaderCellDef>House</th>
@@ -629,7 +635,7 @@ export class StudentFinanceComponent implements OnInit {
   expandedStudent = signal<StudentProfileMin | null>(null);
   loadingSummaries = signal<Set<number>>(new Set());
 
-  readonly displayedColumns = ['name', 'class', 'house', 'category', 'balance', 'status', 'expand'];
+  readonly displayedColumns = ['name', 'class', 'family_code', 'house', 'category', 'balance', 'status', 'expand'];
   readonly FORMAT_CURRENCY = FORMAT_CURRENCY;
 
   ngOnInit() {

@@ -68,7 +68,7 @@ import { MpesaTransaction, MpesaReceiptVerification, FORMAT_CURRENCY } from '../
                 <tr>
                   <td><span class="mono-badge">{{ t.mpesa_receipt_number }}</span></td>
                   <td>
-                    <span class="type-badge" [class.bg-green]="t.transaction_type === 'C2B'" [class.bg-blue]="t.transaction_type === 'STK'">
+                    <span class="type-badge" [class.bg-green]="t.transaction_type === 'C2B'" [class.bg-blue]="t.transaction_type === 'STK_PUSH'">
                       {{ t.transaction_type }}
                     </span>
                   </td>
@@ -225,10 +225,10 @@ export class MpesaTransactionsComponent implements OnInit {
   readonly FORMAT_CURRENCY = FORMAT_CURRENCY;
 
   readonly verifiedCount = computed(() =>
-    this.transactions().filter(t => t.status === 'VERIFIED').length
+    this.transactions().filter(t => t.status === 'SUCCESS').length
   );
   readonly pendingCount = computed(() =>
-    this.transactions().filter(t => t.status === 'PENDING' || t.status === 'FAILED').length
+    this.transactions().filter(t => t.status === 'INITIATED' || t.status === 'FAILED').length
   );
   readonly filteredTransactions = computed(() => {
     const q = this.searchQuery().toLowerCase();
@@ -241,8 +241,8 @@ export class MpesaTransactionsComponent implements OnInit {
 
   statusColor(status: string): string {
     switch (status) {
-      case 'VERIFIED': return '#059669';
-      case 'PENDING': return '#d97706';
+      case 'SUCCESS': return '#059669';
+      case 'INITIATED': return '#d97706';
       case 'FAILED': return '#e11d48';
       default: return '#94a3b8';
     }
