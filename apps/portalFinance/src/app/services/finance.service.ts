@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError, map } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 import {
-  FeeStructure, StudentInvoice, PaymentTransaction, FullLedgerEntry,
+  FeeStructure, FeeCategory, StudentInvoice, InvoiceItem, PaymentTransaction, FullLedgerEntry,
   PurchaseRequisition, Expense, InventoryItem, StockMovement,
   SalaryStructure, Payslip, FinanceSummary, PrincipalDashboardData,
   StudentFinanceSummary, StudentProfileMin,
@@ -11,6 +11,10 @@ import {
   ParentDirectorySummary, ParentDirectoryItem, ParentDirectoryParams,
   ParentDetail, ParentPaymentsResponse,
   ChartAccount, JournalEntry,
+  FamilyAccount, FamilyWallet, FamilyWalletTransaction, FamilyPaymentRequest, FamilyPaymentResponse,
+  FeeWaiver, FeeWaiverRequest, WaiverReversalRequest, WaiverStats,
+  MpesaTransaction, MpesaReceiptVerification,
+  Allocation, AllocationFilterParams, WalletAllocationRequest,
   TrialBalanceReport, IncomeStatementReport, CashFlowReport
 } from '../models/finance.models';
 
@@ -227,6 +231,94 @@ export class FinanceService {
     if (startDate) params = params.set('start_date', startDate);
     if (endDate) params = params.set('end_date', endDate);
     return this.http.get<CashFlowReport>(getApiUrl('/finance/reports/cash-flow/'), { params });
+  }
+
+  // ─── Fee Categories ───────────────────────────────────────────
+  getFeeCategories(): Observable<FeeCategory[]> {
+    return this.http.get<FeeCategory[] | PaginatedResponse<FeeCategory>>(getApiUrl('/finance/fee-categories/')).pipe(
+      map(res => Array.isArray(res) ? res : res.results)
+    );
+  }
+
+  // ─── Invoice Items (line-item list) ───────────────────────────
+  getInvoiceItems(invoiceId?: number): Observable<InvoiceItem[]> {
+    let params = new HttpParams();
+    if (invoiceId) params = params.set('invoice', invoiceId.toString());
+    return this.http.get<InvoiceItem[] | PaginatedResponse<InvoiceItem>>(getApiUrl('/finance/invoice-items/'), { params }).pipe(
+      map(res => Array.isArray(res) ? res : (res.results ?? []))
+    );
+  }
+
+  // ─── Family Accounts & Wallet ─────────────────────────────────
+  getFamilies(): Observable<FamilyAccount[]> {
+    return this.http.get<FamilyAccount[] | PaginatedResponse<FamilyAccount>>(getApiUrl('/finance/families/')).pipe(
+      map(res => Array.isArray(res) ? res : res.results)
+    );
+  }
+
+  getFamily(id: number): Observable<FamilyAccount> {
+    return this.http.get<FamilyAccount>(getApiUrl(`/finance/families/${id}/`));
+  }
+
+  getFamilyWallet(id: number): Observable<FamilyWallet> {
+    return this.http.get<FamilyWallet>(getApiUrl(`/finance/families/${id}/wallet/`));
+  }
+
+  getWalletTransactions(id: number): Observable<FamilyWalletTransaction[]> {
+    return this.http.get<FamilyWalletTransaction[]>(getApiUrl(`/finance/wallets/${id}/transactions/`));
+  }
+
+  payFamily(familyId: number, data: FamilyPaymentRequest): Observable<FamilyPaymentResponse> {
+    return this.http.post<FamilyPaymentResponse>(getApiUrl(`/finance/families/${familyId}/pay/`), data);
+  }
+
+  allocateWallet(familyId: number, data: WalletAllocationRequest): Observable<FamilyPaymentResponse> {
+    return this.http.post<FamilyPaymentResponse>(getApiUrl(`/finance/families/${familyId}/allocate-wallet/`), data);
+  }
+
+  getAllocations(params: AllocationFilterParams = {}): Observable<PaginatedResponse<Allocation>> {
+    let httpParams = new HttpParams();
+    if (params.page) httpParams = httpParams.set('page', params.page.toString());
+    if (params.page_size) httpParams = httpParams.set('page_size', params.page_size.toString());
+    if (params.family) httpParams = httpParams.set('family', params.family.toString());
+    if (params.strategy) httpParams = httpParams.set('strategy', params.strategy);
+    if (params.search) httpParams = httpParams.set('search', params.search);
+    return this.http.get<PaginatedResponse<Allocation>>(getApiUrl('/finance/allocations/'), { params: httpParams });
+  }
+
+  getAllocation(id: number): Observable<Allocation> {
+    return this.http.get<Allocation>(getApiUrl(`/finance/allocations/${id}/`));
+  }
+
+  // ─── Fee Waivers ──────────────────────────────────────────────
+  getWaivers(): Observable<FeeWaiver[]> {
+    return this.http.get<FeeWaiver[] | PaginatedResponse<FeeWaiver>>(getApiUrl('/finance/waivers/')).pipe(
+      map(res => Array.isArray(res) ? res : res.results)
+    );
+  }
+
+  createWaiver(data: FeeWaiverRequest): Observable<FeeWaiver> {
+    return this.http.post<FeeWaiver>(getApiUrl('/finance/waivers/'), data);
+  }
+
+  reverseWaiver(id: number, data: WaiverReversalRequest): Observable<FeeWaiver> {
+    return this.http.post<FeeWaiver>(getApiUrl(`/finance/waivers/${id}/reverse/`), data);
+  }
+
+  getWaiverStats(): Observable<WaiverStats> {
+    return this.http.get<WaiverStats>(getApiUrl('/finance/waivers/stats/'));
+  }
+
+  // ─── M-Pesa Transactions ─────────────────────────────────────
+  getMpesaTransactions(): Observable<MpesaTransaction[]> {
+    return this.http.get<MpesaTransaction[] | PaginatedResponse<MpesaTransaction>>(getApiUrl('/finance/mpesa-transactions/')).pipe(
+      map(res => Array.isArray(res) ? res : res.results)
+    );
+  }
+
+  lookupMpesaReceipt(receipt: string): Observable<MpesaReceiptVerification> {
+    const params = new HttpParams().set('receipt', receipt);
+    return this.http.get<MpesaReceiptVerification>(getApiUrl('/finance/mpesa/lookup/'), { params });
   }
 
   // ─── Helper: typed error handler ───────────────────────────

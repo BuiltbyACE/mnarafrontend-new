@@ -137,6 +137,7 @@ export class TeacherSidebarComponent {
       label: 'Academics',
       items: [
         { label: 'My Classes', icon: 'school', route: '/teacher/classes' },
+        { label: 'Grading Pipeline', icon: 'view_kanban', route: '/teacher/grading' },
         { label: 'Timetable', icon: 'calendar_month', route: '/teacher/timetable' },
       ],
     },

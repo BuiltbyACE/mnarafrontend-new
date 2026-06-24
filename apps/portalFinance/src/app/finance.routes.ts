@@ -18,6 +18,11 @@ export const financeRoutes: Route[] = [
           import('./pages/receivables/receivables-hub').then((m) => m.ReceivablesHubComponent),
       },
       {
+        path: 'allocations',
+        loadComponent: () =>
+          import('./pages/allocations/allocations').then((m) => m.AllocationsComponent),
+      },
+      {
         path: 'payables',
         loadComponent: () => import('./pages/payables/payables-hub').then(m => m.PayablesHubComponent)
       },
@@ -64,6 +69,18 @@ export const financeRoutes: Route[] = [
         path: 'chart-of-accounts',
         loadComponent: () =>
           import('./pages/ledger/chart-of-accounts').then((m) => m.ChartOfAccountsComponent),
+      },
+      {
+        path: 'waivers',
+        loadComponent: () => import('./pages/waivers/waivers').then(m => m.WaiversComponent),
+      },
+      {
+        path: 'mpesa-transactions',
+        loadComponent: () => import('./pages/mpesa-transactions/mpesa-transactions').then(m => m.MpesaTransactionsComponent),
+      },
+      {
+        path: 'fee-categories',
+        loadComponent: () => import('./pages/fee-categories/fee-categories').then(m => m.FeeCategoriesComponent),
       },
     ],
   },

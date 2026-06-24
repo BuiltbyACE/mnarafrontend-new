@@ -1,6 +1,5 @@
 import {
   Component,
-  effect,
   inject,
   signal,
   computed,
@@ -54,50 +53,9 @@ export class PrincipalDashboardComponent implements OnInit {
 
   readonly doughnutChartRef = viewChild<ElementRef<HTMLCanvasElement>>('doughnutCanvas');
 
-  private readonly mockData: PrincipalDashboardPayload = {
-    adminName: 'Dr. Margaret Wanjiku',
-    lastRefresh: new Date().toISOString(),
-    kpis: {
-      totalStudents: 847,
-      totalStaff: 62,
-      totalClasses: 28,
-      feeCollection: 12.4,
-      activeIncidents: 3,
-      attendanceRate: 94.7,
-    },
-    financialHealth: {
-      collected: 8450000,
-      pending: 2130000,
-      overdue: 450000,
-      total: 10635000,
-    },
-    pendingApprovals: [
-      { id: 1, type: 'Leave Request', requester: 'Mr. James Ouma', description: 'Annual leave - 5 days', submittedAt: '2026-05-18T08:00:00Z', priority: 'medium' },
-      { id: 2, type: 'Expense Claim', requester: 'Ms. Grace Mwende', description: 'Teaching supplies - KES 15,000', submittedAt: '2026-05-18T09:30:00Z', priority: 'low' },
-      { id: 3, type: 'Event Request', requester: 'Sports Department', description: 'Inter-school athletics permit', submittedAt: '2026-05-18T10:15:00Z', priority: 'high' },
-      { id: 4, type: 'Curriculum Change', requester: 'Mr. Peter Kimani', description: 'Add coding elective - Form 2', submittedAt: '2026-05-17T14:00:00Z', priority: 'medium' },
-    ],
-    liveOperations: [
-      { id: 1, timestamp: '2026-05-18T08:15:00Z', type: 'warning', message: 'Form 3A Math is unsupervised', location: 'Room 104' },
-      { id: 2, timestamp: '2026-05-18T08:30:00Z', type: 'info', message: 'Bus Route 3 departed', location: 'Main Gate' },
-      { id: 3, timestamp: '2026-05-18T07:45:00Z', type: 'success', message: 'Fire drill completed - all clear', location: 'Playground' },
-      { id: 4, timestamp: '2026-05-18T09:00:00Z', type: 'alert', message: 'Lab 2 - Chemical spill reported', location: 'Science Block' },
-    ],
-    quickStats: [
-      { label: 'Fee Collection (M)', value: 12.4, change: 8.2, unit: 'KES' },
-      { label: 'Active Incidents', value: 3, change: -2, unit: '' },
-      { label: 'Attendance Rate', value: 94.7, change: 1.5, unit: '%' },
-      { label: 'Pending Approvals', value: 12, change: 4, unit: '' },
-    ],
-  };
-
-  constructor() {
-    effect(() => {
-      this.loadDashboard();
-    });
+  ngOnInit(): void {
+    this.loadDashboard();
   }
-
-  ngOnInit(): void {}
 
   refresh(): void {
     this.loadDashboard();
@@ -105,13 +63,14 @@ export class PrincipalDashboardComponent implements OnInit {
 
   private loadDashboard(): void {
     this.isLoading.set(true);
+    this.error.set(null);
     this.dashboardService.getPrincipalSummary().subscribe({
       next: (data) => {
         this.dashboardData.set(data);
         this.isLoading.set(false);
       },
       error: () => {
-        this.dashboardData.set(this.mockData);
+        this.error.set('Unable to load dashboard data. Please try again.');
         this.isLoading.set(false);
       },
     });
@@ -176,10 +135,10 @@ export class PrincipalDashboardComponent implements OnInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '75%',
+        cutout: '85%',
         plugins: {
           legend: {
-            position: 'bottom',
+            position: 'right',
             labels: {
               color: '#64748b',
               padding: 16,
@@ -226,8 +185,9 @@ export class PrincipalDashboardComponent implements OnInit {
   }
 
   private doApprove(id: number): void {
+    const approval = this.dashboardData()?.pendingApprovals.find(a => a.id === id);
     this.processingId.set(id);
-    this.dashboardService.approveApproval(id).subscribe({
+    this.dashboardService.approveApproval(id, approval?.type ?? 'purchase_requisition').subscribe({
       next: () => {
         this.removeApproval(id);
         this.processingId.set(null);
@@ -241,8 +201,9 @@ export class PrincipalDashboardComponent implements OnInit {
   }
 
   private doReject(id: number, reason: string): void {
+    const approval = this.dashboardData()?.pendingApprovals.find(a => a.id === id);
     this.processingId.set(id);
-    this.dashboardService.rejectApproval(id, reason).subscribe({
+    this.dashboardService.rejectApproval(id, approval?.type ?? 'purchase_requisition', reason).subscribe({
       next: () => {
         this.removeApproval(id);
         this.processingId.set(null);

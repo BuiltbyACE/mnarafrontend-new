@@ -1,16 +1,17 @@
 import { Component, computed, signal, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { TimetableService, TimetableLesson } from '../services/timetable.service';
+import { TimetableService } from '../services/timetable.service';
 import { CalendarViewComponent } from './calendar-view.component';
 
 type Weekday = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
 
 const DAYS: Weekday[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const TIME_SLOTS: string[] = [
-  '7:30', '8:30', '9:30', '10:30', '11:30',
-  '12:30', '13:30', '14:30', '15:30', '16:30'
-];
+
+interface SlotInfo {
+  sequence: number;
+  startTime: string;
+}
 
 interface GridEntry {
   subject: string;
@@ -18,23 +19,10 @@ interface GridEntry {
   teacher?: string;
 }
 
-type GridData = { [day: string]: { [time: string]: GridEntry } };
+type GridData = { [day: string]: { [sequence: number]: GridEntry } };
 
 function dateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function nearestSlotIndex(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  const total = h * 60 + m;
-  let bestIdx = 0;
-  let bestDiff = Infinity;
-  for (let i = 0; i < TIME_SLOTS.length; i++) {
-    const [sh, sm] = TIME_SLOTS[i].split(':').map(Number);
-    const diff = Math.abs(total - (sh * 60 + sm));
-    if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
-  }
-  return bestIdx;
 }
 
 @Component({
@@ -78,11 +66,11 @@ function nearestSlotIndex(time: string): number {
               </div>
             }
 
-            @for (slot of timeSlots; track slot) {
-              <div class="time-label">{{ slot }}</div>
+            @for (slot of slots(); track slot.sequence) {
+              <div class="time-label">{{ slot.startTime }}</div>
               @for (day of days; track day) {
-                @let entry = grid()[day]?.[slot];
-                @let isCurrent = currentSlot() === slot && day === todayDay();
+                @let entry = grid()[day]?.[slot.sequence];
+                @let isCurrent = currentSequence() === slot.sequence && day === todayDay();
                 <div class="grid-cell" [class.current]="isCurrent" [class.has-class]="!!entry">
                   @if (entry) {
                     <div class="cell-content">
@@ -178,22 +166,34 @@ export class TimetableComponent {
 
   readonly weekOffset = signal(0);
   readonly selectedDate = signal(new Date());
-  readonly timeSlots = TIME_SLOTS;
   readonly days = DAYS;
   readonly today: Date = new Date();
 
+  readonly slots = computed<SlotInfo[]>(() => {
+    const entries = this.service.entries();
+    const seen = new Map<number, string>();
+    for (const entry of entries) {
+      if (!seen.has(entry.period_sequence)) {
+        seen.set(entry.period_sequence, entry.period_start);
+      }
+    }
+    return Array.from(seen.entries())
+      .map(([sequence, startTime]) => ({ sequence, startTime }))
+      .sort((a, b) => a.sequence - b.sequence);
+  });
+
   readonly grid = computed<GridData>(() => {
-    const lessons = this.service.timetableData().lessons;
+    const entries = this.service.entries();
     const grid: GridData = {};
     for (const day of DAYS) grid[day] = {};
 
-    for (const lesson of lessons) {
-      const slotIdx = nearestSlotIndex(lesson.start_time);
-      const slot = TIME_SLOTS[slotIdx];
-      grid[lesson.day_of_week]![slot] = {
-        subject: lesson.subject_name,
-        classroom: lesson.room,
-        teacher: lesson.teacher_name,
+    for (const entry of entries) {
+      const dayName = entry.day_name || DAYS[entry.day_of_week] || '';
+      if (!dayName) continue;
+      grid[dayName]![entry.period_sequence] = {
+        subject: entry.subject_name,
+        classroom: entry.room_detail?.name ?? '',
+        teacher: entry.teacher_name,
       };
     }
     return grid;
@@ -216,23 +216,23 @@ export class TimetableComponent {
     return null;
   });
 
-  readonly currentSlot = computed(() => {
+  readonly currentSequence = computed(() => {
     const now = new Date();
     const total = now.getHours() * 60 + now.getMinutes();
-    for (let i = TIME_SLOTS.length - 1; i >= 0; i--) {
-      const [hr, min] = TIME_SLOTS[i].split(':').map(Number);
-      if (total >= hr * 60 + (min || 0)) return TIME_SLOTS[i];
-    }
-    return '';
+    const currentSlot = [...this.slots()].reverse().find(s => {
+      const [h, m] = s.startTime.split(':').map(Number);
+      return total >= h * 60 + (m || 0);
+    });
+    return currentSlot?.sequence ?? 0;
   });
 
   readonly classDates = computed<Set<string>>(() => {
-    const lessons = this.service.timetableData().lessons;
-    if (!lessons.length) return new Set();
+    const entries = this.service.entries();
+    if (!entries.length) return new Set();
     const ws = this.weekStart();
     const dates = new Set<string>();
     for (const day of DAYS) {
-      const hasLesson = lessons.some(l => l.day_of_week === day);
+      const hasLesson = entries.some(e => (e.day_name || DAYS[e.day_of_week]) === day);
       if (hasLesson) {
         const idx = DAYS.indexOf(day);
         const d = new Date(ws);

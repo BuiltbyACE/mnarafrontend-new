@@ -1,48 +1,28 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
-import { environment } from '@sms/core/config';
-
-export interface TimetableEvent {
-  id: number;
-  title: string;
-  type: 'holiday' | 'exam' | 'special';
-  start_date: string;
-  end_date: string;
-  color: string;
-}
-
-export interface TimetableLesson {
-  id: number;
-  day_of_week: string;
-  subject_name: string;
-  teacher_name: string;
-  room: string;
-  start_time: string;
-  end_time: string;
-  color: string;
-}
-
-export interface TimetablePayload {
-  events: TimetableEvent[];
-  lessons: TimetableLesson[];
-}
+import { TimetableApiService, TimetableEntry, TimetableEvent } from '@sms/domain/timetable';
 
 @Injectable({ providedIn: 'root' })
 export class TimetableService {
-  private http = inject(HttpClient);
+  private api = inject(TimetableApiService);
 
-  readonly timetableData = signal<TimetablePayload>({ events: [], lessons: [] });
+  readonly entries = signal<TimetableEntry[]>([]);
+  readonly events = signal<TimetableEvent[]>([]);
   readonly isLoading = signal(true);
 
   fetchTimetable(): void {
     this.isLoading.set(true);
-    this.http
-      .get<TimetablePayload>(`${environment.apiBaseUrl}/lms/my-timetable/`)
+    this.api.getStudentTimetable()
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: (res) => this.timetableData.set(res),
-        error: () => this.timetableData.set({ events: [], lessons: [] }),
+        next: (res) => {
+          this.entries.set(res.entries);
+          this.events.set(res.events);
+        },
+        error: () => {
+          this.entries.set([]);
+          this.events.set([]);
+        },
       });
   }
 }

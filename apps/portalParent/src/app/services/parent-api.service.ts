@@ -22,6 +22,9 @@ import {
   PrintableReportCardResponse,
   StkPushRequest,
   StkPushResponse,
+  WalletResponse,
+  ReceiptsResponse,
+  PaymentHistoryResponse,
 } from '../models/parent.models';
 
 @Injectable({ providedIn: 'root' })
@@ -104,6 +107,22 @@ export class ParentApiService {
   // ─── Finance: M-Pesa STK Push ───────────────────────────────────
   initiateMpesaPayment(payload: StkPushRequest): Observable<StkPushResponse> {
     return this.http.post<StkPushResponse>(`${this.baseUrl}/finance/payments/stk-push/`, payload);
+  }
+
+  // ─── Finance: Parent Wallet ────────────────────────────────────
+  getWallet(): Observable<WalletResponse> {
+    return this.http.get<WalletResponse>(`${this.baseUrl}/finance/parent/wallet/`);
+  }
+
+  // ─── Finance: Parent Receipts ──────────────────────────────────
+  getReceipts(): Observable<ReceiptsResponse> {
+    return this.http.get<ReceiptsResponse>(`${this.baseUrl}/finance/parent/receipts/`);
+  }
+
+  // ─── Finance: Parent Payment History (paginated) ───────────────
+  getPaymentHistory(url?: string): Observable<PaymentHistoryResponse> {
+    if (url) return this.http.get<PaymentHistoryResponse>(url);
+    return this.http.get<PaymentHistoryResponse>(`${this.baseUrl}/finance/parent/payments/`);
   }
 
   // ─── Announcements ───────────────────────────────────────────────

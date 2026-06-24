@@ -126,15 +126,7 @@ interface NavSection {
         </div>
       </nav>
 
-      <div class="sidebar-footer">
-        <div class="system-status-pill" [attr.title]="collapsed ? 'All Systems Operational' : null">
-          <span class="status-dot"></span>
-          @if (!collapsed) {
-            <span class="status-text">System Status</span>
-            <span class="status-sub">All Systems Operational</span>
-          }
-        </div>
-      </div>
+      <div class="sidebar-footer"></div>
     </div>
   `,
   styles: [`
@@ -142,7 +134,7 @@ interface NavSection {
       display: flex;
       flex-direction: column;
       height: 100%;
-      background: linear-gradient(180deg, var(--mnara-sidebar-bg-from, #1e3a5f) 0%, var(--mnara-sidebar-bg-to, #0f2027) 100%);
+      background: linear-gradient(180deg, #0d6efd 0%, #0a58ca 100%);
       color: white;
       font-family: 'Inter', sans-serif;
       position: relative;
@@ -265,14 +257,13 @@ interface NavSection {
 
       &.active {
         background: white;
-        color: #1d4ed8;
-        border-left: 3px solid #93c5fd;
-        border-radius: 0 8px 8px 0;
-        padding-left: 9px;
-        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
+        color: #0d6efd;
+        border-radius: 8px;
+        padding-left: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 
-        .nav-label { color: #1d4ed8; font-weight: 600; }
-        .nav-icon { color: #1d4ed8; }
+        .nav-label { color: #0d6efd; font-weight: 600; }
+        .nav-icon { color: #0d6efd; }
       }
     }
 
@@ -348,11 +339,11 @@ interface NavSection {
       &:hover { background: rgba(255, 255, 255, 0.08); color: white; }
 
       &.active {
-        background: white;
-        color: #1e3a5f;
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
         font-weight: 600;
 
-        .child-dot { background: #1e3a5f; }
+        .child-dot { background: white; }
       }
     }
 
@@ -377,59 +368,7 @@ interface NavSection {
       background: rgba(15, 23, 42, 0.18);
     }
 
-    .system-status-pill {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      padding: 9px 12px;
-      border-radius: 10px;
-      background: rgba(16, 185, 129, 0.16);
-      border: 1px solid rgba(52, 211, 153, 0.3);
-    }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #34d399;
-      flex-shrink: 0;
-      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
-      animation: status-pulse 2s infinite;
-    }
-
-    @keyframes status-pulse {
-      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
-      70% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
-    }
-
-    .status-text {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #d1fae5;
-      white-space: nowrap;
-    }
-
-    .status-sub {
-      display: none;
-    }
-
-    .sidebar-container:not(.collapsed) .system-status-pill {
-      flex-wrap: wrap;
-    }
-
-    .sidebar-container:not(.collapsed) .status-sub {
-      display: block;
-      width: 100%;
-      font-size: 0.625rem;
-      color: rgba(209, 250, 229, 0.75);
-      margin-left: 17px;
-    }
-
-    .sidebar-container.collapsed .system-status-pill {
-      justify-content: center;
-      padding: 9px;
-    }
   `],
 })
 export class AdminSidebarComponent {

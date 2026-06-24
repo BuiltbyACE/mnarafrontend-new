@@ -51,6 +51,11 @@ export interface DashboardSummary {
 }
 
 // ─── Timetable ────────────────────────────────────────────────────
+// Deprecated: Use TimetableEntry from @sms/domain/timetable instead.
+// This type is kept for backward compatibility with the current API
+// response shape from /academics/my-timetable/.
+// TODO: Migrate to canonical TimetableEntry from domain once the
+// backend API is updated to return canonical format (Week 3 target).
 export interface TimetableEntry {
   day: string;
   period: number;
@@ -338,3 +343,57 @@ export const PAYMENT_METHOD_LABEL: Record<string, string> = {
   CASH: 'Cash',
   CHEQUE: 'Cheque',
 };
+
+// ─── Wallet ────────────────────────────────────────────────────────
+export interface ParentWallet {
+  id: number;
+  available_balance: number;
+  currency: string;
+  last_transaction_at: string | null;
+}
+
+export interface WalletTransaction {
+  id: number;
+  amount: number;
+  transaction_type: 'CREDIT' | 'DEBIT' | 'PAYMENT_OVERFLOW' | 'REFUND' | 'MANUAL_ADJUSTMENT' | 'WALLET_OFFSET';
+  reference: string;
+  description: string;
+  created_at: string;
+}
+
+export interface WalletResponse {
+  wallet: ParentWallet | null;
+  transactions: WalletTransaction[];
+}
+
+// ─── Receipts ──────────────────────────────────────────────────────
+export interface ParentReceipt {
+  id: number;
+  receipt_number: string;
+  amount: number;
+  issued_at: string;
+  payment_method: string | null;
+  payment_reference: string | null;
+}
+
+export interface ReceiptsResponse {
+  receipts: ParentReceipt[];
+}
+
+// ─── Payment History ───────────────────────────────────────────────
+export interface PaymentHistoryItem {
+  id: number;
+  amount: number;
+  payment_method: string;
+  reference_code: string;
+  transaction_date: string | null;
+  student_name: string | null;
+  student_id: number | null;
+}
+
+export interface PaymentHistoryResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: PaymentHistoryItem[];
+}

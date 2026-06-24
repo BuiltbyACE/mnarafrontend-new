@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatStepperModule } from '@angular/material/stepper';
@@ -65,14 +65,16 @@ function emptyPayload(): AdmissionCreatePayload {
     CarersFamilyStep, ReviewSubmitStep,
   ],
   template: `
-    <div class="wizard-page">
-      <div class="wizard-header">
-        <button mat-icon-button (click)="goBack()"><mat-icon>arrow_back</mat-icon></button>
-        <div>
-          <h1>New Student Admission</h1>
-          <p class="subtitle">Complete all steps to register a new student</p>
+    <div class="wizard-page" [class.in-dialog]="inDialog()">
+      @if (!inDialog()) {
+        <div class="wizard-header">
+          <button mat-icon-button (click)="goBack()"><mat-icon>arrow_back</mat-icon></button>
+          <div>
+            <h1>New Student Admission</h1>
+            <p class="subtitle">Complete all steps to register a new student</p>
+          </div>
         </div>
-      </div>
+      }
 
       <mat-stepper linear #stepper class="wizard-stepper" (selectionChange)="onStepChange($event)">
 
@@ -223,6 +225,8 @@ function emptyPayload(): AdmissionCreatePayload {
   `,
   styles: [`
     .wizard-page { max-width: 900px; margin: 0 auto; padding: 24px; }
+    .wizard-page.in-dialog { max-width: 100%; margin: 0; padding: 0; height: 100%; overflow-y: auto; }
+    .wizard-page.in-dialog .wizard-stepper { border-radius: 0; box-shadow: none; padding: 20px 24px; }
     .wizard-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
     .wizard-header h1 { margin: 0; font-size: 24px; font-weight: 600; color: #1e293b; }
     .wizard-header .subtitle { margin: 4px 0 0; color: #64748b; font-size: 14px; }
@@ -235,6 +239,9 @@ export class AdmissionWizardComponent {
   private academicsService = inject(AcademicsService);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
+
+  readonly inDialog    = input(false);
+  readonly wizardClosed = output<boolean>();
 
   step1Valid = signal(false);
   step2Valid = signal(false);
@@ -391,7 +398,11 @@ export class AdmissionWizardComponent {
       next: (result) => {
         this.isSubmitting.set(false);
         this.snackBar.open(`Admission created: ${result.admission_number}`, 'Close', { duration: 5000 });
-        this.router.navigate(['/portalAdmin/students/admissions']);
+        if (this.inDialog()) {
+          this.wizardClosed.emit(true);
+        } else {
+          this.router.navigate(['/portalAdmin/students/admissions']);
+        }
       },
       error: (err) => {
         this.isSubmitting.set(false);
@@ -402,6 +413,10 @@ export class AdmissionWizardComponent {
   }
 
   goBack(): void {
-    this.router.navigate(['/portalAdmin/students/admissions']);
+    if (this.inDialog()) {
+      this.wizardClosed.emit(false);
+    } else {
+      this.router.navigate(['/portalAdmin/students/admissions']);
+    }
   }
 }

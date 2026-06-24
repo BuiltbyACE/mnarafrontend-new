@@ -2,7 +2,9 @@
   "name": "@schoolmanagement/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start": "node --max-old-space-size=8192 ./node_modules/nx/bin/nx serve shell --devRemotes=portalAdmin,portalStudent,portalTeacher,portalParent,portalTransport,portalFinance"
+  },
   "private": true,
   "dependencies": {
     "@angular/animations": "^21.2.10",

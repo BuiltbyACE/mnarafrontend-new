@@ -35,9 +35,19 @@ export const remoteRoutes: Route[] = [
           import('../features/assignments/submissions/submissions-list.component').then(m => m.SubmissionsListComponent),
       },
       {
+        path: 'assignments/:id/pipeline',
+        loadComponent: () =>
+          import('../features/grading/components/grading-pipeline/grading-pipeline.component').then(m => m.GradingPipelineComponent),
+      },
+      {
         path: 'workspace/:id',
         loadComponent: () =>
           import('../features/classes/components/workspace-detail.component').then(m => m.WorkspaceDetailComponent),
+      },
+      {
+        path: 'grading',
+        loadComponent: () =>
+          import('../features/grading/components/grading-pipeline/grading-pipeline.component').then(m => m.GradingPipelineComponent),
       },
       {
         path: 'timetable',

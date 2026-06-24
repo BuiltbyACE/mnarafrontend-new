@@ -9,27 +9,260 @@ export interface FeeStructure {
   title: string;
 }
 
+export interface FeeCategory {
+  id: number;
+  name: string;
+  priority: number;
+  revenue_account: number | null;
+  is_active: boolean;
+}
+
+export interface InvoiceItem {
+  id: number;
+  invoice: number;
+  fee_category: number;
+  fee_category_name: string;
+  fee_structure: number | null;
+  description: string;
+  amount_due: number;
+  amount_paid: number;
+  amount_waived: number;
+  balance: number;
+  status: 'PENDING' | 'PARTIAL' | 'PAID';
+}
+
+export interface FamilyWallet {
+  id: number;
+  family: number;
+  available_balance: number;
+  currency: string;
+  last_transaction_at: string | null;
+}
+
+export interface FamilyWalletTransaction {
+  id: number;
+  wallet: number;
+  amount: number;
+  transaction_type: 'CREDIT' | 'DEBIT' | 'PAYMENT_OVERFLOW' | 'REFUND' | 'MANUAL_ADJUSTMENT' | 'WALLET_OFFSET';
+  reference: string;
+  description: string;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+}
+
+export interface FamilyAccount {
+  id: number;
+  account_number: string;
+  parents: number[];
+  students: number[];
+  wallet: FamilyWallet | null;
+  balance: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface WaiverStats {
+  total_waivers: number;
+  this_month: number;
+  this_term: number;
+  reversed: number;
+  outstanding: number;
+}
+
+export interface FeeWaiver {
+  id: number;
+  reference_number: string;
+  invoice_item: number;
+  invoice_item_details: InvoiceItem;
+  student: number;
+  student_name: string;
+  student_school_id: string;
+  family: number | null;
+  family_account_number: string | null;
+  invoice: number;
+  amount: number;
+  waiver_type: 'SCHOLARSHIP' | 'SIBLING' | 'STAFF_CHILD' | 'HARDSHIP' | 'BOARD_APPROVED' | 'OTHER';
+  reason: string;
+  entered_by: number;
+  entered_by_name: string;
+  authorized_by: number;
+  authorized_by_name: string;
+  reversed_by: number | null;
+  reversed_by_name: string | null;
+  reversed_at: string | null;
+  reversal_reason: string | null;
+  journal_entry: number | null;
+  status: 'active' | 'reversed';
+  created_at: string;
+}
+
+export interface FeeWaiverRequest {
+  invoice_item_id: number;
+  amount: number;
+  waiver_type: string;
+  reason: string;
+  authorized_by_id: number;
+}
+
+export const WAIVER_TYPE_LABELS: Record<string, string> = {
+  SCHOLARSHIP: 'Scholarship',
+  SIBLING: 'Sibling Discount',
+  STAFF_CHILD: 'Staff Child',
+  HARDSHIP: 'Hardship',
+  BOARD_APPROVED: 'Board Approved',
+  OTHER: 'Other',
+};
+
+export const WAIVER_TYPE_OPTIONS = [
+  { value: 'SCHOLARSHIP', label: 'Scholarship' },
+  { value: 'SIBLING', label: 'Sibling Discount' },
+  { value: 'STAFF_CHILD', label: 'Staff Child' },
+  { value: 'HARDSHIP', label: 'Hardship' },
+  { value: 'BOARD_APPROVED', label: 'Board Approved' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+export interface WaiverReversalRequest {
+  reason: string;
+}
+
+export interface MpesaTransaction {
+  id: number;
+  mpesa_receipt_number: string;
+  transaction_type: 'C2B' | 'STK';
+  amount: number;
+  phone: string;
+  status: 'PENDING' | 'VERIFIED' | 'FAILED';
+  verified_at: string | null;
+  created_at: string;
+}
+
+export interface ManualAllocationItem {
+  invoice_item_id: number;
+  amount: number;
+}
+
+export type AllocationStrategy = 'OLDEST_DEBT_FIRST' | 'SPECIFIC_STUDENT' | 'MANUAL' | 'WALLET_OFFSET';
+
+export interface AllocationLine {
+  id: number;
+  allocation: number;
+  invoice_item: number;
+  invoice_id: number;
+  invoice_item_details: InvoiceItem;
+  student: number | null;
+  student_name: string | null;
+  amount: number;
+  created_at: string;
+}
+
+export interface Allocation {
+  id: number;
+  payment_transaction: number;
+  payment_reference: string;
+  payment_method: string;
+  transaction_date: string;
+  journal_entry_id: number | null;
+  family: number;
+  family_account_number: string;
+  strategy: AllocationStrategy;
+  total_allocated: number;
+  wallet_credit: number;
+  notes: string;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+  lines: AllocationLine[];
+}
+
+export interface AllocationStats {
+  total_allocated: number;
+  total_wallet_credit: number;
+  manual_allocations: number;
+  wallet_offset_count: number;
+  average_allocation: number;
+}
+
+export const ALLOCATION_STRATEGY_LABELS: Record<AllocationStrategy, string> = {
+  OLDEST_DEBT_FIRST: 'Oldest Debt First',
+  SPECIFIC_STUDENT: 'Specific Student',
+  MANUAL: 'Manual Mapping',
+  WALLET_OFFSET: 'Wallet Offset',
+};
+
+export interface AllocationFilterParams {
+  page?: number;
+  page_size?: number;
+  family?: number;
+  strategy?: AllocationStrategy;
+  search?: string;
+}
+
+export interface WalletAllocationRequest {
+  reference?: string;
+  notes?: string;
+  manual_allocations: ManualAllocationItem[];
+}
+
+export interface FamilyPaymentRequest {
+  amount: number;
+  payment_method: 'MPESA' | 'BANK' | 'CASH' | 'CHEQUE';
+  reference?: string;
+  strategy?: AllocationStrategy;
+  notes?: string;
+  manual_allocations?: ManualAllocationItem[];
+}
+
+export interface FamilyPaymentResponse {
+  payment_transaction_id: number;
+  allocation_id: number;
+  amount: number;
+  wallet_credit: number;
+  allocation_count: number;
+  reference: string;
+  strategy: AllocationStrategy;
+}
+
+export interface MpesaReceiptVerification {
+  verified: boolean;
+  result_code: number;
+  result_desc: string;
+  amount: number | null;
+  duplicate: boolean;
+}
+
 export interface StudentInvoice {
   id: number;
   student: number;
   student_name: string;
   student_school_id: string;
-  fee_structure: number;
-  fee_title: string;
-  amount_due: string;
-  amount_paid: string;
+  academic_year: number | null;
+  academic_year_name?: string;
+  term: number | null;
+  term_name?: string;
+  due_date: string | null;
+  family: number | null;
+  amount_due: number;
+  amount_paid: number;
+  amount_waived: number;
+  balance: number;
   status: 'PENDING' | 'PARTIAL' | 'PAID';
+  items: InvoiceItem[];
 }
 
 export interface PaymentTransaction {
   id: number;
-  invoice: number;
-  student_name: string;
+  invoice: number | null;
+  family: number | null;
+  family_account_number: string | null;
+  student_name: string | null;
   amount: string;
-  payment_method: 'MPESA' | 'BANK' | 'CASH' | 'CHEQUE';
+  payment_method: 'MPESA' | 'BANK' | 'CASH' | 'CHEQUE' | 'WALLET';
   reference_code: string;
   transaction_date: string;
-  ledger_entries: LedgerEntryItem[];
+  journal_entry: number | null;
+  allocation: Allocation | null;
 }
 
 export interface LedgerEntryItem {
@@ -259,6 +492,8 @@ export interface StudentFinancePayment {
   payment_method: string;
   reference_code: string;
   transaction_date: string;
+  family_account_number?: string | null;
+  allocation?: Allocation | null;
 }
 
 export interface StudentServices {
@@ -279,7 +514,10 @@ export interface StudentProfileMin {
   enrollment_status?: string;
 }
 
-export const FORMAT_CURRENCY = (amount: string | number, currency = 'KES'): string => {
+export const FORMAT_CURRENCY = (amount: string | number | null | undefined, currency = 'KES'): string => {
+  if (amount === null || amount === undefined) {
+    return `${currency} 0.00`;
+  }
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   if (isNaN(num)) return `${currency} 0`;
   return `${currency} ${num.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -295,6 +533,7 @@ export const STATUS_COLOR: Record<string, string> = {
   DISBURSED: '#059669',
   READY: '#059669',
   ACTIVE: '#059669',
+  reversed: '#94a3b8',
   INACTIVE: '#94a3b8',
 };
 

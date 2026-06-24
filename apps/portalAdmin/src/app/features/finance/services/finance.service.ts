@@ -10,6 +10,10 @@ import {
   ParentDirectorySummary, ParentDirectoryItem, ParentDirectoryParams,
   ParentDetail, ParentPaymentsResponse, InvoiceCreateRequest,
   SuggestedInvoicesResponse,
+  FeeCategory, InvoiceItem, StudentInvoice,
+  FamilyAccount, FamilyWallet, FamilyPaymentRequest, FamilyPaymentResponse,
+  FeeWaiver, FeeWaiverRequest,
+  MpesaTransaction, MpesaReceiptVerification,
 } from '../../../shared/models/finance.models';
 
 interface PaginatedResponse<T> {
@@ -72,6 +76,7 @@ export class FinanceService {
       );
   }
 
+  /** @deprecated Use payFamily() with a FamilyAccount ID instead */
   recordPayment(data: ManualPaymentRequest): Observable<Payment> {
     return this.http.post<Payment>(getApiUrl('/finance/payments/'), data);
   }
@@ -203,5 +208,79 @@ export class FinanceService {
   // ─── Invoice Generation ───────────────────────────────────────
   createInvoice(data: InvoiceCreateRequest): Observable<any> {
     return this.http.post(getApiUrl('/finance/invoices/'), data);
+  }
+
+  // ─── Fee Categories ───────────────────────────────────────────
+  getFeeCategories(): Observable<FeeCategory[]> {
+    return this.http.get<FeeCategory[] | { results: FeeCategory[] }>(getApiUrl('/finance/fee-categories/')).pipe(
+      map(res => Array.isArray(res) ? res : (res.results ?? []))
+    );
+  }
+
+  createFeeCategory(data: Partial<FeeCategory>): Observable<FeeCategory> {
+    return this.http.post<FeeCategory>(getApiUrl('/finance/fee-categories/'), data);
+  }
+
+  // ─── Line Item Invoices ─────────────────────────────────────────
+  getInvoices(): Observable<StudentInvoice[]> {
+    return this.http.get<StudentInvoice[] | { results: StudentInvoice[] }>(getApiUrl('/finance/invoices/')).pipe(
+      map(res => Array.isArray(res) ? res : (res.results ?? []))
+    );
+  }
+
+  getInvoice(id: number): Observable<StudentInvoice> {
+    return this.http.get<StudentInvoice>(getApiUrl(`/finance/invoices/${id}/`));
+  }
+
+  getInvoiceItems(invoiceId?: number): Observable<InvoiceItem[]> {
+    let params = new HttpParams();
+    if (invoiceId) {
+      params = params.set('invoice', invoiceId.toString());
+    }
+    return this.http.get<InvoiceItem[] | { results: InvoiceItem[] }>(getApiUrl('/finance/invoice-items/'), { params }).pipe(
+      map(res => Array.isArray(res) ? res : (res.results ?? []))
+    );
+  }
+
+  // ─── Family Accounts & Wallet ───────────────────────────────────
+  getFamilyAccounts(): Observable<FamilyAccount[]> {
+    return this.http.get<FamilyAccount[] | { results: FamilyAccount[] }>(getApiUrl('/finance/families/')).pipe(
+      map(res => Array.isArray(res) ? res : (res.results ?? []))
+    );
+  }
+
+  getFamilyAccount(id: number): Observable<FamilyAccount> {
+    return this.http.get<FamilyAccount>(getApiUrl(`/finance/families/${id}/`));
+  }
+
+  getFamilyWallet(id: number): Observable<FamilyWallet> {
+    return this.http.get<FamilyWallet>(getApiUrl(`/finance/families/${id}/wallet/`));
+  }
+
+  payFamily(familyId: number, data: FamilyPaymentRequest): Observable<FamilyPaymentResponse> {
+    return this.http.post<FamilyPaymentResponse>(getApiUrl(`/finance/families/${familyId}/pay/`), data);
+  }
+
+  // ─── Fee Waivers ────────────────────────────────────────────────
+  getFeeWaivers(): Observable<FeeWaiver[]> {
+    return this.http.get<FeeWaiver[] | { results: FeeWaiver[] }>(getApiUrl('/finance/waivers/')).pipe(
+      map(res => Array.isArray(res) ? res : (res.results ?? []))
+    );
+  }
+
+  createFeeWaiver(data: FeeWaiverRequest): Observable<FeeWaiver> {
+    return this.http.post<FeeWaiver>(getApiUrl('/finance/waivers/'), data);
+  }
+
+  // ─── M-Pesa Transactions ───────────────────────────────────────
+  getMpesaTransactions(): Observable<MpesaTransaction[]> {
+    return this.http.get<MpesaTransaction[] | { results: MpesaTransaction[] }>(getApiUrl('/finance/mpesa-transactions/')).pipe(
+      map(res => Array.isArray(res) ? res : (res.results ?? []))
+    );
+  }
+
+  lookupMpesaReceipt(receipt: string): Observable<MpesaReceiptVerification> {
+    const params = new HttpParams().set('receipt', receipt);
+    return this.http.get<MpesaReceiptVerification>(getApiUrl('/finance/mpesa/lookup/'), { params });
   }
 }

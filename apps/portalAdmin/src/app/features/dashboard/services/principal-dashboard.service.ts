@@ -56,11 +56,11 @@ export class PrincipalDashboardService {
     );
   }
 
-  approveApproval(id: number): Observable<{ status: string }> {
-    return this.http.post<{ status: string }>(`${this.baseUrl}/analytics/approvals/${id}/approve/`, {});
+  approveApproval(id: number, type: string): Observable<{ status: string }> {
+    return this.http.post<{ status: string }>(`${this.baseUrl}/analytics/approvals/${id}/approve/`, { type });
   }
 
-  rejectApproval(id: number, reason: string): Observable<{ status: string }> {
-    return this.http.post<{ status: string }>(`${this.baseUrl}/analytics/approvals/${id}/reject/`, { reason });
+  rejectApproval(id: number, type: string, reason: string): Observable<{ status: string }> {
+    return this.http.post<{ status: string }>(`${this.baseUrl}/analytics/approvals/${id}/reject/`, { type, reason });
   }
 }

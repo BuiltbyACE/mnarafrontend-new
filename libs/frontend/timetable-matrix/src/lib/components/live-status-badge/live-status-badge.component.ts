@@ -1,7 +1,6 @@
 import { Component, input, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LiveTrackerService } from '../../services/live-tracker.service';
-import { LiveLocatorResponse } from '../../models/live-status.model';
+import { TimetableApiService, LiveLocatorResponse } from '@sms/domain/timetable';
 import { interval, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
@@ -80,16 +79,16 @@ export class LiveStatusBadgeComponent implements OnInit, OnDestroy {
   readonly pollingIntervalMs = input(30_000);
 
   protected status = signal<LiveLocatorResponse | null>(null);
-  private tracker = inject(LiveTrackerService);
+  private api = inject(TimetableApiService);
   private sub: Subscription | null = null;
 
   ngOnInit(): void {
-    this.tracker.getTeacherStatus(this.teacherId()).subscribe({
+    this.api.getTeacherStatus(this.teacherId()).subscribe({
       next: (s) => this.status.set(s),
     });
 
     this.sub = interval(this.pollingIntervalMs())
-      .pipe(switchMap(() => this.tracker.getTeacherStatus(this.teacherId())))
+      .pipe(switchMap(() => this.api.getTeacherStatus(this.teacherId())))
       .subscribe({
         next: (s) => this.status.set(s),
       });

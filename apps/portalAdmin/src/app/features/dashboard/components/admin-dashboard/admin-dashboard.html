@@ -12,312 +12,363 @@
 } @else if (dashboardData(); as data) {
   <div class="command-center">
 
-    <!-- Hero -->
-    <header class="hero">
-      <div class="hero-illustration">
-        <svg viewBox="0 0 240 160" preserveAspectRatio="xMaxYMax meet" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="190" cy="55" r="40" fill="#bfdbfe" opacity="0.6"/>
-          <rect x="40" y="60" width="14" height="22" fill="#93c5fd" opacity="0.5"/>
-          <rect x="100" y="44" width="60" height="100" rx="4" fill="#2563eb"/>
-          <rect x="108" y="56" width="14" height="14" fill="#bfdbfe"/>
-          <rect x="128" y="56" width="14" height="14" fill="#bfdbfe"/>
-          <rect x="146" y="56" width="14" height="14" fill="#bfdbfe"/>
-          <rect x="108" y="76" width="14" height="14" fill="#bfdbfe"/>
-          <rect x="128" y="76" width="14" height="14" fill="#dbeafe"/>
-          <rect x="146" y="76" width="14" height="14" fill="#bfdbfe"/>
-          <rect x="108" y="96" width="14" height="14" fill="#dbeafe"/>
-          <rect x="128" y="96" width="14" height="14" fill="#bfdbfe"/>
-          <rect x="146" y="96" width="14" height="14" fill="#dbeafe"/>
-          <rect x="124" y="120" width="22" height="24" fill="#1e3a8a"/>
-          <rect x="165" y="70" width="30" height="74" rx="3" fill="#1d4ed8"/>
-          <rect x="172" y="80" width="8" height="10" fill="#bfdbfe"/>
-          <rect x="184" y="80" width="8" height="10" fill="#bfdbfe"/>
-          <rect x="172" y="98" width="8" height="10" fill="#bfdbfe"/>
-          <rect x="184" y="98" width="8" height="10" fill="#bfdbfe"/>
-          <path d="M210 134 C214 110 224 100 236 96 C228 112 226 128 222 144 Z" fill="#16a34a" opacity="0.85"/>
-          <rect x="218" y="140" width="6" height="14" fill="#78350f"/>
-          <path d="M30 38 q6 -4 12 0" stroke="#93c5fd" stroke-width="2" fill="none"/>
-          <path d="M44 30 q6 -4 12 0" stroke="#93c5fd" stroke-width="2" fill="none"/>
-          <rect x="0" y="144" width="240" height="16" fill="#eff6ff"/>
-        </svg>
+    <!-- CC Topbar -->
+    <div class="cc-topbar">
+      <div class="cc-topbar-left">
+        <h1 class="cc-title">Principal's Command Center</h1>
+        <p class="cc-subtitle">Overview of Institutional Health · Last refresh {{ data.lastRefresh | date:'short' }}</p>
+      </div>
+      <button class="scan-btn">Scand Incidents <mat-icon>chevron_right</mat-icon></button>
+    </div>
+
+    <!-- Hero Panel Card -->
+    <div class="cc-panel-card hero-panel">
+    <!-- Hero Grid: 3 columns -->
+    <section class="hero-grid">
+
+      <!-- Column 1: KPI Stack -->
+      <div class="kpi-stack">
+        @for (card of kpiCards(); track card.label) {
+          @if (card.colorClass === 'kpi-blue' || card.colorClass === 'kpi-indigo') {
+            <div class="kpi-mini-card" [class]="card.colorClass">
+              <div class="kpi-mini-top">
+                <div class="kpi-mini-icon"><mat-icon>{{ card.icon }}</mat-icon></div>
+                <svg class="kpi-mini-sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
+                  <polyline [attr.points]="card.sparklinePoints" fill="none" [attr.stroke]="card.sparklineColor" stroke-width="2"></polyline>
+                </svg>
+              </div>
+              <span class="kpi-mini-label">{{ card.label }}</span>
+              <span class="kpi-mini-value">{{ card.value }}</span>
+              <span class="kpi-mini-caption positive">
+                <mat-icon class="caption-arrow">arrow_upward</mat-icon>{{ card.caption }}
+              </span>
+            </div>
+          }
+        }
+        <div class="fee-hero-card">
+          <span class="fee-hero-label">FEE COLLECTION</span>
+          <span class="fee-hero-value">{{ formatKpiCurrency(data.kpis.feeCollection) }}</span>
+          <span class="fee-hero-caption positive">
+          </span>
+        </div>
       </div>
 
-      <div class="hero-content">
-        <div class="hero-left">
-          <h1 class="hero-greeting">{{ greeting() }}, {{ firstName() }} <span class="wave">👋</span></h1>
-          <p class="hero-title">Principal's Command Center</p>
-          <p class="hero-subtitle">Overview of Institutional Health · Last refresh {{ data.lastRefresh | date:'short' }}</p>
+      <!-- Column 2: Institution Health Gauge -->
+      <div class="health-center-panel">
+        <div class="health-panel-label">
+          INSTITUTION HEALTH <mat-icon class="health-info-icon">info_outline</mat-icon>
         </div>
-
-        <div class="hero-right">
-          @if (healthScore() !== null) {
-            <div class="health-ring" [class]="healthStatus().className">
-              <svg viewBox="0 0 80 80" class="ring-svg">
-                <circle cx="40" cy="40" r="34" class="ring-track"></circle>
-                <circle cx="40" cy="40" r="34" class="ring-progress"
-                  [style.stroke-dasharray]="213.6"
-                  [style.stroke-dashoffset]="213.6 - (213.6 * (healthScore() ?? 0) / 100)">
-                </circle>
-              </svg>
-              <div class="ring-center">
-                <mat-icon>favorite</mat-icon>
-              </div>
+        @if (healthScore() !== null) {
+          <div class="health-gauge-wrap" [class]="healthStatus().className">
+            <svg viewBox="0 0 140 140" class="gauge-svg">
+              <circle cx="70" cy="70" r="55" class="gauge-track"/>
+              <circle cx="70" cy="70" r="55" class="gauge-progress"
+                [style.stroke-dasharray]="345.6"
+                [style.stroke-dashoffset]="345.6 - (345.6 * (healthScore() ?? 0) / 100)"/>
+            </svg>
+            <div class="gauge-center">
+              <span class="gauge-pct">{{ healthScore() }}%</span>
             </div>
-            <div class="health-info">
-              <span class="health-label">Institution Health Score</span>
-              <div class="health-score-row">
-                <span class="health-score">{{ healthScore() }}%</span>
-                <span class="health-status-chip" [class]="healthStatus().className">{{ healthStatus().label }}</span>
-              </div>
-              <span class="health-delta">
-                <mat-icon>trending_up</mat-icon>
-                {{ healthDeltaLabel() }}
-              </span>
+          </div>
+          <div class="health-status-badge" [class]="healthStatus().className">
+            {{ healthStatus().label }}
+          </div>
+        }
+        <div class="key-risks-section">
+          <div class="key-risks-title">KEY RISKS</div>
+          @for (risk of keyRisks(); track risk.label) {
+            <div class="risk-item">
+              <span class="risk-dot" [style.background]="risk.color"></span>
+              <span class="risk-label">{{ risk.label }}</span>
             </div>
           }
         </div>
       </div>
-    </header>
 
-    <!-- KPI Row -->
-    <section class="kpi-row">
-      @for (card of kpiCards(); track card.label) {
-        <mat-card class="kpi-card" [class]="card.colorClass">
-          <mat-card-content>
-            <div class="kpi-top">
-              <div class="kpi-icon">
-                <mat-icon>{{ card.icon }}</mat-icon>
+      <!-- Column 3: Active Incidents Panel -->
+      <div class="active-incidents-panel">
+        <div class="ai-header">
+          <span class="ai-title">ACTIVE INCIDENTS</span>
+          <mat-icon class="ai-warn-icon">warning_amber</mat-icon>
+        </div>
+        <span class="ai-count">{{ data.kpis.activeIncidents }}</span>
+        <div class="ai-list">
+          @for (op of heroIncidents(); track op.id) {
+            <div class="ai-item">
+              <span class="ai-dot" [class]="op.type === 'alert' ? 'dot-alert' : 'dot-warning'"></span>
+              <div class="ai-item-info">
+                <span class="ai-message">{{ op.message }}</span>
+                <span class="ai-loc">{{ op.location }}</span>
               </div>
-              <svg class="kpi-sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
-                <polyline [attr.points]="card.sparklinePoints" fill="none" [attr.stroke]="card.sparklineColor" stroke-width="2"></polyline>
-              </svg>
             </div>
-            <div class="kpi-body">
-              <span class="kpi-label">{{ card.label }}</span>
-              <span class="kpi-value">{{ card.value }}</span>
-              <span class="kpi-caption" [class.positive]="card.captionClass === 'positive'" [class.negative]="card.captionClass === 'negative'">
-                @if (card.captionClass !== 'negative') {
-                  <mat-icon class="caption-arrow">arrow_upward</mat-icon>
-                }
-                {{ card.caption }}
-              </span>
-            </div>
-          </mat-card-content>
-        </mat-card>
-      }
+          }
+          @if (heroIncidents().length === 0) {
+            <div class="ai-empty">No critical alerts at this time.</div>
+          }
+        </div>
+        <button class="ai-attention-btn">
+          <mat-icon>warning</mat-icon> NEEDS ATTENTION
+        </button>
+      </div>
     </section>
+    </div>
 
-    <!-- Top Row: Action Queue / Operations Radar / School Calendar -->
-    <section class="triple-grid">
-      <mat-card class="approvals-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">fact_check</mat-icon>
-          <mat-card-title>Action Queue</mat-card-title>
-          <mat-card-subtitle>Pending Approvals</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          @if (data.pendingApprovals.length === 0) {
-            <div class="empty-row">
-              <mat-icon>task_alt</mat-icon>
-              <span>No pending approvals — you're all caught up.</span>
-            </div>
-          } @else {
-            <div class="approvals-list">
-              @for (approval of data.pendingApprovals; track approval.id) {
-                <div class="approval-item">
-                  <div class="approval-header">
-                    <span class="approval-type">{{ approval.type }}</span>
-                    <span class="approval-priority" [class]="getPriorityClass(approval.priority)">{{ approval.priority }}</span>
-                  </div>
-                  <div class="approval-body">
-                    <span class="approval-requester">{{ approval.requester }}</span>
-                    <span class="approval-desc">{{ approval.description }}</span>
-                  </div>
-                  <div class="approval-actions">
-                    <button mat-stroked-button class="action-btn review-btn" (click)="reviewApproval(approval)" [disabled]="processingId() === approval.id">
-                      <mat-icon>visibility</mat-icon> Review
-                    </button>
-                    <button mat-flat-button color="primary" class="action-btn approve-btn" (click)="approveApproval(approval)" [disabled]="processingId() === approval.id">
-                      @if (processingId() === approval.id) {
-                        <mat-spinner diameter="14"></mat-spinner>
-                      } @else {
-                        <mat-icon>check</mat-icon>
-                      }
-                      Approve
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
+    <!-- Body Grid: 2 columns -->
+    <section class="body-grid">
 
-      <mat-card class="operations-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">radar</mat-icon>
-          <mat-card-title>Operations Radar</mat-card-title>
-          <mat-card-subtitle>Live monitoring feed</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          @if (data.liveOperations.length === 0) {
-            <div class="empty-row">
-              <mat-icon>sensors_off</mat-icon>
-              <span>No live operations reported.</span>
-            </div>
-          } @else {
-            <div class="operations-log">
-              @for (op of data.liveOperations; track op.id) {
-                <div class="operation-entry" [class]="getOperationColor(op.type)">
-                  <span class="op-time">[{{ formatTime(op.timestamp) }}]</span>
-                  <mat-icon class="op-icon">{{ getOperationIcon(op.type) }}</mat-icon>
-                  <span class="op-message">{{ op.message }}</span>
-                  <span class="op-location"><mat-icon class="loc-icon">place</mat-icon>{{ op.location }}</span>
-                </div>
-              }
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
+      <!-- Left ~60%: Operational Control Center -->
+      <div class="cc-panel-card">
+      <div class="operational-control">
+        <h2 class="panel-section-heading">OPERATIONAL CONTROL CENTER</h2>
 
-      <mat-card class="calendar-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">calendar_month</mat-icon>
-          <mat-card-title>
-            <button mat-icon-button class="cal-nav" (click)="calendarService.previousMonth()">
-              <mat-icon>chevron_left</mat-icon>
-            </button>
-            <span>{{ calendarMonthLabel() }}</span>
-            <button mat-icon-button class="cal-nav" (click)="calendarService.nextMonth()">
-              <mat-icon>chevron_right</mat-icon>
-            </button>
-          </mat-card-title>
-          <mat-card-subtitle>{{ calendarEvents().length }} event(s)</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          @if (calendarLoading()) {
-            <mat-progress-spinner diameter="24"></mat-progress-spinner>
-          } @else {
-            <div class="calendar-grid">
-              @for (day of ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; track day) {
-                <span class="cal-day-header">{{ day }}</span>
-              }
-              @for (day of calendarDays(); track day.fullDate + day.num) {
-                <div class="cal-day" [class.has-event]="dayHasEvent(day)" [class.other-month]="day.month !== calendarMonth() - 1">
-                  <span class="day-num">{{ day.num }}</span>
-                  @if (dayHasEvent(day)) {
-                    <span class="day-dot"></span>
-                  }
-                </div>
-              }
+        <!-- Critical Alerts & Incidents -->
+        <mat-card class="incidents-ctrl-card">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <div class="section-icon-wrap danger-icon-wrap"><mat-icon>emergency</mat-icon></div>
+              <div class="card-title">CRITICAL ALERTS &amp; INCIDENTS</div>
             </div>
-            @if (upcomingEvents().length > 0) {
-              <mat-divider class="cal-divider"></mat-divider>
-              <div class="upcoming-list">
-                <span class="upcoming-title">Upcoming</span>
-                @for (evt of upcomingEvents(); track evt.id) {
-                  <div class="upcoming-item">
-                    <span class="upcoming-dot" [style.background]="getEventColor(evt.type)"></span>
-                    <span class="upcoming-text">{{ evt.title }}</span>
-                    <span class="upcoming-date">{{ evt.date | date:'d MMM' }}</span>
-                  </div>
-                }
+            <a class="view-all-btn" [routerLink]="link('monitoring')">View All <mat-icon>chevron_right</mat-icon></a>
+          </div>
+          <mat-card-content>
+            @if (data.liveOperations.length === 0) {
+              <div class="empty-row">
+                <mat-icon>check_circle</mat-icon>
+                <span>No active alerts — all clear.</span>
               </div>
             } @else {
-              <div class="empty-row compact">
-                <mat-icon>event_available</mat-icon>
-                <span>Nothing scheduled this month.</span>
+              <div class="incidents-ctrl-list">
+                @for (op of data.liveOperations; track op.id) {
+                  <div class="incident-ctrl-row" [class]="getIncidentRowClass(op.type)">
+                    <mat-icon class="icr-icon" [class]="getIncidentIconClass(op.type)">{{ getOperationIcon(op.type) }}</mat-icon>
+                    <div class="icr-info">
+                      <span class="icr-label">{{ op.message }}</span>
+                      <span class="icr-desc">{{ op.location }}</span>
+                    </div>
+                    @if (op.type === 'alert') {
+                      <span class="inc-priority-badge high">HIGH</span>
+                    } @else if (op.type === 'warning') {
+                      <span class="inc-priority-badge medium">MEDIUM</span>
+                    }
+                    <mat-icon class="icr-arrow">chevron_right</mat-icon>
+                  </div>
+                }
               </div>
             }
-          }
-        </mat-card-content>
-      </mat-card>
-    </section>
+          </mat-card-content>
+        </mat-card>
 
-    <!-- Bottom Row: Revenue / Fee Trend / Enrollment / Quick Actions -->
-    <section class="quad-grid">
-      <mat-card class="financial-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">pie_chart</mat-icon>
-          <mat-card-title>Term Revenue Breakdown</mat-card-title>
-          <mat-card-subtitle>Financial health snapshot</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="doughnut-wrapper">
-            <div class="chart-container">
-              @if (feeChartConfig(); as config) {
+        <!-- Action Queue -->
+        <mat-card class="approvals-card">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <div class="section-icon-wrap"><mat-icon>fact_check</mat-icon></div>
+              <div>
+                <div class="card-title">ACTION QUEUE</div>
+                <div class="card-sub">Pending Approvals</div>
+              </div>
+            </div>
+            <a class="view-all-btn" [routerLink]="link('approvals')">View All <mat-icon>chevron_right</mat-icon></a>
+          </div>
+          <mat-card-content>
+            @if (data.pendingApprovals.length === 0) {
+              <div class="empty-row">
+                <mat-icon>task_alt</mat-icon>
+                <span>No pending approvals — you're all caught up.</span>
+              </div>
+            } @else {
+              <div class="approvals-list">
+                @for (approval of data.pendingApprovals; track approval.id) {
+                  <div class="approval-item" (click)="reviewApproval(approval)" [class.processing]="processingId() === approval.id">
+                    <span class="approval-dot" [class]="getPriorityDotClass(approval.priority)"></span>
+                    <mat-icon class="approval-type-icon">{{ getApprovalIcon(approval.type) }}</mat-icon>
+                    <div class="approval-info">
+                      <span class="approval-requester">{{ approval.requester }}</span>
+                      <span class="approval-desc">{{ approval.description }}</span>
+                    </div>
+                    <span class="approval-priority" [class]="getPriorityClass(approval.priority)">{{ approval.priority }}</span>
+                    <mat-icon class="approval-arrow">chevron_right</mat-icon>
+                  </div>
+                }
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div><!-- /operational-control -->
+
+      </div><!-- /cc-panel-card left -->
+
+      <!-- Right ~40%: Operational Insights -->
+      <div class="cc-panel-card">
+      <div class="operational-insights">
+        <h2 class="panel-section-heading">OPERATIONAL INSIGHTS &amp; ACTIVITIES</h2>
+
+        <!-- 3 Mini Charts in a row -->
+        <div class="charts-trio">
+
+          <!-- Term Revenue Breakdown -->
+          <mat-card class="mini-chart-card">
+            <div class="mini-chart-header">
+              <div>
+                <div class="mini-chart-title">TERM REVENUE BREAKDOWN</div>
+                <div class="mini-chart-sub">Financial health snapshot</div>
+              </div>
+              <button class="term-filter-btn">This Term <mat-icon>expand_more</mat-icon></button>
+            </div>
+            <div class="mini-doughnut-wrap">
+              <div class="mini-doughnut-container">
+                @if (feeChartConfig(); as config) {
+                  <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
+                }
+              </div>
+              <div class="mini-doughnut-center">
+                <span class="mini-center-sub">TOTAL</span>
+                <span class="mini-center-val">{{ formatCurrency(financialTotal()) }}</span>
+              </div>
+            </div>
+            <div class="mini-legend">
+              @for (row of financialBreakdown(); track row.label) {
+                <div class="mini-legend-row">
+                  <span class="legend-dot" [style.background]="row.color"></span>
+                  <span class="mini-legend-label">{{ row.label }}</span>
+                  <span class="mini-legend-value">{{ formatCurrency(row.value) }}</span>
+                  <span class="legend-pct">{{ row.pct }}%</span>
+                </div>
+              }
+            </div>
+          </mat-card>
+
+          <!-- Fee Collection Trend -->
+          <mat-card class="mini-chart-card">
+            <div class="mini-chart-header">
+              <div>
+                <div class="mini-chart-title">FEE COLLECTION TREND</div>
+                <div class="mini-chart-sub">Monthly collected vs target</div>
+              </div>
+              <button class="term-filter-btn">Polished <mat-icon>expand_more</mat-icon></button>
+            </div>
+            <div class="mini-chart-body">
+              @if (feeTrendChartConfig(); as config) {
                 <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
               }
             </div>
-            <div class="doughnut-center">
-              <span class="center-label">Total</span>
-              <span class="center-value">{{ formatCurrency(financialTotal()) }}</span>
-            </div>
-          </div>
-          <div class="financial-legend">
-            @for (row of financialBreakdown(); track row.label) {
-              <div class="legend-row">
-                <span class="legend-dot" [style.background]="row.color"></span>
-                <span class="legend-label">{{ row.label }}</span>
-                <span class="legend-value">{{ formatCurrency(row.value) }}</span>
-                <span class="legend-pct">{{ row.pct }}%</span>
+          </mat-card>
+
+          <!-- Student Enrollment Trend -->
+          <mat-card class="mini-chart-card">
+            <div class="mini-chart-header">
+              <div>
+                <div class="mini-chart-title">STUDENT ENROLLMENT TREND</div>
+                <div class="mini-chart-sub">Year-to-date trend</div>
               </div>
-            }
-          </div>
-        </mat-card-content>
-      </mat-card>
+              <button class="term-filter-btn">This Year <mat-icon>expand_more</mat-icon></button>
+            </div>
+            <div class="enrollment-mini-stat">
+              <span class="enrollment-mini-val">{{ data.kpis.totalStudents }}</span>
+              <div class="enrollment-mini-meta">
+                <span class="mini-chart-sub">Total Students</span>
+              </div>
+            </div>
+            <div class="mini-chart-body">
+              @if (enrollmentChartConfig(); as config) {
+                <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
+              }
+            </div>
+          </mat-card>
+        </div>
 
-      <mat-card class="insight-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">trending_up</mat-icon>
-          <mat-card-title>Fee Collection Trend</mat-card-title>
-          <mat-card-subtitle>Monthly collected vs target</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="insight-chart">
-            @if (feeTrendChartConfig(); as config) {
-              <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
-            }
-          </div>
-          <p class="insight-disclaimer">Illustrative trend — monthly series endpoint not yet wired up.</p>
-        </mat-card-content>
-      </mat-card>
+        <!-- Quick Actions + School Calendar -->
+        <div class="actions-calendar-row">
 
-      <mat-card class="insight-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">show_chart</mat-icon>
-          <mat-card-title>Student Enrollment</mat-card-title>
-          <mat-card-subtitle>Year-to-date trend</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="insight-chart">
-            @if (enrollmentChartConfig(); as config) {
-              <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
-            }
-          </div>
-          <p class="insight-disclaimer">Illustrative trend — monthly series endpoint not yet wired up.</p>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="quick-actions-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">bolt</mat-icon>
-          <mat-card-title>Quick Actions</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="quick-actions-grid">
-            @for (action of quickActions; track action.label) {
-              <a class="quick-action-item" [class]="action.colorClass" [routerLink]="link(action.route)">
-                <div class="qa-icon"><mat-icon>{{ action.icon }}</mat-icon></div>
-                <div class="qa-text">
-                  <span class="qa-label">{{ action.label }}</span>
-                  <span class="qa-sub">{{ action.sub }}</span>
+          <!-- Quick Actions -->
+          <mat-card class="quick-actions-card">
+            <div class="card-header-bar">
+              <div class="card-title-group">
+                <div class="section-icon-wrap qa-icon-wrap"><mat-icon>bolt</mat-icon></div>
+                <div>
+                  <div class="card-title">QUICK ACTIONS</div>
+                  <div class="card-sub">Common administrative tasks</div>
                 </div>
-              </a>
-            }
-          </div>
-        </mat-card-content>
-      </mat-card>
+              </div>
+            </div>
+            <mat-card-content>
+              <div class="quick-actions-grid">
+                @for (action of quickActions; track action.label) {
+                  <a class="quick-action-item" [class]="action.colorClass" [routerLink]="link(action.route)">
+                    <div class="qa-icon"><mat-icon>{{ action.icon }}</mat-icon></div>
+                    <div class="qa-text">
+                      <span class="qa-label">{{ action.label }}</span>
+                      <span class="qa-sub">{{ action.sub }}</span>
+                    </div>
+                  </a>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- School Calendar -->
+          <mat-card class="calendar-card">
+            <div class="card-header-bar">
+              <div class="card-title-group">
+                <div>
+                  <div class="card-title">SCHOOL CALENDAR</div>
+                  <div class="card-sub">{{ calendarMonthLabel() }}</div>
+                </div>
+              </div>
+              <div class="cal-header-right">
+                <button mat-icon-button class="cal-nav" (click)="calendarService.previousMonth()">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+                <button mat-icon-button class="cal-nav" (click)="calendarService.nextMonth()">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <span class="cal-event-count">{{ calendarEvents().length }} event(s)</span>
+                <mat-icon class="cal-event-arrow">chevron_right</mat-icon>
+              </div>
+            </div>
+            <mat-card-content>
+              @if (calendarLoading()) {
+                <mat-progress-spinner diameter="24"></mat-progress-spinner>
+              } @else {
+                <div class="calendar-grid">
+                  @for (day of ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; track day) {
+                    <span class="cal-day-header">{{ day }}</span>
+                  }
+                  @for (day of calendarDays(); track day.fullDate + day.num) {
+                    <div class="cal-day"
+                      [class.has-event]="dayHasEvent(day)"
+                      [class.other-month]="day.month !== calendarMonth() - 1"
+                      [class.today]="day.isToday">
+                      <span class="day-num">{{ day.num }}</span>
+                      @if (dayHasEvent(day) && !day.isToday) {
+                        <span class="day-dot"></span>
+                      }
+                    </div>
+                  }
+                </div>
+                @if (upcomingEvents().length > 0) {
+                  <mat-divider class="cal-divider"></mat-divider>
+                  <div class="upcoming-list">
+                    @for (evt of upcomingEvents(); track evt.id) {
+                      <div class="upcoming-item">
+                        <span class="upcoming-dot" [style.background]="getEventColor(evt.type)"></span>
+                        <span class="upcoming-text">{{ evt.title }}</span>
+                        <span class="upcoming-date">{{ evt.date | date:'d MMM' }}</span>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="empty-row compact">
+                    <mat-icon>event_available</mat-icon>
+                    <span>Nothing scheduled this month.</span>
+                  </div>
+                }
+              }
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div><!-- /operational-insights -->
+      </div><!-- /cc-panel-card right -->
     </section>
   </div>
 } @else {

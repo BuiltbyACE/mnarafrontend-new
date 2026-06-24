@@ -141,6 +141,10 @@ import {
                     <th mat-header-cell *matHeaderCellDef>Reference</th>
                     <td mat-cell *matCellDef="let p" class="mono-cell">{{ p.reference_code }}</td>
                   </ng-container>
+                  <ng-container matColumnDef="family">
+                    <th mat-header-cell *matHeaderCellDef>Family</th>
+                    <td mat-cell *matCellDef="let p" class="mono-cell">{{ p.family_account_number || '—' }}</td>
+                  </ng-container>
                   <ng-container matColumnDef="date">
                     <th mat-header-cell *matHeaderCellDef>Date</th>
                     <td mat-cell *matCellDef="let p">{{ p.transaction_date | date:'mediumDate' }}</td>
@@ -339,7 +343,7 @@ import {
 export class StudentFinanceDetailComponent {
   FORMAT_CURRENCY = FORMAT_CURRENCY;
   readonly invoiceColumns = ['title', 'year', 'due', 'paid', 'balance', 'status'];
-  readonly paymentColumns = ['amount', 'method', 'ref', 'date'];
+  readonly paymentColumns = ['amount', 'method', 'ref', 'family', 'date'];
 
   @Input({ required: true }) data!: StudentFinanceSummary;
 

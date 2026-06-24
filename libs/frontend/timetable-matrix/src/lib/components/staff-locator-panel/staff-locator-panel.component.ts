@@ -1,14 +1,8 @@
 import { Component, input, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LiveTrackerService } from '../../services/live-tracker.service';
-import { LiveLocatorResponse, TeacherStatus } from '../../models/live-status.model';
+import { TimetableApiService, LiveLocatorResponse, TeacherOption } from '@sms/domain/timetable';
 import { LiveStatusBadgeComponent } from '../live-status-badge/live-status-badge.component';
-
-interface TeacherOption {
-  id: number;
-  name: string;
-}
 
 @Component({
   selector: 'app-staff-locator-panel',
@@ -79,7 +73,7 @@ export class StaffLocatorPanelComponent {
   protected selectedTeacherId = signal(0);
   protected currentStatus = signal<LiveLocatorResponse | null>(null);
 
-  private tracker = inject(LiveTrackerService);
+  private api = inject(TimetableApiService);
 
   protected onTeacherChange(): void {
     if (this.selectedTeacherId() > 0) {
@@ -90,7 +84,7 @@ export class StaffLocatorPanelComponent {
   protected refresh(): void {
     const id = this.selectedTeacherId();
     if (id <= 0) return;
-    this.tracker.getTeacherStatus(id).subscribe({
+    this.api.getTeacherStatus(id).subscribe({
       next: (status) => this.currentStatus.set(status),
     });
   }

@@ -1,4 +1,4 @@
-import { Component, Inject, inject, signal } from '@angular/core';
+import { Component, Inject, inject, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -49,14 +49,14 @@ export interface PaymentDialogData {
           <mat-icon>check_circle</mat-icon>
           <span>{{ successMessage() }}</span>
         </div>
-        <p class="instruction">
+        <p class="instruction" style="margin-top: 8px;">
           Please check your phone and enter your M-Pesa PIN to complete the transaction.
         </p>
       } @else {
         <mat-form-field appearance="outline" class="phone-input">
           <mat-label>Safaricom Phone Number</mat-label>
-          <input matInput [(ngModel)]="phone" placeholder="e.g. 254712345678" [disabled]="loading()">
-          <mat-hint>Format: 2547XXXXXXXX</mat-hint>
+          <input #phoneInput matInput [ngModel]="phone()" (input)="onPhoneChange(phoneInput.value)" placeholder="e.g. 254712345678" [disabled]="loading()">
+          <mat-hint>Format: 2547XXXXXXXX (debug: {{ phone() }} valid: {{ isValidPhone() }})</mat-hint>
         </mat-form-field>
       }
     </mat-dialog-content>
@@ -65,7 +65,12 @@ export interface PaymentDialogData {
         <button mat-button (click)="closeDialog(true)">Close</button>
       } @else {
         <button mat-button (click)="closeDialog(false)" [disabled]="loading()">Cancel</button>
-        <button mat-flat-button color="primary" (click)="pay()" [disabled]="!isValidPhone() || loading()">
+        <button
+          mat-flat-button
+          (click)="pay()"
+          [disabled]="loading()"
+          [style.background]="isValidPhone() ? '#059669' : '#9ca3af'"
+          [style.color]="'#ffffff'">
           @if (loading()) {
             <mat-spinner diameter="20"></mat-spinner>
             <span class="ml-2">Processing...</span>
@@ -129,17 +134,20 @@ export interface PaymentDialogData {
   `]
 })
 export class PaymentDialogComponent {
-  phone = '254';
+  phone = signal('254');
+  isValidPhone = computed(() => /^254\d{9}$/.test(this.phone().trim()));
   loading = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
   private apiService = inject(ParentApiService);
+  private cdr = inject(ChangeDetectorRef);
   public dialogRef = inject(MatDialogRef<PaymentDialogComponent>);
   public data: PaymentDialogData = inject(MAT_DIALOG_DATA);
 
-  isValidPhone(): boolean {
-    return /^254\d{9}$/.test(this.phone.trim());
+  onPhoneChange(value: string): void {
+    this.phone.set(value);
+    this.cdr.markForCheck();
   }
 
   pay(): void {
@@ -149,7 +157,7 @@ export class PaymentDialogComponent {
     this.errorMessage.set(null);
 
     this.apiService.initiateMpesaPayment({
-      phone: this.phone.trim(),
+      phone: this.phone().trim(),
       invoice_ids: this.data.invoiceIds
     }).subscribe({
       next: (res: any) => {

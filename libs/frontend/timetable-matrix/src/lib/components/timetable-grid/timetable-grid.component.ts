@@ -1,30 +1,27 @@
 import { Component, input, output, computed, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
-import { TimetableStateService } from '../../services/timetable-state.service';
-import { TimetableApiService } from '../../services/timetable-api.service';
+import { TimetableStateService, TimetableApiService, TimetableEntry, TieredPeriod, DAY_LABELS, DAY_SHORT_LABELS } from '@sms/domain/timetable';
 import { PeriodCellComponent } from '../period-cell/period-cell.component';
-import { TieredPeriod, DAY_LABELS, DAY_SHORT_LABELS } from '../../models/bell-schedule.model';
-import { TimetableEntry } from '../../models/timetable-entry.model';
 
 @Component({
   selector: 'app-timetable-grid',
   standalone: true,
   imports: [CommonModule, ScrollingModule, PeriodCellComponent],
   template: `
-    <div class="flex flex-col h-full bg-slate-950 text-white rounded-xl overflow-hidden border border-slate-800">
+    <div class="flex flex-col h-full bg-white rounded-xl overflow-hidden border border-[var(--tt-border)] shadow-sm">
       <!-- Header Row -->
-      <div class="grid grid-cols-[160px_repeat(5,1fr)] border-b border-slate-800 bg-slate-900/50">
-        <div class="p-3 text-xs font-semibold text-slate-500 uppercase tracking-widest border-r border-slate-800">
+      <div class="grid grid-cols-[160px_repeat(5,1fr)] border-b border-[var(--tt-border)] bg-[var(--tt-surface-alt)]">
+        <div class="p-3 text-xs font-semibold text-[var(--tt-text-subtle)] uppercase tracking-widest border-r border-[var(--tt-border)]">
           Time
         </div>
         @for (day of dayColumns; track day.value) {
           <div class="p-3 text-center"
-               [class.bg-emerald-950/30]="day.isToday"
-               [class.text-emerald-400]="day.isToday"
-               [class.text-slate-400]="!day.isToday">
+               [class.bg-[var(--tt-primary-bg)]]="day.isToday"
+               [class.text-[var(--tt-primary)]]="day.isToday"
+               [class.text-[var(--tt-text-muted)]]="!day.isToday">
             <div class="text-xs font-bold uppercase tracking-wide">{{ day.shortLabel }}</div>
-            <div class="text-[10px] text-slate-600 mt-0.5">{{ day.fullLabel }}</div>
+            <div class="text-[10px] text-[var(--tt-text-subtle)] mt-0.5">{{ day.fullLabel }}</div>
           </div>
         }
       </div>
@@ -33,8 +30,8 @@ import { TimetableEntry } from '../../models/timetable-entry.model';
       @if (isLoading()) {
         <div class="flex-1 flex items-center justify-center">
           <div class="flex flex-col items-center gap-3">
-            <div class="h-8 w-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin"></div>
-            <span class="text-sm text-slate-500">Loading timetable...</span>
+            <div class="h-8 w-8 rounded-full border-2 border-[var(--tt-primary)] border-t-transparent animate-spin"></div>
+            <span class="text-sm text-[var(--tt-text-muted)]">Loading timetable...</span>
           </div>
         </div>
       }
@@ -44,9 +41,9 @@ import { TimetableEntry } from '../../models/timetable-entry.model';
         <div class="flex-1 flex items-center justify-center p-8">
           <div class="text-center">
             <div class="text-4xl mb-3">⚠️</div>
-            <p class="text-sm text-red-400">{{ err }}</p>
+            <p class="text-sm text-[var(--tt-danger-text)]">{{ err }}</p>
             <button (click)="loadTimetable()"
-                    class="mt-4 px-4 py-2 text-xs font-semibold rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/60 transition-colors">
+                    class="mt-4 px-4 py-2 text-xs font-semibold rounded-lg bg-[var(--tt-danger-bg)] text-[var(--tt-danger-text)] hover:bg-red-200 transition-colors">
               Retry
             </button>
           </div>
@@ -58,8 +55,8 @@ import { TimetableEntry } from '../../models/timetable-entry.model';
         <div class="flex-1 flex items-center justify-center p-8">
           <div class="text-center">
             <div class="text-4xl mb-3">📅</div>
-            <p class="text-sm text-slate-500">No bell schedule configured for this view.</p>
-            <p class="text-xs text-slate-700 mt-1">
+            <p class="text-sm text-[var(--tt-text-muted)]">No bell schedule configured for this view.</p>
+            <p class="text-xs text-[var(--tt-text-faint)] mt-1">
               Ask an administrator to seed bell schedules and assign timetable entries.
             </p>
           </div>
@@ -71,25 +68,25 @@ import { TimetableEntry } from '../../models/timetable-entry.model';
         <cdk-virtual-scroll-viewport itemSize="80" class="flex-1">
           <div class="min-h-full">
             @for (period of activePeriods(); track period.id) {
-              <div class="grid grid-cols-[160px_repeat(5,1fr)] border-b border-slate-800/50 transition-colors duration-150"
-                   [class.bg-indigo-950/10]="period.period_type === 'INSTITUTIONAL'"
-                   [class.bg-amber-950/10]="period.period_type === 'BREAK'"
-                   [class.bg-slate-900/30]="period.period_type === 'TRANSITION'"
-                   [class.hover:bg-slate-800/30]="period.is_assignable">
+              <div class="grid grid-cols-[160px_repeat(5,1fr)] border-b border-[var(--tt-border)] transition-colors duration-150"
+                   [class.bg-[var(--tt-primary-bg)]]="period.period_type === 'INSTITUTIONAL'"
+                   [class.bg-amber-50]="period.period_type === 'BREAK'"
+                   [class.bg-slate-50]="period.period_type === 'TRANSITION'"
+                   [class.hover:bg-[var(--tt-surface-alt)]]="period.is_assignable">
 
                 <!-- Time Axis Cell -->
-                <div class="p-3 border-r border-slate-800 flex flex-col justify-center min-h-[80px]">
-                  <span class="text-xs text-slate-300 font-medium">{{ formatTime(period.start_time) }}</span>
-                  <span class="text-[10px] text-slate-600 mt-0.5">{{ formatTime(period.end_time) }}</span>
-                  <span class="text-[9px] text-slate-700 mt-1">{{ period.duration_minutes }}m</span>
+                <div class="p-3 border-r border-[var(--tt-border)] flex flex-col justify-center min-h-[80px]">
+                  <span class="text-xs font-medium text-[var(--tt-text)]">{{ formatTime(period.start_time) }}</span>
+                  <span class="text-[10px] text-[var(--tt-text-faint)] mt-0.5">{{ formatTime(period.end_time) }}</span>
+                  <span class="text-[9px] text-[var(--tt-text-subtle)] mt-1">{{ period.duration_minutes }}m</span>
                   @if (period.period_type !== 'ACADEMIC') {
                     <span class="mt-1 text-[9px] px-1.5 py-0.5 rounded-full text-center font-semibold"
-                          [class.bg-amber-900/60]="period.period_type === 'BREAK'"
-                          [class.text-amber-400]="period.period_type === 'BREAK'"
-                          [class.bg-indigo-900/60]="period.period_type === 'INSTITUTIONAL'"
-                          [class.text-indigo-400]="period.period_type === 'INSTITUTIONAL'"
-                          [class.bg-slate-800/60]="period.period_type === 'TRANSITION'"
-                          [class.text-slate-400]="period.period_type === 'TRANSITION'">
+                          [class.bg-amber-100]="period.period_type === 'BREAK'"
+                          [class.text-amber-700]="period.period_type === 'BREAK'"
+                          [class.bg-[var(--tt-primary-bg)]]="period.period_type === 'INSTITUTIONAL'"
+                          [class.text-[var(--tt-primary)]]="period.period_type === 'INSTITUTIONAL'"
+                          [class.bg-slate-200]="period.period_type === 'TRANSITION'"
+                          [class.text-slate-500]="period.period_type === 'TRANSITION'">
                       {{ period.name }}
                     </span>
                   }
@@ -182,6 +179,10 @@ export class TimetableGridComponent implements OnInit {
         ];
         this.state.setEntries(allEntries);
         this.state.setLoading(false);
+
+        if (allEntries.length > 0) {
+          this._resolveBellSchedule(allEntries);
+        }
       },
       error: (err) => {
         this.state.setLoading(false);
@@ -190,15 +191,40 @@ export class TimetableGridComponent implements OnInit {
           : `Failed to load timetable: ${err.statusText || 'Unknown error'}`);
       },
     });
+  }
 
-    this.api.getBellSchedules().subscribe({
-      next: (schedules) => {
-        if (schedules.length > 0) {
-          const schedule = schedules[0];
-          this.api.getTieredPeriods(schedule.id).subscribe({
-            next: (periods) => this.state.setBellSchedule(periods),
-          });
+  private _resolveBellSchedule(entries: TimetableEntry[]): void {
+    const usedPeriodIds = new Set(entries.map((e) => e.tiered_period));
+
+    this.api.getTieredPeriods().subscribe({
+      next: (allPeriods) => {
+        const matchedSchedules = new Set<number>();
+
+        for (const p of allPeriods) {
+          if (usedPeriodIds.has(p.id)) {
+            matchedSchedules.add(p.schedule);
+          }
         }
+
+        if (matchedSchedules.size > 0) {
+          const merged = allPeriods.filter((p) => matchedSchedules.has(p.schedule));
+          merged.sort((a, b) => {
+            if (a.start_time !== b.start_time) return a.start_time < b.start_time ? -1 : 1;
+            return a.sequence - b.sequence;
+          });
+          this.state.setBellSchedule(merged);
+        }
+      },
+      error: () => {
+        this.api.getBellSchedules().subscribe({
+          next: (schedules) => {
+            if (schedules.length > 0) {
+              this.api.getTieredPeriods(schedules[0].id).subscribe({
+                next: (periods) => this.state.setBellSchedule(periods),
+              });
+            }
+          },
+        });
       },
     });
   }

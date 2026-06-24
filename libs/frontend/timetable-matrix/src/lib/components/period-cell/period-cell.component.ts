@@ -1,17 +1,16 @@
 import { Component, input, output, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TieredPeriod } from '../../models/bell-schedule.model';
-import { TimetableEntry } from '../../models/timetable-entry.model';
+import { TieredPeriod, TimetableEntry } from '@sms/domain/timetable';
 
 @Component({
   selector: 'app-period-cell',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="relative p-2 min-h-[80px] border-r border-slate-800/50 flex flex-col justify-center cursor-pointer transition-all duration-150 hover:bg-slate-800/20"
-         [class.bg-slate-950]="!isSelected() && !isToday()"
-         [class.bg-slate-900/50]="isSelected() && !isToday()"
-         [class.bg-emerald-950/30]="isToday()"
+    <div class="relative p-2 min-h-[80px] border-r border-[var(--tt-border)] flex flex-col justify-center cursor-pointer transition-all duration-150 hover:bg-[var(--tt-surface-alt)]"
+         [class.bg-white]="!isSelected() && !isToday()"
+         [class.bg-[var(--tt-primary-bg)]]="isSelected() && !isToday()"
+         [class.bg-emerald-50]="isToday()"
          [class.border-l-2]="isToday()"
          [class.border-emerald-500]="isToday()"
          (click)="handleClick()">
@@ -28,15 +27,15 @@ import { TimetableEntry } from '../../models/timetable-entry.model';
                 {{ e.subject_code }}
               </span>
               @if (e.is_practical) {
-                <span class="text-[8px] bg-orange-900/60 text-orange-400 px-1 py-0.5 rounded font-semibold flex-shrink-0">
+                <span class="text-[8px] bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-semibold flex-shrink-0">
                   PRAC
                 </span>
               }
             </div>
-            <div class="text-[10px] text-slate-400 truncate leading-tight mt-0.5">
+            <div class="text-[10px] text-[var(--tt-text-faint)] truncate leading-tight mt-0.5">
               {{ e.subject_name }}
             </div>
-            <div class="text-[9px] text-slate-600 mt-1 flex items-center gap-1">
+            <div class="text-[9px] text-[var(--tt-text-muted)] mt-1 flex items-center gap-1">
               <span>{{ e.teacher_name }}</span>
               @if (e.room_detail?.name) {
                 <span>·</span>
@@ -47,21 +46,21 @@ import { TimetableEntry } from '../../models/timetable-entry.model';
         </div>
       } @else if (period()?.period_type === 'INSTITUTIONAL') {
         <div class="text-center">
-          <span class="text-[10px] text-indigo-400/60 uppercase tracking-widest">
+          <span class="text-[10px] text-indigo-400 uppercase tracking-widest">
             {{ period()?.name }}
           </span>
         </div>
       } @else if (period()?.period_type === 'BREAK') {
         <div class="text-center">
-          <span class="text-[10px] text-amber-600/50 uppercase tracking-widest">break</span>
+          <span class="text-[10px] text-amber-400 uppercase tracking-widest">break</span>
         </div>
       } @else if (period()?.period_type === 'TRANSITION') {
         <div class="text-center">
-          <span class="text-[10px] text-slate-600/50 uppercase tracking-widest">{{ period()?.name }}</span>
+          <span class="text-[10px] text-[var(--tt-text-subtle)] uppercase tracking-widest">{{ period()?.name }}</span>
         </div>
       } @else {
         <div class="text-center">
-          <span class="text-[10px] text-slate-800">—</span>
+          <span class="text-[10px] text-[var(--tt-border-strong)]">—</span>
         </div>
       }
     </div>

@@ -102,13 +102,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const last = new Date(year, month, 0);
     const startPad = (first.getDay() + 6) % 7;
     const totalCells = Math.ceil((startPad + last.getDate()) / 7) * 7;
-    const days: { num: number; month: number; fullDate: string }[] = [];
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const days: { num: number; month: number; fullDate: string; isToday: boolean }[] = [];
     for (let i = 0; i < totalCells; i++) {
       const d = new Date(year, month - 1, -startPad + i + 1);
       const fullDate = d.getMonth() === month - 1
         ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         : '';
-      days.push({ num: d.getDate(), month: d.getMonth(), fullDate });
+      days.push({ num: d.getDate(), month: d.getMonth(), fullDate, isToday: fullDate === todayStr && !!fullDate });
     }
     return days;
   });
@@ -143,18 +145,31 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return { label: 'Needs Attention', className: 'health-poor' };
   });
 
-  /** No historical health-score endpoint yet — month-over-month delta is a placeholder. */
   readonly healthDeltaLabel = computed(() => {
     if (this.healthScore() === null) return '';
-    return '↑ 6% from last month';
+    return '';
   });
 
-  /** No time-series endpoint for KPI history yet — sparklines render a static placeholder shape. */
-  private sparkline(rising: boolean): string {
-    const rise = [8, 22, 14, 26, 18, 30];
-    const fall = [30, 24, 27, 18, 21, 10];
-    const values = rising ? rise : fall;
-    return values.map((v, i) => `${(i / (values.length - 1)) * 100},${32 - v}`).join(' ');
+  readonly heroIncidents = computed(() => {
+    const ops = this.dashboardData()?.liveOperations ?? [];
+    return ops.filter(op => op.type === 'warning' || op.type === 'alert').slice(0, 3);
+  });
+
+  readonly keyRisks = computed(() => {
+    const data = this.dashboardData();
+    if (!data) return [];
+    const risks: { label: string; color: string }[] = [];
+    const feeRatio = data.financialHealth.total > 0
+      ? (data.financialHealth.collected / data.financialHealth.total) * 100 : 0;
+    if (data.kpis.attendanceRate < 85) risks.push({ label: 'Low attendance rate', color: '#10b981' });
+    if (feeRatio < 50) risks.push({ label: 'Low fee collection rate', color: '#f59e0b' });
+    if (data.financialHealth.overdue > 0) risks.push({ label: 'Overdue fee accumulation', color: '#f59e0b' });
+    if (data.kpis.activeIncidents > 0) risks.push({ label: 'Active incidents', color: '#ef4444' });
+    return risks.slice(0, 4);
+  });
+
+  private sparkline(): string {
+    return '';
   }
 
   readonly kpiCards = computed(() => {
@@ -167,9 +182,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         value: k.totalStudents.toLocaleString(),
         icon: 'groups',
         colorClass: 'kpi-blue',
-        caption: '12 from last month',
+        caption: '',
         captionClass: 'positive',
-        sparklinePoints: this.sparkline(true),
+        sparklinePoints: this.sparkline(),
         sparklineColor: '#2563eb',
       },
       {
@@ -177,19 +192,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         value: k.totalStaff.toString(),
         icon: 'badge',
         colorClass: 'kpi-indigo',
-        caption: '3 from last month',
+        caption: '',
         captionClass: 'positive',
-        sparklinePoints: this.sparkline(true),
+        sparklinePoints: this.sparkline(),
         sparklineColor: '#4f46e5',
       },
       {
         label: 'Fee Collection',
-        value: this.formatCurrency(k.feeCollection),
+        value: this.formatKpiCurrency(k.feeCollection),
         icon: 'account_balance',
         colorClass: 'kpi-green',
-        caption: '8.2% from last month',
+        caption: '',
         captionClass: 'positive',
-        sparklinePoints: this.sparkline(true),
+        sparklinePoints: this.sparkline(),
         sparklineColor: '#10b981',
       },
       {
@@ -199,7 +214,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         colorClass: k.activeIncidents > 0 ? 'kpi-red-pulse' : 'kpi-green',
         caption: k.activeIncidents > 0 ? 'Needs attention' : 'All clear',
         captionClass: k.activeIncidents > 0 ? 'negative' : 'positive',
-        sparklinePoints: this.sparkline(false),
+        sparklinePoints: this.sparkline(),
         sparklineColor: '#ef4444',
       },
     ];
@@ -249,63 +264,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   readonly financialTotal = computed(() => this.dashboardData()?.financialHealth.total ?? 0);
 
-  private readonly trendMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-
-  /** No monthly fee-trend endpoint yet — bars are an illustrative placeholder series. */
   readonly feeTrendChartConfig = computed<ChartConfiguration<'bar'> | null>(() => {
     const data = this.dashboardData();
     if (!data) return null;
     return {
       type: 'bar',
       data: {
-        labels: this.trendMonths,
+        labels: ['Collected', 'Pending', 'Overdue'],
         datasets: [
           {
-            label: 'Collected',
-            data: [120000, 145000, 138000, 162000, 150000, data.financialHealth.collected || 175000],
-            backgroundColor: '#2563eb',
+            label: 'Amount (KES)',
+            data: [data.financialHealth.collected, data.financialHealth.pending, data.financialHealth.overdue],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
             borderRadius: 4,
-          },
-          {
-            label: 'Target',
-            data: [130000, 140000, 150000, 155000, 160000, 200000],
-            backgroundColor: '#bfdbfe',
-            borderRadius: 4,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, family: 'Inter' } } } },
-        scales: {
-          y: { ticks: { callback: (v) => `${Number(v) / 1000}K`, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
-          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-        },
-      },
-    };
-  });
-
-  /** No enrollment-history endpoint yet — line is an illustrative placeholder series. */
-  readonly enrollmentChartConfig = computed<ChartConfiguration<'line'> | null>(() => {
-    const data = this.dashboardData();
-    if (!data) return null;
-    const total = data.kpis.totalStudents || 29;
-    const base = Math.max(1, Math.round(total * 0.7));
-    return {
-      type: 'line',
-      data: {
-        labels: this.trendMonths,
-        datasets: [
-          {
-            label: 'Students',
-            data: [base, base + 4, base + 6, base + 9, base + 11, total],
-            borderColor: '#2563eb',
-            backgroundColor: 'rgba(37, 99, 235, 0.1)',
-            fill: true,
-            tension: 0.35,
-            pointRadius: 3,
-            pointBackgroundColor: '#2563eb',
           },
         ],
       },
@@ -314,20 +285,26 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+          y: { ticks: { callback: (v) => `${Number(v) / 1000}K`, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
           x: { grid: { display: false }, ticks: { font: { size: 10 } } },
         },
       },
     };
   });
 
+  readonly enrollmentChartConfig = computed<ChartConfiguration<'line'> | null>(() => {
+    const data = this.dashboardData();
+    if (!data) return null;
+    return null;
+  });
+
   readonly quickActions = [
     { label: 'Add Student', sub: 'New admission', icon: 'person_add', route: 'students/admissions/new', colorClass: 'qa-blue' },
-    { label: 'Manage Staff', sub: 'HR directory', icon: 'badge', route: 'staff/directory', colorClass: 'qa-indigo' },
-    { label: 'Record Payment', sub: 'Fee balances', icon: 'payments', route: 'finance/fee-balances', colorClass: 'qa-green' },
-    { label: 'Send Notice', sub: 'Communication hub', icon: 'campaign', route: 'communication/chat', colorClass: 'qa-amber' },
+    { label: 'Add Staff', sub: 'New employee', icon: 'badge', route: 'staff/directory', colorClass: 'qa-indigo' },
+    { label: 'Record Payment', sub: 'Quick entry', icon: 'payments', route: 'finance/fee-balances', colorClass: 'qa-green' },
+    { label: 'Create Notice', sub: 'Broadcast', icon: 'campaign', route: 'communication/chat', colorClass: 'qa-amber' },
     { label: 'View Reports', sub: 'Analytics', icon: 'bar_chart', route: 'reports', colorClass: 'qa-purple' },
-    { label: 'School Calendar', sub: 'Plan an event', icon: 'event', route: 'calendar', colorClass: 'qa-rose' },
+    { label: 'Calendar Event', sub: 'Schedule', icon: 'event', route: 'calendar', colorClass: 'qa-rose' },
   ];
 
   constructor() {
@@ -399,8 +376,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   private doApprove(id: number): void {
+    const approval = this.dashboardData()?.pendingApprovals.find(a => a.id === id);
     this.processingId.set(id);
-    this.dashboardService.approveApproval(id).subscribe({
+    this.dashboardService.approveApproval(id, approval?.type ?? 'purchase_requisition').subscribe({
       next: () => {
         this.removeApproval(id);
         this.processingId.set(null);
@@ -414,8 +392,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   private doReject(id: number, reason: string): void {
+    const approval = this.dashboardData()?.pendingApprovals.find(a => a.id === id);
     this.processingId.set(id);
-    this.dashboardService.rejectApproval(id, reason).subscribe({
+    this.dashboardService.rejectApproval(id, approval?.type ?? 'purchase_requisition', reason).subscribe({
       next: () => {
         this.removeApproval(id);
         this.processingId.set(null);
@@ -453,6 +432,49 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   getPriorityClass(priority: string): string {
     const classes: Record<string, string> = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
     return classes[priority] || 'priority-low';
+  }
+
+  getPriorityDotClass(priority: string): string {
+    const classes: Record<string, string> = { high: 'dot-high', medium: 'dot-medium', low: 'dot-low' };
+    return classes[priority] || 'dot-low';
+  }
+
+  getApprovalIcon(type: string): string {
+    const icons: Record<string, string> = {
+      facility_booking: 'meeting_room',
+      leave_request: 'calendar_today',
+      support_ticket: 'support_agent',
+      purchase_requisition: 'shopping_cart',
+    };
+    return icons[type] || 'description';
+  }
+
+  getOperationDotClass(type: string): string {
+    const classes: Record<string, string> = { info: 'dot-info', warning: 'dot-warning', alert: 'dot-alert', success: 'dot-success' };
+    return classes[type] || 'dot-info';
+  }
+
+  getLocationBadgeClass(location: string): string {
+    if (!location) return 'op-badge-default';
+    const loc = location.toLowerCase();
+    if (loc.includes('finance')) return 'op-badge-finance';
+    if (loc.includes('campus')) return 'op-badge-campus';
+    return 'op-badge-default';
+  }
+
+  getIncidentRowClass(type: string): string {
+    const map: Record<string, string> = { alert: 'icr-alert', warning: 'icr-warning', info: 'icr-info', success: 'icr-success' };
+    return map[type] || 'icr-info';
+  }
+
+  getIncidentIconClass(type: string): string {
+    const map: Record<string, string> = { alert: 'icon-alert', warning: 'icon-warning', info: 'icon-info', success: 'icon-success' };
+    return map[type] || 'icon-info';
+  }
+
+  formatKpiCurrency(value: number): string {
+    if (value >= 1000000) return `KES ${(value / 1000000).toFixed(1)}M`;
+    return `KES ${value.toLocaleString()}`;
   }
 
   formatTime(timestamp: string): string {

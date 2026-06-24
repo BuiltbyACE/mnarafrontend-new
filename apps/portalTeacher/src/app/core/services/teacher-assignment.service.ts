@@ -4,6 +4,13 @@ import { finalize } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 import { Assignment, CreateAssignmentPayload, SubmissionsResponse, UnreadCountResponse } from '../../shared/models/teacher.models';
 
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 interface RawAssignment {
   id: number;
   title: string;
@@ -58,10 +65,10 @@ export class TeacherAssignmentService {
   fetchAssignments(): void {
     this.isLoading.set(true);
     this.error.set(null);
-    this.http.get<RawAssignment[]>(getApiUrl('/lms/assignments/'))
+    this.http.get<PaginatedResponse<RawAssignment>>(getApiUrl('/lms/assignments/'))
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: (data) => this.assignments.set(data.map(mapRaw)),
+        next: (data) => this.assignments.set(data.results.map(mapRaw)),
         error: () => this.error.set('Failed to load assignments'),
       });
   }

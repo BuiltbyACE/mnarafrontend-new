@@ -41,6 +41,27 @@ export const remoteRoutes: Route[] = [
           import('./features/finance/fee-structure/fee-structure.component').then(m => m.FeeStructureComponent),
       },
 
+      // Wallet
+      {
+        path: 'wallet',
+        loadComponent: () =>
+          import('./features/finance/wallet/wallet.component').then(m => m.WalletComponent),
+      },
+
+      // Receipts
+      {
+        path: 'receipts',
+        loadComponent: () =>
+          import('./features/finance/receipts/receipts.component').then(m => m.ReceiptsComponent),
+      },
+
+      // Payment History
+      {
+        path: 'payments',
+        loadComponent: () =>
+          import('./features/finance/payments/payments.component').then(m => m.PaymentsComponent),
+      },
+
       // Transport
       {
         path: 'transport',

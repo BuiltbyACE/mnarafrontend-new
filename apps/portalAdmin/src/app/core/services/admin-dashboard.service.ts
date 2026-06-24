@@ -116,7 +116,6 @@ export class AdminDashboardService {
       next: (data) => {
         this.dashboardData.set(data);
       },
-      error: () => {}
     });
   }
 

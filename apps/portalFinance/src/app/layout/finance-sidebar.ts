@@ -110,8 +110,15 @@ export class FinanceSidebarComponent {
     { name: 'staff', label: 'Staff', icon: 'person_outline', route: '/portalFinance/staff' },
     { name: 'parents', label: 'Parents', icon: 'people', route: '/portalFinance/parents' },
     { name: 'receivables', label: 'Receivables', icon: 'payments', route: '/portalFinance/receivables' },
+    { name: 'allocations', label: 'Allocations', icon: 'hub', route: '/portalFinance/allocations' },
     { name: 'payables', label: 'Payables', icon: 'receipt', route: '/portalFinance/payables' },
+    { name: 'waivers', label: 'Waivers', icon: 'redeem', route: '/portalFinance/waivers' },
+    { name: 'mpesa', label: 'M-Pesa Txns', icon: 'smartphone', route: '/portalFinance/mpesa-transactions' },
+    { name: 'fee-categories', label: 'Fee Categories', icon: 'category', route: '/portalFinance/fee-categories' },
+    { name: 'payroll', label: 'Payroll', icon: 'credit_card', route: '/portalFinance/payroll' },
     { name: 'inventory', label: 'Inventory', icon: 'inventory_2', route: '/portalFinance/inventory' },
+    { name: 'reports', label: 'Reports', icon: 'assessment', route: '/portalFinance/reports' },
     { name: 'ledger', label: 'Master Ledger', icon: 'book', route: '/portalFinance/ledger' },
+    { name: 'chart-of-accounts', label: 'Chart of Accounts', icon: 'account_balance', route: '/portalFinance/chart-of-accounts' },
   ];
 }

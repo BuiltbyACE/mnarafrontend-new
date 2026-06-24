@@ -1,0 +1,277 @@
+<div class="page">
+
+  <!-- ── Page header ── -->
+  <div class="page-header">
+    <h1 class="page-title">Grading Pipeline</h1>
+    <p class="page-sub">Select an assignment, then drag student cards between columns to track progress.</p>
+  </div>
+
+  <!-- ── Assignment picker + summary chips ── -->
+  <div class="picker-row">
+    <span class="picker-label">Assignment</span>
+
+    <mat-form-field appearance="outline" class="picker-field" subscriptSizing="dynamic">
+      <mat-label>
+        @if (assignmentSvc.isLoading()) { Loading assignments… }
+        @else if (assignments().length === 0) { No assignments found for your account }
+        @else { Select an assignment… }
+      </mat-label>
+      <mat-select
+        [value]="selectedId()"
+        [disabled]="assignments().length === 0"
+        (selectionChange)="onAssignmentChange($event.value)">
+        @for (a of assignments(); track a.id) {
+          <mat-option [value]="a.id">{{ a.title }} — {{ a.class }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (!assignmentSvc.isLoading() && assignments().length === 0) {
+      <span class="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg font-medium">
+        Grace has no assignments. Create one first or log in as another teacher.
+      </span>
+    }
+
+    @if (selectedId()) {
+      <div class="total-chips">
+        <span class="chip submitted">
+          <mat-icon>inbox</mat-icon>{{ submittedList().length }} Submitted
+        </span>
+        <span class="chip in-review">
+          <mat-icon>rate_review</mat-icon>{{ inReviewList().length }} In Review
+        </span>
+        <span class="chip graded">
+          <mat-icon>check_circle</mat-icon>{{ gradedList().length }} Graded
+        </span>
+      </div>
+    }
+  </div>
+
+  <!-- ── Rollback error toast ── -->
+  @if (pipeline.patchError()) {
+    <div class="toast" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      {{ pipeline.patchError() }}
+      <button class="toast-close" (click)="dismissPatchError()" aria-label="Dismiss">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- ── Empty state: no assignment chosen ── -->
+  @if (!selectedId()) {
+    <div class="pick-prompt">
+      <mat-icon>view_kanban</mat-icon>
+      <h3>No assignment selected</h3>
+      <p>Choose an assignment from the dropdown above to load the board.</p>
+    </div>
+  }
+
+  <!-- ── Fetch error ── -->
+  @if (pipeline.error()) {
+    <div class="error-banner">{{ pipeline.error() }}</div>
+  }
+
+  <!-- ── Loading ── -->
+  @if (selectedId() && pipeline.isLoading()) {
+    <div class="loading-row">
+      <mat-icon>hourglass_top</mat-icon> Loading submissions…
+    </div>
+  }
+
+  <!-- ══ KANBAN BOARD ════════════════════════════════════════════════════════ -->
+  @if (selectedId() && !pipeline.isLoading() && !pipeline.error()) {
+    <div class="board" cdkDropListGroup>
+
+      <!-- ── Column: Submitted ── -->
+      <div class="column">
+        <div class="col-head">
+          <span class="col-title">Submitted</span>
+          <span class="col-count submitted">{{ submittedList().length }}</span>
+        </div>
+
+        <div
+          id="col-submitted"
+          cdkDropList
+          [cdkDropListData]="submittedList()"
+          [cdkDropListConnectedTo]="['col-in-review']"
+          (cdkDropListDropped)="drop($event)"
+          class="drop-list">
+
+          @for (item of submittedList(); track item.id) {
+            <ng-container *ngTemplateOutlet="card; context: { $implicit: item, col: 'submitted' }" />
+          }
+
+          @if (submittedList().length === 0) {
+            <div class="empty-drop">No submissions waiting</div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Column: In Review ── -->
+      <div class="column">
+        <div class="col-head">
+          <span class="col-title">In Review</span>
+          <span class="col-count in_review">{{ inReviewList().length }}</span>
+        </div>
+
+        <div
+          id="col-in-review"
+          cdkDropList
+          [cdkDropListData]="inReviewList()"
+          [cdkDropListConnectedTo]="['col-submitted', 'col-graded']"
+          (cdkDropListDropped)="drop($event)"
+          class="drop-list">
+
+          @for (item of inReviewList(); track item.id) {
+            <ng-container *ngTemplateOutlet="card; context: { $implicit: item, col: 'in-review' }" />
+          }
+
+          @if (inReviewList().length === 0) {
+            <div class="empty-drop">Drag cards here to start reviewing</div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Column: Graded ── -->
+      <div class="column">
+        <div class="col-head">
+          <span class="col-title">Graded</span>
+          <span class="col-count graded">{{ gradedList().length }}</span>
+        </div>
+
+        <div
+          id="col-graded"
+          cdkDropList
+          [cdkDropListData]="gradedList()"
+          [cdkDropListConnectedTo]="['col-in-review']"
+          (cdkDropListDropped)="drop($event)"
+          class="drop-list">
+
+          @for (item of gradedList(); track item.id) {
+            <ng-container *ngTemplateOutlet="card; context: { $implicit: item, col: 'graded' }" />
+          }
+
+          @if (gradedList().length === 0) {
+            <div class="empty-drop">Graded submissions appear here</div>
+          }
+        </div>
+      </div>
+
+    </div>
+  }
+</div>
+
+<!-- ══ KANBAN CARD TEMPLATE ════════════════════════════════════════════════ -->
+<ng-template #card let-item let-col="col">
+  <div
+    class="kanban-card group relative bg-white rounded-2xl p-4 select-none cursor-grab
+           active:cursor-grabbing border border-indigo-50
+           shadow-[0_1px_3px_0_rgb(99_102_241/0.10),0_1px_2px_-1px_rgb(99_102_241/0.06)]
+           hover:shadow-[0_4px_16px_0_rgb(99_102_241/0.15),0_2px_4px_-1px_rgb(99_102_241/0.08)]
+           hover:border-indigo-200 hover:-translate-y-px
+           transition-all duration-200 ease-out focus-within:ring-2 focus-within:ring-indigo-400"
+    cdkDrag
+    [cdkDragData]="item">
+
+    <!-- ── Hover overlay: Grade Now ─────────────────────────────────────── -->
+    <div class="absolute inset-0 rounded-2xl bg-white/85 backdrop-blur-[3px]
+                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                flex items-center justify-center z-10
+                pointer-events-none group-hover:pointer-events-auto">
+      <button
+        class="flex items-center gap-2 cursor-pointer
+               bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800
+               text-white text-xs font-semibold tracking-wide
+               px-4 py-2 rounded-lg shadow-lg shadow-indigo-200
+               transition-colors duration-150 pointer-events-auto
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
+        (click)="gradeNow($event, item)">
+        <!-- Pencil icon -->
+        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652
+                   L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685
+                   a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+        </svg>
+        Grade Now
+      </button>
+    </div>
+
+    <!-- ── Card header: Avatar + Name + Status badge ─────────────────────── -->
+    <div class="flex items-start gap-3 mb-2.5">
+
+      <!-- 32 × 32 circular avatar with ring -->
+      <div
+        class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center
+               text-white text-[11px] font-bold leading-none ring-2 ring-white"
+        [style.background]="avatarColor(item.studentName)">
+        {{ initials(item.studentName) }}
+      </div>
+
+      <!-- Name + badge -->
+      <div class="flex-1 min-w-0 pt-px">
+        <p class="text-sm font-semibold text-slate-900 leading-snug truncate">
+          {{ item.studentName }}
+        </p>
+
+        <!-- On Time badge -->
+        @if (!item.isLate) {
+          <span class="inline-flex items-center gap-1 mt-1
+                       px-2 py-0.5 rounded-full
+                       text-[10px] font-semibold tracking-wide
+                       bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+            On Time
+          </span>
+        } @else {
+          <!-- Late badge -->
+          <span class="inline-flex items-center gap-1 mt-1
+                       px-2 py-0.5 rounded-full
+                       text-[10px] font-semibold tracking-wide
+                       bg-orange-50 text-orange-600 border border-orange-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0"></span>
+            Late
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Course name -->
+    <p class="text-[11px] text-slate-400 mb-3 truncate pl-11 leading-normal font-medium">
+      {{ item.courseName }}
+    </p>
+
+    <!-- ── Card footer ────────────────────────────────────────────────────── -->
+    <div class="border-t border-slate-100 pt-2.5 flex items-center justify-between gap-2">
+
+      <!-- Attachments indicator -->
+      <div class="flex items-center gap-1.5 text-slate-400 min-w-0">
+        <!-- Paperclip icon -->
+        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364
+                   l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32
+                   m.009-.01l-.01.01m5.699-9.941l-7.81 7.81
+                   a1.5 1.5 0 002.112 2.13" />
+        </svg>
+        <span class="text-[11px] font-medium whitespace-nowrap">2 Attachments</span>
+      </div>
+
+      <!-- Score chip (graded column) or timestamp -->
+      @if (col === 'graded' && item.scoreAwarded != null) {
+        <span class="text-[11px] font-bold px-2.5 py-px rounded-full
+                     bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+          {{ item.scoreAwarded }} / {{ item.maxScore }}
+        </span>
+      } @else {
+        <span class="text-[11px] text-slate-400 whitespace-nowrap flex-shrink-0 tabular-nums">
+          {{ item.submittedAt | date:'MMM d, h:mm a' }}
+        </span>
+      }
+    </div>
+
+  </div>
+</ng-template>

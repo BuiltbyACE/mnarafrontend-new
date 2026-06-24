@@ -30,10 +30,16 @@ type SubTab = 'submitted' | 'not_submitted';
           <h1 class="page-title">{{ assignmentTitle() }}</h1>
           <p class="page-subtitle">Review and grade student submissions</p>
         </div>
-        <button class="btn-secondary" routerLink="/teacher/workspace/{{ assignmentId() }}">
-          <mat-icon>arrow_back</mat-icon>
-          Back to Workspace
-        </button>
+        <div style="display:flex;gap:10px">
+          <button class="btn-secondary" [routerLink]="['/teacher/assignments', assignmentId(), 'pipeline']">
+            <mat-icon>view_kanban</mat-icon>
+            Grading Pipeline
+          </button>
+          <button class="btn-secondary" routerLink="/teacher/workspace/{{ assignmentId() }}">
+            <mat-icon>arrow_back</mat-icon>
+            Back to Workspace
+          </button>
+        </div>
       </div>
 
       @if (submissionsLoading()) {

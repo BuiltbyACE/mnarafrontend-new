@@ -462,6 +462,16 @@ export class ReceivablesHubComponent implements OnInit {
   }
 
   generateInvoicePdf(inv: StudentInvoice) {
+    const lineItemsBody: any[][] = [
+      [
+        { text: 'DESCRIPTION', bold: true, fontSize: 10, color: '#ffffff', fillColor: '#2563eb', margin: [10, 8, 10, 8] },
+        { text: 'AMOUNT', bold: true, fontSize: 10, color: '#ffffff', fillColor: '#2563eb', alignment: 'right', margin: [10, 8, 10, 8] }
+      ],
+      ...inv.items.map(item => ([
+        { text: item.fee_category_name || item.description, fontSize: 11, color: '#1e293b', margin: [10, 15, 10, 15], border: [false, false, false, true] },
+        { text: FORMAT_CURRENCY(item.amount_due), fontSize: 11, color: '#1e293b', alignment: 'right', margin: [10, 15, 10, 15], border: [false, false, false, true] }
+      ]))
+    ];
     const docDef: TDocumentDefinitions = {
       pageSize: 'A4',
       pageMargins: [40, 40, 40, 60],
@@ -507,7 +517,7 @@ export class ReceivablesHubComponent implements OnInit {
                 { text: 'BILLED TO:', fontSize: 10, bold: true, color: '#64748b', margin: [0, 0, 0, 4] },
                 { text: inv.student_name, fontSize: 14, bold: true, color: '#0f172a', margin: [0, 0, 0, 2] },
                 { text: `Admission No: ${inv.student_school_id}`, fontSize: 11, color: '#334155', margin: [0, 0, 0, 2] },
-                { text: `Fee Structure: ${inv.fee_title}`, fontSize: 11, color: '#334155' }
+                { text: `Academic Year: ${inv.academic_year_name || 'Current'}`, fontSize: 11, color: '#334155' }
               ]
             },
             {
@@ -541,16 +551,7 @@ export class ReceivablesHubComponent implements OnInit {
           table: {
             headerRows: 1,
             widths: ['*', 'auto'],
-            body: [
-              [
-                { text: 'DESCRIPTION', bold: true, fontSize: 10, color: '#ffffff', fillColor: '#2563eb', margin: [10, 8, 10, 8] },
-                { text: 'AMOUNT', bold: true, fontSize: 10, color: '#ffffff', fillColor: '#2563eb', alignment: 'right', margin: [10, 8, 10, 8] }
-              ],
-              [
-                { text: inv.fee_title || 'School Fees Assessment', fontSize: 11, color: '#1e293b', margin: [10, 15, 10, 15], border: [false, false, false, true] },
-                { text: FORMAT_CURRENCY(inv.amount_due), fontSize: 11, color: '#1e293b', alignment: 'right', margin: [10, 15, 10, 15], border: [false, false, false, true] }
-              ]
-            ]
+            body: lineItemsBody
           },
           layout: {
             hLineWidth: function (i: number, node: any) { return (i === 0 || i === node.table.body.length) ? 0 : 1; },

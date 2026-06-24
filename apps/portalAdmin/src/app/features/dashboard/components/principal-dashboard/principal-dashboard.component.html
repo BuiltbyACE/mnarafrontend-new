@@ -11,58 +11,218 @@
   </div>
 } @else if (dashboardData(); as data) {
   <div class="command-center">
-    <!-- Header -->
-    <header class="command-header">
-      <div class="header-left">
-        <h1 class="header-title">Principal's Command Center</h1>
-        <p class="header-subtitle">Overview of Institutional Health</p>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-bg-curve">
+        <svg preserveAspectRatio="none" viewBox="0 0 1440 320" class="curve-svg">
+          <path fill="#0d6efd" fill-opacity="1" d="M0,0L1440,0L1440,160C1200,280 800,280 600,200C400,120 200,200 0,280Z"></path>
+        </svg>
       </div>
-      <div class="header-right">
-        <div class="last-refresh">
-          <mat-icon class="refresh-icon">update</mat-icon>
-          <span>Last refresh: {{ data.lastRefresh | date:'short' }}</span>
+      
+      <div class="hero-content">
+        <div class="hero-left">
+          <h1 class="hero-greeting">Good Morning, {{ data.adminName.split(' ')[1] || data.adminName }}</h1>
+          <p class="hero-subtitle">Here is what's happening at your institution today.</p>
+        </div>
+        
+        <div class="hero-center-graphic">
+          <div class="health-ring-container">
+            <div class="health-ring">
+              <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" stroke-dasharray="92, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <div class="health-text">
+                <span class="health-score">92%</span>
+                <span class="health-label">Excellent</span>
+              </div>
+            </div>
+          </div>
+          <div class="school-img-wrapper">
+             <img src="/images/login.jpg" alt="School" class="school-illustration" onerror="this.style.display='none'" />
+          </div>
         </div>
       </div>
-    </header>
+    </section>
 
-    <!-- The 4 Pillars - KPI Cards -->
-    <section class="kpi-row">
+    <!-- KPI Cards (Overlapping Hero) -->
+    <section class="kpi-overlap-row">
       @for (card of kpiCards(); track card.label) {
-        <mat-card class="kpi-card" [class]="card.colorClass">
+        <mat-card class="kpi-card premium-card" [class]="card.colorClass">
           <mat-card-content>
-            <div class="kpi-icon">
-              <mat-icon>{{ card.icon }}</mat-icon>
-            </div>
-            <div class="kpi-body">
-              <span class="kpi-label">{{ card.label }}</span>
-              <span class="kpi-value">{{ card.value }}</span>
+            <div class="kpi-top">
+              <div class="kpi-icon-wrapper">
+                <mat-icon>{{ card.icon }}</mat-icon>
+              </div>
               <span class="kpi-change" [class.positive]="card.changeType === 'positive'" [class.negative]="card.changeType === 'negative'">
                 {{ card.change }}
               </span>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-value">{{ card.value }}</span>
+              <span class="kpi-label">{{ card.label }}</span>
+            </div>
+            <div class="kpi-sparkline">
+              <svg width="100%" height="30" viewBox="0 0 100 30" preserveAspectRatio="none">
+                <path d="M0,20 Q20,10 40,25 T80,15 T100,5" fill="none" [attr.stroke]="card.changeType === 'positive' ? '#10b981' : '#ef4444'" stroke-width="2"/>
+                <path d="M0,20 Q20,10 40,25 T80,15 T100,5 L100,30 L0,30 Z" [attr.fill]="card.changeType === 'positive' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'" stroke="none"/>
+              </svg>
             </div>
           </mat-card-content>
         </mat-card>
       }
     </section>
 
-    <!-- Middle Grid - Financial Pulse + Action Queue -->
-    <section class="middle-grid">
-      <!-- Financial Pulse - Doughnut Chart -->
-      <mat-card class="financial-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">pie_chart</mat-icon>
-          <mat-card-title>Term Revenue Breakdown</mat-card-title>
-          <mat-card-subtitle>Financial health snapshot</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
+    <!-- Middle Grid (Action Queue + Operations Radar + Calendar) -->
+    <section class="premium-middle-grid">
+      
+      <!-- Left Col: Action Queue & Radar -->
+      <div class="middle-left-col">
+        <!-- Action Queue -->
+        <mat-card class="premium-card action-queue-card">
+          <div class="card-header-premium">
+            <h3 class="card-title">Action Queue</h3>
+            <a class="view-all-link">View All <mat-icon>chevron_right</mat-icon></a>
+          </div>
+          <div class="scrollable-content approvals">
+            <div class="timeline-list">
+              @for (approval of data.pendingApprovals; track approval.id) {
+                <div class="timeline-item">
+                  <div class="timeline-dot" [class]="getPriorityClass(approval.priority)"></div>
+                  <div class="timeline-content">
+                    <div class="tl-header">
+                      <span class="tl-title">{{ approval.type }}</span>
+                      <span class="tl-time">{{ approval.submittedAt | date:'shortTime' }}</span>
+                    </div>
+                    <p class="tl-desc">{{ approval.description }}</p>
+                    <div class="tl-requester">
+                      <mat-icon>person</mat-icon> {{ approval.requester }}
+                    </div>
+                  </div>
+                  <div class="tl-actions">
+                    <button class="icon-action-btn check" (click)="approveApproval(approval)" title="Approve">
+                      <mat-icon>check</mat-icon>
+                    </button>
+                    <button class="icon-action-btn review" (click)="reviewApproval(approval)" title="Review">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </mat-card>
+
+        <!-- Operations Radar -->
+        <mat-card class="premium-card operations-card">
+          <div class="card-header-premium">
+            <h3 class="card-title">Operations Radar</h3>
+            <span class="live-pulse">Live</span>
+          </div>
+          <div class="scrollable-content compact operations">
+            <div class="timeline-list">
+              @for (op of data.liveOperations; track op.id) {
+                <div class="timeline-item compact">
+                  <div class="timeline-dot icon-dot" [class]="getOperationColor(op.type)">
+                    <mat-icon>{{ getOperationIcon(op.type) }}</mat-icon>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="tl-header">
+                      <span class="tl-title">{{ op.message }}</span>
+                    </div>
+                    <div class="tl-meta">
+                      <span class="tl-time">{{ formatTime(op.timestamp) }}</span>
+                      <span class="tl-location"><mat-icon>place</mat-icon> {{ op.location }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </mat-card>
+      </div>
+
+      <!-- Right Col: Big Calendar -->
+      <div class="middle-right-col">
+        <mat-card class="premium-card calendar-card">
+          <div class="card-header-premium">
+            <h3 class="card-title">School Calendar</h3>
+            <span class="event-count">2 event(s) <mat-icon>chevron_right</mat-icon></span>
+          </div>
+          <div class="calendar-wrapper">
+            <div class="calendar-month-nav">
+              <button mat-icon-button><mat-icon>chevron_left</mat-icon></button>
+              <span class="month-name">March 2026</span>
+              <button mat-icon-button><mat-icon>chevron_right</mat-icon></button>
+            </div>
+            <div class="calendar-grid">
+              <div class="cal-day-header">Mo</div>
+              <div class="cal-day-header">Tu</div>
+              <div class="cal-day-header">We</div>
+              <div class="cal-day-header">Th</div>
+              <div class="cal-day-header">Fr</div>
+              <div class="cal-day-header">Sa</div>
+              <div class="cal-day-header">Su</div>
+              
+              <div class="cal-cell empty">23</div>
+              <div class="cal-cell empty">24</div>
+              <div class="cal-cell empty">25</div>
+              <div class="cal-cell empty">26</div>
+              <div class="cal-cell empty">27</div>
+              <div class="cal-cell empty">28</div>
+              <div class="cal-cell empty">1</div>
+              
+              <div class="cal-cell active has-event">2<span class="event-dot"></span></div>
+              <div class="cal-cell">3</div>
+              <div class="cal-cell">4</div>
+              <div class="cal-cell">5</div>
+              <div class="cal-cell">6</div>
+              <div class="cal-cell">7</div>
+              <div class="cal-cell">8</div>
+              
+              <div class="cal-cell">9</div>
+              <div class="cal-cell">10</div>
+              <div class="cal-cell has-event">11<span class="event-dot"></span></div>
+              <div class="cal-cell">12</div>
+              <div class="cal-cell">13</div>
+              <div class="cal-cell">14</div>
+              <div class="cal-cell">15</div>
+              
+              <div class="cal-cell">16</div>
+              <div class="cal-cell">17</div>
+              <div class="cal-cell">18</div>
+              <div class="cal-cell">19</div>
+              <div class="cal-cell">20</div>
+              <div class="cal-cell">21</div>
+              <div class="cal-cell">22</div>
+              
+              <div class="cal-cell">23</div>
+              <div class="cal-cell">24</div>
+              <div class="cal-cell">25</div>
+              <div class="cal-cell">26</div>
+              <div class="cal-cell">27</div>
+              <div class="cal-cell">28</div>
+              <div class="cal-cell">29</div>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+      
+    </section>
+
+    <!-- Bottom Charts Grid -->
+    <section class="bottom-charts-grid">
+      <!-- Donut Chart -->
+      <mat-card class="premium-card chart-card">
+        <div class="card-header-premium">
+          <h3 class="card-title">Term Revenue</h3>
+        </div>
+        <mat-card-content class="chart-content">
           <div class="doughnut-wrapper">
             <div class="chart-container">
               @if (feeChartConfig(); as config) {
-                <canvas baseChart
-                  [type]="config.type"
-                  [data]="config.data"
-                  [options]="config.options">
-                </canvas>
+                <canvas baseChart [type]="config.type" [data]="config.data" [options]="config.options"></canvas>
               }
             </div>
             <div class="doughnut-center">
@@ -72,69 +232,51 @@
           </div>
         </mat-card-content>
       </mat-card>
+      
+      <!-- Placeholder Bar Chart -->
+      <mat-card class="premium-card chart-card">
+        <div class="card-header-premium">
+          <h3 class="card-title">Collection Trend</h3>
+        </div>
+        <mat-card-content class="chart-content">
+          <div class="placeholder-bar-chart">
+            <div class="bar-wrap"><div class="bar" style="height: 40%"></div><span>Jan</span></div>
+            <div class="bar-wrap"><div class="bar" style="height: 60%"></div><span>Feb</span></div>
+            <div class="bar-wrap"><div class="bar" style="height: 30%"></div><span>Mar</span></div>
+            <div class="bar-wrap"><div class="bar" style="height: 80%"></div><span>Apr</span></div>
+            <div class="bar-wrap"><div class="bar" style="height: 100%"></div><span>May</span></div>
+            <div class="bar-wrap"><div class="bar" style="height: 70%"></div><span>Jun</span></div>
+          </div>
+        </mat-card-content>
+      </mat-card>
 
-      <!-- Action Queue - Pending Approvals -->
-      <mat-card class="approvals-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">fact_check</mat-icon>
-          <mat-card-title>Action Queue</mat-card-title>
-          <mat-card-subtitle>Pending Approvals</mat-card-subtitle>
-        </mat-card-header>
+      <!-- Quick Actions -->
+      <mat-card class="premium-card quick-actions-card">
+        <div class="card-header-premium">
+          <h3 class="card-title">Quick Actions</h3>
+        </div>
         <mat-card-content>
-          <div class="approvals-list">
-            @for (approval of data.pendingApprovals; track approval.id) {
-              <div class="approval-item">
-                <div class="approval-header">
-                  <span class="approval-type">{{ approval.type }}</span>
-                  <span class="approval-priority" [class]="getPriorityClass(approval.priority)">
-                    {{ approval.priority }}
-                  </span>
-                </div>
-                <div class="approval-body">
-                  <span class="approval-requester">{{ approval.requester }}</span>
-                  <span class="approval-desc">{{ approval.description }}</span>
-                </div>
-                <div class="approval-actions">
-                  <button mat-stroked-button color="primary" class="action-btn review-btn" (click)="reviewApproval(approval)" [disabled]="processingId() === approval.id">
-                    <mat-icon>visibility</mat-icon>
-                    Review
-                  </button>
-                  <button mat-flat-button color="primary" class="action-btn approve-btn" (click)="approveApproval(approval)" [disabled]="processingId() === approval.id">
-                    <mat-icon>check</mat-icon>
-                    Approve
-                  </button>
-                </div>
-              </div>
-            }
+          <div class="qa-grid">
+            <button class="qa-btn">
+              <div class="qa-icon-wrap blue"><mat-icon>person_add</mat-icon></div>
+              <span class="qa-text">Add Student</span>
+            </button>
+            <button class="qa-btn">
+              <div class="qa-icon-wrap green"><mat-icon>payments</mat-icon></div>
+              <span class="qa-text">Record Fee</span>
+            </button>
+            <button class="qa-btn">
+              <div class="qa-icon-wrap orange"><mat-icon>campaign</mat-icon></div>
+              <span class="qa-text">Announcement</span>
+            </button>
+            <button class="qa-btn">
+              <div class="qa-icon-wrap purple"><mat-icon>assessment</mat-icon></div>
+              <span class="qa-text">Generate Report</span>
+            </button>
           </div>
         </mat-card-content>
       </mat-card>
     </section>
 
-    <!-- Bottom Section - Operations Radar -->
-    <section class="operations-section">
-      <mat-card class="operations-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar class="section-icon">radar</mat-icon>
-          <mat-card-title>Operations Radar</mat-card-title>
-          <mat-card-subtitle>Live monitoring feed</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="operations-log">
-            @for (op of data.liveOperations; track op.id) {
-              <div class="operation-entry" [class]="getOperationColor(op.type)">
-                <span class="op-time">[{{ formatTime(op.timestamp) }}]</span>
-                <mat-icon class="op-icon">{{ getOperationIcon(op.type) }}</mat-icon>
-                <span class="op-message">{{ op.message }}</span>
-                <span class="op-location">
-                  <mat-icon class="loc-icon">place</mat-icon>
-                  {{ op.location }}
-                </span>
-              </div>
-            }
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </section>
   </div>
 }

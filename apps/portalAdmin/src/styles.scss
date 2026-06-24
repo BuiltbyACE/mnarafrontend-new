@@ -29,7 +29,7 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #f3f4f6;
+  background-color: #f1f4f9;
 }
 
 body {
@@ -46,7 +46,7 @@ body {
     sans-serif;
   font-size: 1rem;
   line-height: 1.6;
-  color: #1f2937;
+  color: #0b1a2e;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -62,7 +62,7 @@ h6 {
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -0.02em;
-  color: #1f2937;
+  color: #0b1a2e;
 }
 
 p {
@@ -110,24 +110,68 @@ a {
 // ─── Admin Portal Design Tokens ──────────────────────────────────────────────
 :root {
   // Brand palette
-  --mnara-primary: #2563eb;
-  --mnara-primary-dark: #1d4ed8;
-  --mnara-primary-light: #3b82f6;
-  --mnara-sidebar-bg-from: #1d4ed8;
-  --mnara-sidebar-bg-to: #1e3a8a;
+  --mnara-primary: #1a2a6c;
+  --mnara-primary-dark: #14225a;
+  --mnara-primary-light: #2d4373;
 
-  // Surface
+  // ─── Timetable Theme (Navy) ──────────────────────────────────────────
+  --tt-primary: #1a2a6c;
+  --tt-primary-dark: #14225a;
+  --tt-primary-light: #2d4373;
+  --tt-primary-bg: #e8edfb;
+  --tt-surface: #ffffff;
+  --tt-surface-alt: #f8faff;
+  --tt-surface-subtle: #f1f4f9;
+  --tt-bg: #f1f4f9;
+  --tt-border: #e9eef4;
+  --tt-border-medium: #edf2f7;
+  --tt-border-strong: #cbd5e1;
+  --tt-text: #0b1a2e;
+  --tt-text-body: #5e6f8d;
+  --tt-text-muted: #5e6f8d;
+  --tt-text-faint: #64748b;
+  --tt-text-subtle: #8a9bb5;
+
+  // Status
+  --tt-success-bg: #dcfce7;
+  --tt-success-text: #15803d;
+  --tt-warning-bg: #fef3c7;
+  --tt-warning-text: #b45309;
+  --tt-danger-bg: #fee2e2;
+  --tt-danger-text: #dc2626;
+  --tt-info-bg: #e0f2fe;
+  --tt-info-text: #0369a1;
+
+  // Gradients
+  --tt-gradient-brand: linear-gradient(135deg, #1a2a6c, #2d4373);
+  --tt-gradient-version-bar: linear-gradient(135deg, #f8faff, #f1f5fe);
+
+  // Shadows
+  --tt-shadow-card: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --tt-shadow-elevated: 0 4px 6px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.08);
+  --tt-shadow-nav: 0 4px 10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --tt-shadow-primary: 0 4px 10px rgba(26, 42, 108, 0.25);
+  --tt-shadow-primary-hover: 0 6px 16px rgba(26, 42, 108, 0.30);
+
+  // Radii
+  --tt-radius-app: 28px;
+  --tt-radius-card: 16px;
+  --tt-radius-card-lg: 18px;
+  --tt-radius-nav: 16px;
+  --tt-radius-icon: 12px;
+  --tt-radius-icon-sm: 14px;
+  --tt-radius-pill: 40px;
+
+  // Original mnara tokens
+  --mnara-sidebar-bg-from: #1a2a6c;
+  --mnara-sidebar-bg-to: #14225a;
   --mnara-surface: #ffffff;
   --mnara-surface-alt: #f9fafb;
   --mnara-border: #e5e7eb;
   --mnara-border-light: #f3f4f6;
-
-  // Text
   --mnara-text-primary: #1f2937;
   --mnara-text-muted: #6b7280;
   --mnara-text-faint: #9ca3af;
-
-  // Status
   --mnara-success: #10b981;
   --mnara-warning: #f59e0b;
   --mnara-error: #ef4444;
