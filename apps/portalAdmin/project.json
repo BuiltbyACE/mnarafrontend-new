@@ -10,7 +10,7 @@
       "executor": "@nx/angular:webpack-browser",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/portalAdmin",
+        "outputPath": "dist/apps/portalAdmin/browser",
         "index": "apps/portalAdmin/src/index.html",
         "main": "apps/portalAdmin/src/main.ts",
         "tsConfig": "apps/portalAdmin/tsconfig.app.json",

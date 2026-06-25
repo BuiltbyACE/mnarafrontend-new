@@ -1,0 +1,52 @@
+{
+  "buildCommand": "node scripts/generate-prod-manifest.mjs && npx nx build shell --configuration=production",
+  "outputDirectory": "dist/apps/shell/browser",
+  "framework": "angular",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/mf-manifest.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/remoteEntry.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.js",
+      "headers": [
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "cross-origin"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "MF_REMOTE_PORTAL_ADMIN": "@mf-remote-portal-admin",
+    "MF_REMOTE_PORTAL_STUDENT": "@mf-remote-portal-student",
+    "MF_REMOTE_PORTAL_TEACHER": "@mf-remote-portal-teacher",
+    "MF_REMOTE_PORTAL_PARENT": "@mf-remote-portal-parent",
+    "MF_REMOTE_PORTAL_TRANSPORT": "@mf-remote-portal-transport",
+    "MF_REMOTE_PORTAL_FINANCE": "@mf-remote-portal-finance"
+  }
+}

@@ -12,7 +12,7 @@
         "{options.outputPath}"
       ],
       "options": {
-        "outputPath": "dist/apps/portalTransport",
+        "outputPath": "dist/apps/portalTransport/browser",
         "index": "apps/portalTransport/src/index.html",
         "main": "apps/portalTransport/src/main.ts",
         "tsConfig": "apps/portalTransport/tsconfig.app.json",

@@ -1,0 +1,339 @@
+name: Deploy to Vercel (Multi-App)
+
+on:
+  push:
+    branches: [main]
+
+env:
+  NX_CLOUD_DISTRIBUTED_EXECUTION: false
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      shell: ${{ steps.affected.outputs.shell }}
+      portalAdmin: ${{ steps.affected.outputs.portalAdmin }}
+      portalStudent: ${{ steps.affected.outputs.portalStudent }}
+      portalTeacher: ${{ steps.affected.outputs.portalTeacher }}
+      portalParent: ${{ steps.affected.outputs.portalParent }}
+      portalTransport: ${{ steps.affected.outputs.portalTransport }}
+      portalFinance: ${{ steps.affected.outputs.portalFinance }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Compute affected apps
+        id: affected
+        run: |
+          npx nx affected --target=build --base=main --head=HEAD --plain > affected.txt
+          echo "shell=$(grep -c '^shell$' affected.txt || echo 0)" >> $GITHUB_OUTPUT
+          echo "portalAdmin=$(grep -c '^portalAdmin$' affected.txt || echo 0)" >> $GITHUB_OUTPUT
+          echo "portalStudent=$(grep -c '^portalStudent$' affected.txt || echo 0)" >> $GITHUB_OUTPUT
+          echo "portalTeacher=$(grep -c '^portalTeacher$' affected.txt || echo 0)" >> $GITHUB_OUTPUT
+          echo "portalParent=$(grep -c '^portalParent$' affected.txt || echo 0)" >> $GITHUB_OUTPUT
+          echo "portalTransport=$(grep -c '^portalTransport$' affected.txt || echo 0)" >> $GITHUB_OUTPUT
+          echo "portalFinance=$(grep -c '^portalFinance$' affected.txt || echo 0)" >> $GITHUB_OUTPUT
+
+  generate-manifest:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.shell == '1' || github.event_name == 'push'
+    outputs:
+      manifest: ${{ steps.generate.outputs.manifest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Generate manifest (shell app only)
+        id: generate
+        run: |
+          cat > scripts/generate-prod-manifest.mjs << 'EOF'
+          import fs from 'fs';
+          import path from 'path';
+
+          const remotes = {
+            portalAdmin: process.env.MF_REMOTE_PORTAL_ADMIN || 'https://mnara-portal-admin.vercel.app',
+            portalStudent: process.env.MF_REMOTE_PORTAL_STUDENT || 'https://mnara-portal-student.vercel.app',
+            portalTeacher: process.env.MF_REMOTE_PORTAL_TEACHER || 'https://mnara-portal-teacher.vercel.app',
+            portalParent: process.env.MF_REMOTE_PORTAL_PARENT || 'https://mnara-portal-parent.vercel.app',
+            portalTransport: process.env.MF_REMOTE_PORTAL_TRANSPORT || 'https://mnara-portal-transport.vercel.app',
+            portalFinance: process.env.MF_REMOTE_PORTAL_FINANCE || 'https://mnara-portal-finance.vercel.app',
+          };
+
+          const manifest = {};
+          for (const [name, url] of Object.entries(remotes)) {
+            if (url) manifest[name] = `${url}/mf-manifest.json`;
+          }
+
+          const outDir = path.resolve('apps/shell/public');
+          if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+          fs.writeFileSync(
+            path.join(outDir, 'module-federation.manifest.json'),
+            JSON.stringify(manifest, null, 2)
+          );
+          
+          // Output for workflow
+          console.log('MANIFEST_JSON=' + JSON.stringify(manifest));
+          EOF
+
+          node scripts/generate-prod-manifest.mjs 2>&1
+        env:
+          MF_REMOTE_PORTAL_ADMIN: ${{ secrets.MF_REMOTE_PORTAL_ADMIN }}
+          MF_REMOTE_PORTAL_STUDENT: ${{ secrets.MF_REMOTE_PORTAL_STUDENT }}
+          MF_REMOTE_PORTAL_TEACHER: ${{ secrets.MF_REMOTE_PORTAL_TEACHER }}
+          MF_REMOTE_PORTAL_PARENT: ${{ secrets.MF_REMOTE_PORTAL_PARENT }}
+          MF_REMOTE_PORTAL_TRANSPORT: ${{ secrets.MF_REMOTE_PORTAL_TRANSPORT }}
+          MF_REMOTE_PORTAL_FINANCE: ${{ secrets.MF_REMOTE_PORTAL_FINANCE }}
+
+  deploy-shell:
+    needs: [detect-changes, generate-manifest]
+    if: needs.detect-changes.outputs.shell == '1' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Build shell app
+        run: npx nx build shell --configuration=production
+
+      - name: Generate manifest
+        run: node scripts/generate-prod-manifest.mjs
+        env:
+          MF_REMOTE_PORTAL_ADMIN: ${{ secrets.MF_REMOTE_PORTAL_ADMIN }}
+          MF_REMOTE_PORTAL_STUDENT: ${{ secrets.MF_REMOTE_PORTAL_STUDENT }}
+          MF_REMOTE_PORTAL_TEACHER: ${{ secrets.MF_REMOTE_PORTAL_TEACHER }}
+          MF_REMOTE_PORTAL_PARENT: ${{ secrets.MF_REMOTE_PORTAL_PARENT }}
+          MF_REMOTE_PORTAL_TRANSPORT: ${{ secrets.MF_REMOTE_PORTAL_TRANSPORT }}
+          MF_REMOTE_PORTAL_FINANCE: ${{ secrets.MF_REMOTE_PORTAL_FINANCE }}
+
+      - name: Deploy to Vercel (Shell)
+        id: deploy-shell
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_SHELL_PROJECT_ID }}
+          vercel-args: '--prod'
+
+  deploy-portal-admin:
+    needs: [detect-changes, generate-manifest]
+    if: needs.detect-changes.outputs.portalAdmin == '1' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Build portal-admin
+        run: npx nx build portalAdmin --configuration=production
+
+      - name: Deploy to Vercel (Portal Admin)
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PORTAL_ADMIN_PROJECT_ID }}
+          vercel-args: '--prod'
+        env:
+          MF_REMOTE_URL: ${{ secrets.MF_REMOTE_PORTAL_ADMIN }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+
+  deploy-portal-student:
+    needs: [detect-changes, generate-manifest]
+    if: needs.detect-changes.outputs.portalStudent == '1' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Build portal-student
+        run: npx nx build portalStudent --configuration=production
+
+      - name: Deploy to Vercel (Portal Student)
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PORTAL_STUDENT_PROJECT_ID }}
+          vercel-args: '--prod'
+        env:
+          MF_REMOTE_URL: ${{ secrets.MF_REMOTE_PORTAL_STUDENT }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+
+  deploy-portal-teacher:
+    needs: [detect-changes, generate-manifest]
+    if: needs.detect-changes.outputs.portalTeacher == '1' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Build portal-teacher
+        run: npx nx build portalTeacher --configuration=production
+
+      - name: Deploy to Vercel (Portal Teacher)
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PORTAL_TEACHER_PROJECT_ID }}
+          vercel-args: '--prod'
+        env:
+          MF_REMOTE_URL: ${{ secrets.MF_REMOTE_PORTAL_TEACHER }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+
+  deploy-portal-parent:
+    needs: [detect-changes, generate-manifest]
+    if: needs.detect-changes.outputs.portalParent == '1' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Build portal-parent
+        run: npx nx build portalParent --configuration=production
+
+      - name: Deploy to Vercel (Portal Parent)
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PORTAL_PARENT_PROJECT_ID }}
+          vercel-args: '--prod'
+        env:
+          MF_REMOTE_URL: ${{ secrets.MF_REMOTE_PORTAL_PARENT }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+
+  deploy-portal-transport:
+    needs: [detect-changes, generate-manifest]
+    if: needs.detect-changes.outputs.portalTransport == '1' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Build portal-transport
+        run: npx nx build portalTransport --configuration=production
+
+      - name: Deploy to Vercel (Portal Transport)
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PORTAL_TRANSPORT_PROJECT_ID }}
+          vercel-args: '--prod'
+        env:
+          MF_REMOTE_URL: ${{ secrets.MF_REMOTE_PORTAL_TRANSPORT }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+
+  deploy-portal-finance:
+    needs: [detect-changes, generate-manifest]
+    if: needs.detect-changes.outputs.portalFinance == '1' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces=false
+
+      - name: Build portal-finance
+        run: npx nx build portalFinance --configuration=production
+
+      - name: Deploy to Vercel (Portal Finance)
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PORTAL_FINANCE_PROJECT_ID }}
+          vercel-args: '--prod'
+        env:
+          MF_REMOTE_URL: ${{ secrets.MF_REMOTE_PORTAL_FINANCE }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}

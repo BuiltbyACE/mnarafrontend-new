@@ -10,7 +10,7 @@
       "executor": "@nx/angular:webpack-browser",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/portalStudent",
+        "outputPath": "dist/apps/portalStudent/browser",
         "index": "apps/portalStudent/src/index.html",
         "main": "apps/portalStudent/src/main.ts",
         "tsConfig": "apps/portalStudent/tsconfig.app.json",

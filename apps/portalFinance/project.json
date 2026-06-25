@@ -10,7 +10,7 @@
       "executor": "@nx/angular:webpack-browser",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/portalFinance",
+        "outputPath": "dist/apps/portalFinance/browser",
         "index": "apps/portalFinance/src/index.html",
         "main": "apps/portalFinance/src/main.ts",
         "tsConfig": "apps/portalFinance/tsconfig.app.json",

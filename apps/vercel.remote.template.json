@@ -1,0 +1,48 @@
+{
+  "buildCommand": "npx nx build <REMOTE_APP_NAME> --configuration=production",
+  "outputDirectory": "dist/apps/<REMOTE_APP_NAME>/browser",
+  "framework": "angular",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/mf-manifest.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/remoteEntry.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.js",
+      "headers": [
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "cross-origin"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "MF_REMOTE_URL": "@mf-remote-url",
+    "API_BASE_URL": "@api-base-url"
+  }
+}
