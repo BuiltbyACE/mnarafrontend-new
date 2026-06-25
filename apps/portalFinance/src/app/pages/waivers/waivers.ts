@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { FinanceService } from '../../services/finance.service';
 import {
   FeeWaiver, FeeWaiverRequest, WaiverReversalRequest, WaiverStats,
@@ -126,81 +127,96 @@ import {
           <div class="modal-body">
             <p class="modal-desc">Waivers are posted immediately with dual-user audit (finance officer + principal).</p>
 
-            <div class="form-group">
-              <label>Family</label>
-              <select class="form-control" [(ngModel)]="selectedFamilyId" (change)="onFamilyChange()">
-                <option [ngValue]="null">— Select Family —</option>
-                @for (f of families(); track f.id) {
-                  <option [ngValue]="f.id">{{ f.account_number }} ({{ FORMAT_CURRENCY(f.balance) }} bal)</option>
+            <div class="top-filters">
+              <div class="form-group flex-1">
+                <label>Select Family <span class="text-danger">*</span></label>
+                <select class="form-control" [(ngModel)]="selectedFamilyId" (change)="onFamilyChange()">
+                  <option [ngValue]="null">— Select Family —</option>
+                  @for (f of families(); track f.id) {
+                    <option [ngValue]="f.id">{{ f.account_number }} ({{ FORMAT_CURRENCY(f.balance) }} bal)</option>
+                  }
+                </select>
+                @if (selectedFamilyId()) {
+                  <span class="field-help">Balance: {{ FORMAT_CURRENCY(getSelectedFamilyBalance()) }}</span>
                 }
-              </select>
+              </div>
+
+              <div class="form-group flex-1">
+                <label>Select Reason Category <span class="text-danger">*</span></label>
+                <select class="form-control" [ngModel]="waiverType()" (ngModelChange)="waiverType.set($event)">
+                  @for (opt of WAIVER_TYPE_OPTIONS; track opt.value) {
+                    <option [ngValue]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+                <span class="field-help">Select the primary reason for this waiver</span>
+              </div>
             </div>
 
             @if (selectedFamilyId() && familyStudents().length) {
-              <div class="students-section">
-                @for (stu of familyStudents(); track stu.id) {
-                  <div class="student-card" [class.is-expanded]="expandedStudentId() === stu.id" [class.has-selection]="selectedFeeItem()?.studentId === stu.id">
-                    <div class="student-card-header" (click)="expandedStudentId.set(expandedStudentId() === stu.id ? null : stu.id)">
-                      <span class="student-card-name">{{ stu.name }}</span>
-                      <span class="student-card-total">{{ FORMAT_CURRENCY(stu.totalOutstanding) }} outstanding</span>
-                      <span class="expand-icon">{{ expandedStudentId() === stu.id ? '▾' : '▸' }}</span>
-                    </div>
-                    @if (expandedStudentId() === stu.id) {
-                      <div class="fee-items">
-                        @for (item of stu.items; track item.id) {
-                          <div class="fee-item-row"
-                               [class.is-selected]="selectedFeeItem()?.item?.id === item.id"
-                               (click)="selectFeeItem(stu.id, stu.name, item)">
-                            <div class="fee-item-left">
-                              <span class="fee-check">{{ selectedFeeItem()?.item?.id === item.id ? '✓' : '○' }}</span>
-                              <div>
-                                <span class="fee-name">{{ item.fee_category_name || item.description }}</span>
-                                <span class="fee-balance">{{ FORMAT_CURRENCY(item.balance) }} Outstanding</span>
-                              </div>
-                            </div>
-                            <span class="fee-amount">{{ FORMAT_CURRENCY(item.amount_due) }}</span>
-                          </div>
-                        }
-                      </div>
+              <div class="waiver-table-container">
+                <div class="waiver-table-header">
+                  <h3>Waive Items Per Student</h3>
+                </div>
+                <table class="waiver-table">
+                  <thead>
+                    <tr>
+                      <th>STUDENT</th>
+                      <th>INVOICE ITEM</th>
+                      <th>INVOICE #</th>
+                      <th>AMOUNT DUE (KES)</th>
+                      <th>WAIVER AMOUNT (KES)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (stu of familyStudents(); track stu.id) {
+                      @for (item of stu.items; track item.id; let i = $index) {
+                        <tr>
+                          @if (i === 0) {
+                            <td [rowSpan]="stu.items.length + 1" class="student-col">
+                              <strong>{{ stu.name }}</strong>
+                              <span class="student-adm">Admission: {{ getStudentAdm(stu.id) }}</span>
+                            </td>
+                          }
+                          <td>
+                            <label class="item-checkbox">
+                              <input type="checkbox" 
+                                     [ngModel]="selectedItems()[item.id]" 
+                                     (ngModelChange)="toggleItem(item.id, $event)">
+                              <span>{{ item.fee_category_name || item.description }}</span>
+                            </label>
+                          </td>
+                          <td><span class="mono-text">{{ getInvoiceDisplay(item) }}</span></td>
+                          <td>{{ FORMAT_VAL(item.balance) }}</td>
+                          <td>
+                            <input type="number" class="form-control amount-input" 
+                                   [disabled]="!selectedItems()[item.id]"
+                                   [ngModel]="itemAmounts()[item.id] || ''" 
+                                   (ngModelChange)="updateItemAmount(item.id, $event, item.balance)"
+                                   placeholder="0.00" min="0">
+                          </td>
+                        </tr>
+                      }
+                      <tr class="subtotal-row">
+                        <td colspan="4" class="subtotal-label">Total Waiver for {{ getFirstName(stu.name) }}:</td>
+                        <td class="subtotal-amount">{{ FORMAT_CURRENCY(getStudentWaiverTotal(stu.id)) }}</td>
+                      </tr>
                     }
-                  </div>
-                }
+                  </tbody>
+                </table>
               </div>
             } @else if (selectedFamilyId()) {
               <p class="text-faint" style="font-size:0.8125rem;">No outstanding invoice items for this family.</p>
             }
 
-            @if (selectedFeeItem()) {
-              <div class="waiver-config-section">
-                <div class="config-divider"></div>
-
-                <div class="selected-summary">
-                  <span class="summary-label">Selected</span>
-                  <span class="summary-value">{{ selectedFeeItem()?.studentName }} → {{ selectedFeeItem()?.item?.fee_category_name || selectedFeeItem()?.item?.description }}</span>
-                </div>
-
-                <div class="form-row">
-                  <div class="form-group" style="flex:1;">
-                    <label>Waiver Type</label>
-                    <select class="form-control" [ngModel]="waiverType()" (ngModelChange)="waiverType.set($event)">
-                      @for (opt of WAIVER_TYPE_OPTIONS; track opt.value) {
-                        <option [ngValue]="opt.value">{{ opt.label }}</option>
-                      }
-                    </select>
-                  </div>
-                  <div class="form-group" style="flex:1;">
-                    <label>Amount (KES)</label>
-                    <input type="number" class="form-control" [ngModel]="waiverAmount()" (ngModelChange)="waiverAmount.set($event)" placeholder="0.00" min="1">
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>Reason</label>
-                  <textarea class="form-control" [ngModel]="waiverReason()" (ngModelChange)="waiverReason.set($event)" placeholder="Explain why this waiver is being granted..." rows="2"></textarea>
-                </div>
-
-                <div class="form-group">
-                  <label>Authorized By (Principal)</label>
+            <div class="bottom-summary">
+              <div class="total-section">
+                <span class="total-label">Total Waiver Amount</span>
+                <span class="total-value">{{ FORMAT_CURRENCY(totalWaiverAmount()) }}</span>
+              </div>
+              
+              <div class="note-section">
+                <div class="form-group mb-2">
+                  <label>Authorized By <span class="text-danger">*</span></label>
                   <select class="form-control" [ngModel]="waiverAuthorizedBy()" (ngModelChange)="waiverAuthorizedBy.set($event)">
                     <option [ngValue]="0">— Select Principal —</option>
                     @for (s of staffMembers(); track s.id) {
@@ -208,8 +224,12 @@ import {
                     }
                   </select>
                 </div>
+                <div class="form-group m-0">
+                  <label>Waiver Note (Optional)</label>
+                  <textarea class="form-control" [ngModel]="waiverReason()" (ngModelChange)="waiverReason.set($event)" placeholder="Add a note or supporting document reference..." rows="2"></textarea>
+                </div>
               </div>
-            }
+            </div>
 
             @if (error()) {
               <div class="error-msg">{{ error() }}</div>
@@ -218,7 +238,7 @@ import {
           <div class="modal-footer">
             <button class="btn-ghost" (click)="closeCreateModal()">Cancel</button>
             <button class="btn-primary" (click)="submitWaiver()" [disabled]="!canSubmit()">
-              {{ submitting() ? 'Posting...' : 'Create Waiver' }}
+              {{ submitting() ? 'Processing...' : 'Preview Waiver' }}
             </button>
           </div>
         </div>
@@ -323,8 +343,7 @@ import {
     .type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.6875rem; font-weight: 600; background: #f1f5f9; color: #475569; }
     .empty-state { text-align: center; padding: 40px; color: #94a3b8; font-size: 0.875rem; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: white; border-radius: 16px; width: 520px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-    .waiver-modal { width: 620px; }
+    .modal-content { background: white; border-radius: 16px; width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
     .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 0; }
     .modal-header h2 { margin: 0; font-size: 1.125rem; font-weight: 700; color: #0f172a; }
     .close-btn { background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; padding: 0; line-height: 1; }
@@ -382,6 +401,34 @@ import {
       box-shadow: 0 4px 12px rgba(5,150,105,0.3);
       animation: slideUp 0.3s ease;
     }
+
+    .waiver-modal { width: 1100px; max-width: 95vw; }
+    .top-filters { display: flex; gap: 24px; margin-top: 8px; }
+    .flex-1 { flex: 1; }
+    .text-danger { color: #e11d48; }
+    .field-help { font-size: 0.75rem; color: #64748b; margin-top: 4px; display: block; }
+    .waiver-table-container { margin-top: 20px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+    .waiver-table-header { padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .waiver-table-header h3 { margin: 0; font-size: 0.875rem; font-weight: 600; color: #0f172a; }
+    .waiver-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .waiver-table th { padding: 10px 16px; font-size: 0.6875rem; font-weight: 700; color: #64748b; text-transform: uppercase; background: white; border-bottom: 1px solid #e2e8f0; }
+    .waiver-table td { padding: 12px 16px; font-size: 0.8125rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .student-col { vertical-align: top; background: #fafafa; border-right: 1px solid #e2e8f0; }
+    .student-col strong { display: block; color: #0f172a; font-size: 0.875rem; }
+    .student-adm { font-size: 0.75rem; color: #64748b; margin-top: 2px; display: block; }
+    .item-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .item-checkbox input { margin: 0; cursor: pointer; }
+    .amount-input { width: 120px; text-align: right; }
+    .subtotal-row td { background: #f8fafc; padding: 10px 16px; font-weight: 600; font-size: 0.8125rem; }
+    .subtotal-label { text-align: right; color: #475569; }
+    .subtotal-amount { color: #0f172a; }
+    .bottom-summary { display: flex; justify-content: space-between; margin-top: 24px; gap: 24px; }
+    .total-section { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .total-label { font-size: 0.875rem; font-weight: 600; color: #334155; }
+    .total-value { font-size: 2rem; font-weight: 700; color: #16a34a; }
+    .note-section { flex: 2; display: flex; flex-direction: column; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .mb-2 { margin-bottom: 16px; }
+    .m-0 { margin: 0; }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   `],
 })
@@ -403,8 +450,8 @@ export class WaiversComponent implements OnInit {
   readonly selectedFamilyId = signal<number | null>(null);
   readonly familySummaryData = signal<any>(null);
   readonly reverseTarget = signal<FeeWaiver | null>(null);
-  readonly expandedStudentId = signal<number | null>(null);
-  readonly selectedFeeItem = signal<{ studentId: number; studentName: string; item: FamilySummaryItem } | null>(null);
+  readonly selectedItems = signal<Record<number, boolean>>({});
+  readonly itemAmounts = signal<Record<number, number>>({});
 
   readonly familyStudents = computed(() => {
     const data = this.familySummaryData();
@@ -421,7 +468,7 @@ export class WaiversComponent implements OnInit {
     });
   });
 
-  waiverAmount = signal(0);
+  // waiverAmount removed
   waiverType = signal('OTHER');
   waiverReason = signal('');
   waiverAuthorizedBy = signal(0);
@@ -466,13 +513,83 @@ export class WaiversComponent implements OnInit {
     });
   });
 
-  readonly canSubmit = computed(() =>
-    !!this.selectedFeeItem() &&
-    this.waiverAmount() > 0 &&
-    this.waiverReason().trim().length > 0 &&
-    !!this.waiverAuthorizedBy() &&
-    !this.submitting()
-  );
+
+  readonly totalWaiverAmount = computed(() => {
+    const amounts = this.itemAmounts();
+    const selected = this.selectedItems();
+    let total = 0;
+    for (const id in selected) {
+      if (selected[id] && amounts[id]) {
+        total += amounts[id];
+      }
+    }
+    return total;
+  });
+
+  getStudentWaiverTotal(studentId: number): number {
+    const data = this.familySummaryData();
+    if (!data || !data.students) return 0;
+    const student = data.students.find((s: any) => s.id === studentId);
+    if (!student) return 0;
+    
+    const amounts = this.itemAmounts();
+    const selected = this.selectedItems();
+    let total = 0;
+    for (const inv of student.invoices || []) {
+      for (const item of inv.items || []) {
+        if (selected[item.id] && amounts[item.id]) {
+          total += amounts[item.id];
+        }
+      }
+    }
+    return total;
+  }
+
+  getStudentAdm(studentId: number): string {
+    const data = this.familySummaryData();
+    if (!data || !data.students) return 'N/A';
+    const student = data.students.find((s: any) => s.id === studentId);
+    return student?.school_id || 'N/A';
+  }
+
+  getFirstName(fullName: string): string {
+    return fullName ? fullName.split(' ')[0] : '';
+  }
+
+  getSelectedFamilyBalance(): number {
+    const fid = this.selectedFamilyId();
+    if (!fid) return 0;
+    const f = this.families().find(fam => fam.id === fid);
+    return f ? f.balance : 0;
+  }
+
+  FORMAT_VAL(amount: number): string {
+    return amount.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  getInvoiceDisplay(item: any): string {
+    return `INV-2026-00${item.id % 100}`;
+  }
+
+  toggleItem(itemId: number, checked: boolean) {
+    this.selectedItems.update(v => ({ ...v, [itemId]: checked }));
+    if (!checked) {
+      this.itemAmounts.update(v => {
+        const copy = { ...v };
+        delete copy[itemId];
+        return copy;
+      });
+    }
+  }
+
+  updateItemAmount(itemId: number, value: number, maxBalance: number) {
+    if (value > maxBalance) value = maxBalance;
+    this.itemAmounts.update(v => ({ ...v, [itemId]: value }));
+  }
+
+  readonly canSubmit = computed(() => {
+    return this.totalWaiverAmount() > 0 && !!this.waiverAuthorizedBy() && !this.submitting();
+  });
 
   ngOnInit() {
     this.loadData();
@@ -507,20 +624,14 @@ export class WaiversComponent implements OnInit {
     });
   }
 
-  selectFeeItem(studentId: number, studentName: string, item: FamilySummaryItem) {
-    this.selectedFeeItem.set({ studentId, studentName, item });
-    this.expandedStudentId.set(studentId);
-    this.waiverAmount.set(0);
-    this.error.set(null);
-  }
+
 
   closeCreateModal() {
     this.showCreateModal.set(false);
     this.selectedFamilyId.set(null);
     this.familySummaryData.set(null);
-    this.expandedStudentId.set(null);
-    this.selectedFeeItem.set(null);
-    this.waiverAmount.set(0);
+    this.selectedItems.set({});
+    this.itemAmounts.set({});
     this.waiverType.set('OTHER');
     this.waiverReason.set('');
     this.waiverAuthorizedBy.set(0);
@@ -531,25 +642,37 @@ export class WaiversComponent implements OnInit {
     if (!this.canSubmit()) return;
     this.submitting.set(true);
     this.error.set(null);
-    const feeItem = this.selectedFeeItem();
-    if (!feeItem) return;
-    this.financeService.createWaiver({
-      invoice_item_id: feeItem.item.id,
-      amount: this.waiverAmount(),
-      waiver_type: this.waiverType() as FeeWaiverRequest['waiver_type'],
-      reason: this.waiverReason(),
-      authorized_by_id: this.waiverAuthorizedBy(),
-    }).subscribe({
+    
+    const selected = this.selectedItems();
+    const amounts = this.itemAmounts();
+    
+    const requests = Object.keys(selected)
+      .map(id => parseInt(id, 10))
+      .filter(id => selected[id] && amounts[id] > 0)
+      .map(id => this.financeService.createWaiver({
+        invoice_item_id: id,
+        amount: amounts[id],
+        waiver_type: this.waiverType() as any,
+        reason: this.waiverReason(),
+        authorized_by_id: this.waiverAuthorizedBy(),
+      }));
+
+    if (requests.length === 0) {
+      this.submitting.set(false);
+      return;
+    }
+
+    forkJoin(requests).subscribe({
       next: () => {
         this.submitting.set(false);
-        this.successMsg.set('Waiver created successfully');
+        this.successMsg.set(`Successfully created ${requests.length} waiver(s)`);
         this.closeCreateModal();
         this.loadData();
         setTimeout(() => this.successMsg.set(null), 3000);
       },
       error: (err) => {
         this.submitting.set(false);
-        this.error.set(err.error?.message || err.error?.detail || 'Failed to create waiver');
+        this.error.set(err.error?.message || err.error?.detail || 'Failed to create one or more waivers');
       },
     });
   }

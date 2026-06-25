@@ -163,6 +163,11 @@
   justify-content: center;
   flex-shrink: 0;
   letter-spacing: 0.5px;
+  overflow: hidden;
+}
+
+.avatar-img {
+  object-fit: cover;
 }
 
 .user-info {
@@ -210,6 +215,14 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.menu-avatar-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .menu-details {

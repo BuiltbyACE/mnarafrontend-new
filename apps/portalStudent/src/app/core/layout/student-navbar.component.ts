@@ -18,7 +18,7 @@ import { NotificationService } from '../services/notification.service';
 })
 export class StudentNavbarComponent implements OnInit {
   private router = inject(Router);
-  private authStore = inject(AuthStore);
+  authStore = inject(AuthStore);
   private dialog = inject(MatDialog);
   private notif = inject(NotificationService);
 

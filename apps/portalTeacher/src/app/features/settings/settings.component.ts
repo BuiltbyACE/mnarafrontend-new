@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, computed, inject, effect, ChangeDetectionStrategy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,7 +8,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { FormsModule } from '@angular/forms';
+import { AuthStore } from '@sms/core/auth';
 import { TeacherSettingsService } from '../../core/services/teacher-settings.service';
+import { AvatarUploadService } from '@sms/core/avatar';
 
 @Component({
   selector: 'app-teacher-settings',
@@ -39,6 +41,34 @@ import { TeacherSettingsService } from '../../core/services/teacher-settings.ser
         </h2>
         <mat-card class="settings-card" appearance="outlined">
           <mat-card-content>
+            <div class="profile-header-row">
+              <div class="avatar-wrapper" (click)="fileInput.click()" [class.uploading]="avatarUpload.isUploading()">
+                @if (avatarUpload.previewUrl(); as preview) {
+                  <img [src]="preview" class="avatar-img" alt="Preview" />
+                } @else if (authStore.avatarUrl(); as url) {
+                  <img [src]="url" class="avatar-img" alt="Avatar" />
+                } @else {
+                  <div class="avatar-fallback">{{ initials() }}</div>
+                }
+                <div class="avatar-overlay">
+                  <mat-icon class="camera-icon">photo_camera</mat-icon>
+                </div>
+              </div>
+              <div class="avatar-info">
+                <span class="avatar-name">{{ profile().name }}</span>
+                <span class="avatar-hint">Click to change photo</span>
+                @if (avatarUpload.isUploading()) {
+                  <span class="upload-status uploading">Uploading…</span>
+                }
+                @if (avatarUpload.error(); as err) {
+                  <span class="upload-status error">{{ err }}</span>
+                }
+                @if (avatarUpload.lastResult(); as result) {
+                  <span class="upload-status success">Photo updated</span>
+                }
+              </div>
+            </div>
+            <input #fileInput type="file" accept="image/jpeg,image/png,image/webp" class="file-input" (change)="onFileSelected($event)" />
             <div class="profile-fields">
               <div class="field">
                 <span class="field-label">Name</span>
@@ -56,12 +86,6 @@ import { TeacherSettingsService } from '../../core/services/teacher-settings.ser
                 <span class="field-label">Department</span>
                 <span class="field-value">{{ profile().department }}</span>
               </div>
-            </div>
-            <div class="section-actions">
-              <button mat-stroked-button color="primary" (click)="editProfile()">
-                <mat-icon>edit</mat-icon>
-                Edit Profile
-              </button>
             </div>
           </mat-card-content>
         </mat-card>
@@ -182,7 +206,43 @@ import { TeacherSettingsService } from '../../core/services/teacher-settings.ser
     }
     .section-title mat-icon { color: var(--mnara-primary); font-size: 22px; width: 22px; height: 22px; }
     .settings-card { background: var(--mnara-surface); }
-    .profile-fields { display: flex; flex-direction: column; gap: 16px; padding-bottom: 8px; }
+
+    .profile-header-row {
+      display: flex; align-items: center; gap: 16px;
+      padding-bottom: 20px; border-bottom: 1px solid var(--mnara-border); margin-bottom: 16px;
+    }
+    .avatar-wrapper {
+      position: relative; width: 80px; height: 80px; border-radius: 50%;
+      overflow: hidden; cursor: pointer; flex-shrink: 0;
+      border: 3px solid var(--mnara-border);
+      transition: border-color 0.2s, opacity 0.2s;
+    }
+    .avatar-wrapper:hover { border-color: var(--mnara-primary); }
+    .avatar-wrapper.uploading { opacity: 0.6; pointer-events: none; }
+    .avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .avatar-fallback {
+      width: 100%; height: 100%; border-radius: 50%;
+      background: linear-gradient(135deg, var(--mnara-primary), var(--mnara-primary-dark));
+      color: white; display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 700;
+    }
+    .avatar-overlay {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+    .camera-icon { color: white; font-size: 28px; width: 28px; height: 28px; }
+    .file-input { display: none; }
+    .avatar-info { display: flex; flex-direction: column; gap: 2px; }
+    .avatar-name { font-size: 1rem; font-weight: 600; }
+    .avatar-hint { font-size: 0.75rem; color: var(--mnara-text-secondary); }
+    .upload-status { font-size: 0.75rem; font-weight: 500; }
+    .upload-status.uploading { color: var(--mnara-primary); }
+    .upload-status.error { color: #ef4444; }
+    .upload-status.success { color: #10b981; }
+
+    .profile-fields { display: flex; flex-direction: column; gap: 16px; }
     .field { display: flex; flex-direction: column; gap: 2px; }
     .field-label { font-size: 12px; color: var(--mnara-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
     .field-value { font-size: 16px; font-weight: 500; color: var(--mnara-text); }
@@ -204,6 +264,8 @@ import { TeacherSettingsService } from '../../core/services/teacher-settings.ser
 })
 export class SettingsComponent {
   private settingsService = inject(TeacherSettingsService);
+  readonly authStore = inject(AuthStore);
+  readonly avatarUpload = inject(AvatarUploadService);
 
   readonly profile = computed(() =>
     this.settingsService.profile() ?? {
@@ -212,6 +274,10 @@ export class SettingsComponent {
       phone: '',
       department: '',
     }
+  );
+
+  readonly initials = computed(() =>
+    this.profile().name.split(' ').filter(n => n.length > 0).map(n => n[0]).join('').toUpperCase()
   );
 
   passwordModel = {
@@ -230,10 +296,24 @@ export class SettingsComponent {
 
   constructor() {
     this.settingsService.fetchProfile();
+    effect(() => {
+      const res = this.avatarUpload.lastResult();
+      if (res) {
+        this.authStore.updateAvatarUrl(res.photoUrl);
+        this.settingsService.fetchProfile();
+      }
+    });
   }
 
-  editProfile(): void {
-    console.log('Edit profile clicked');
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.avatarUpload.reset();
+    this.avatarUpload.setPreview(file);
+    this.avatarUpload.upload(file);
+    input.value = '';
   }
 
   updatePassword(): void {

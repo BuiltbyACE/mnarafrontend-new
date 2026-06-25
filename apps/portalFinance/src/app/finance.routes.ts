@@ -86,6 +86,10 @@ export const financeRoutes: Route[] = [
         path: 'reconciliation',
         loadComponent: () => import('./pages/reconciliation/reconciliation').then(m => m.ReconciliationComponent),
       },
+      {
+        path: 'settings',
+        loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent),
+      },
     ],
   },
 ];

@@ -249,6 +249,18 @@ export interface TeacherProfile {
   role: string;
   email: string;
   phone: string;
+  hireDate?: string;
+  photoUrl?: string;
+  surname?: string;
+  otherNames?: string;
+  nationalId?: string;
+  kraPin?: string;
+  qualificationLevel?: string;
+  specializationArea?: string;
+  tscNumber?: string;
+  highestDegree?: string;
+  teachingSubjects?: string[];
+  leaveBalance?: { pointsRemaining: number };
 }
 
 export interface LeaveBalance {
@@ -266,4 +278,11 @@ export interface LeaveRequest {
   status: 'pending' | 'approved' | 'rejected';
   reason: string;
   appliedOn: string;
+}
+
+export interface CreateLeavePayload {
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  reason: string;
 }

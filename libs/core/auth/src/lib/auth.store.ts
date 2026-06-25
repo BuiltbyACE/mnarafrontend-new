@@ -63,6 +63,26 @@ export class AuthStore {
     return userProfile?.firstName ?? this.state().identifier;
   });
   readonly avatarUrl = computed(() => this.state().user?.user?.avatarUrl ?? null);
+
+  /** Update avatar URL in global state (called after successful upload). */
+  updateAvatarUrl(url: string): void {
+    this.state.update((s) => {
+      if (!s.user) return s;
+      return {
+        ...s,
+        user: {
+          ...s.user,
+          user: { ...s.user.user, avatarUrl: url },
+        },
+      };
+    });
+    // Persist updated context to sessionStorage so other tabs get it
+    const ctx = this.tokenStorage.getUserContext();
+    if (ctx) {
+      ctx.user.avatarUrl = url;
+      this.tokenStorage.saveUserContext(ctx);
+    }
+  }
   readonly isGodMode = computed(() =>
     this.state().user?.permissions?.includes('*') ?? false
   );

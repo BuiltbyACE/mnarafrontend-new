@@ -25,6 +25,15 @@ import {
   mapTeacherResponseToEntries,
 } from '../mappers/teacher-timetable.mapper';
 
+export interface TimetableStats {
+  active_version: string;
+  total_entries: number;
+  total_classes: number;
+  conflicts: number;
+  capacity_warnings: number;
+  availability_issues: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TimetableApiService {
   private readonly http = inject(HttpClient);
@@ -234,6 +243,13 @@ export class TimetableApiService {
     return this.http.get<VersionCompareResult>(
       `${environment.apiBaseUrl}/lms/timetable/versions/${id}/compare/`,
       { params: new HttpParams().set('with', withId) }
+    );
+  }
+
+  getStats(termId: number): Observable<TimetableStats> {
+    return this.http.get<TimetableStats>(
+      `${environment.apiBaseUrl}/lms/timetable/stats/`,
+      { params: new HttpParams().set('term', termId) }
     );
   }
 

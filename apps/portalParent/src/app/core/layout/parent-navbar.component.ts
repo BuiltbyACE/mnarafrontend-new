@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -23,7 +23,7 @@ import { AuthStore } from '@sms/core/auth';
 })
 export class ParentNavbarComponent {
   private readonly router = inject(Router);
-  private readonly authStore = inject(AuthStore);
+  readonly authStore = inject(AuthStore);
   readonly siblingState = inject(SiblingStateService);
 
   constructor() {
@@ -31,9 +31,9 @@ export class ParentNavbarComponent {
   }
 
   readonly fullName = this.authStore.fullName;
-  readonly email = this.authStore.user()?.user?.email ?? '';
+  readonly email = computed(() => this.authStore.user()?.user?.email ?? '');
 
-  readonly initials = (() => {
+  readonly initials = computed(() => {
     const name = this.fullName();
     return name
       .split(' ')
@@ -41,22 +41,22 @@ export class ParentNavbarComponent {
       .map((n) => n[0])
       .join('')
       .toUpperCase();
-  })();
+  });
 
   readonly isDarkMode = { value: false };
 
   private readonly hour = new Date().getHours();
 
-  private readonly firstName = (() => {
+  private readonly firstName = computed(() => {
     const parts = this.fullName().split(' ').filter((n) => n.length > 0);
     return parts[0] || 'there';
-  })();
+  });
 
-  get greeting(): string {
-    if (this.hour < 12) return `Good morning, ${this.firstName}`;
-    if (this.hour < 17) return `Good afternoon, ${this.firstName}`;
-    return `Good evening, ${this.firstName}`;
-  }
+  readonly greeting = computed(() => {
+    if (this.hour < 12) return `Good morning, ${this.firstName()}`;
+    if (this.hour < 17) return `Good afternoon, ${this.firstName()}`;
+    return `Good evening, ${this.firstName()}`;
+  });
 
   selectSibling(siblingId: string): void {
     this.siblingState.setActiveSiblingById(siblingId);

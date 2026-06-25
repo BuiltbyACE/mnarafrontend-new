@@ -54,6 +54,58 @@
         </div>
       </div>
 
+      @if (stats(); as s) {
+        <div class="stats-section">
+          <h3 class="stats-heading">Attendance Overview</h3>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-value">{{ s.total_classes }}</span>
+              <span class="stat-label">Classes Held</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ s.weekly.rate }}%</span>
+              <span class="stat-label">Weekly Attendance</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ s.monthly.rate }}%</span>
+              <span class="stat-label">Monthly Attendance</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ s.present_today }}/{{ s.total_students }}</span>
+              <span class="stat-label">Today</span>
+            </div>
+          </div>
+          @if (s.periods.length > 0) {
+            <div class="periods-table-wrapper">
+              <table class="periods-table">
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>Present</th>
+                    <th>Total</th>
+                    <th>Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of s.periods; track p.period_name) {
+                    <tr>
+                      <td>{{ p.period_name }}</td>
+                      <td>{{ p.present }}</td>
+                      <td>{{ p.total }}</td>
+                      <td>
+                        <span class="rate-badge" [class.good]="p.rate >= 90" [class.ok]="p.rate >= 75 && p.rate < 90" [class.poor]="p.rate < 75">
+                          {{ p.rate }}%
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+
       <div class="roster-grid">
         @for (student of payload.students; track student.id) {
           <div class="student-card" [class.absent]="isAbsent(student)" [class.present]="student.status === 'PRESENT'">

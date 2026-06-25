@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { finalize } from 'rxjs';
+import { map, finalize } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 
 export interface ClassAssignment {
@@ -9,6 +9,16 @@ export interface ClassAssignment {
   class_name: string;
   section: string;
   student_count: number;
+}
+
+export interface WorkspaceAssignment {
+  id: number;
+  subject_name: string;
+  classroom_name: string;
+  syllabus_overview: string;
+  student_count: number;
+  pending_tasks: number;
+  term_name?: string;
 }
 
 export interface ClassStudent {
@@ -50,8 +60,17 @@ export class TeacherClassService {
   fetchAssignments(): void {
     this.isLoading.set(true);
     this.error.set(null);
-    this.http.get<ClassAssignment[]>(getApiUrl('/staff/my-assignments/'))
-      .pipe(finalize(() => this.isLoading.set(false)))
+    this.http.get<WorkspaceAssignment[]>(getApiUrl('/lms/workspaces/my-classes/'))
+      .pipe(
+        map(data => data.map(w => ({
+          id: w.id,
+          subject: w.subject_name,
+          class_name: w.classroom_name,
+          section: '',
+          student_count: w.student_count,
+        }))),
+        finalize(() => this.isLoading.set(false)),
+      )
       .subscribe({
         next: (data) => this.assignments.set(data),
         error: () => this.error.set('Failed to load class assignments'),

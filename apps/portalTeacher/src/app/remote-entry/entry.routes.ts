@@ -45,6 +45,11 @@ export const remoteRoutes: Route[] = [
           import('../features/classes/components/workspace-detail.component').then(m => m.WorkspaceDetailComponent),
       },
       {
+        path: 'workspace/:id/gradebook',
+        loadComponent: () =>
+          import('../features/classes/components/workspace-detail.component').then(m => m.WorkspaceDetailComponent),
+      },
+      {
         path: 'grading',
         loadComponent: () =>
           import('../features/grading/components/grading-pipeline/grading-pipeline.component').then(m => m.GradingPipelineComponent),
@@ -82,6 +87,16 @@ export const remoteRoutes: Route[] = [
           import('../features/behaviour/behaviour.component').then(m => m.BehaviourComponent),
       },
 
+      {
+        path: 'exams',
+        loadComponent: () =>
+          import('../features/exams/exam-list.component').then(m => m.ExamListComponent),
+      },
+      {
+        path: 'exams/:id',
+        loadComponent: () =>
+          import('../features/exams/exam-detail.component').then(m => m.ExamDetailComponent),
+      },
       {
         path: 'announcements',
         loadComponent: () =>

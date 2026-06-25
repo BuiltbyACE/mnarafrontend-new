@@ -11,6 +11,18 @@ export interface StaffProfileData {
   role: string;
   email: string;
   phone: string;
+  hire_date?: string;
+  photo_url?: string;
+  surname?: string;
+  other_names?: string;
+  national_id?: string;
+  kra_pin?: string;
+  qualification_level?: string;
+  specialization_area?: string;
+  tsc_number?: string;
+  highest_degree?: string;
+  teaching_subjects?: string[];
+  leave_balance?: { points_remaining: number } | null;
 }
 
 export interface ChangePasswordPayload {
@@ -50,9 +62,21 @@ export class TeacherSettingsService {
             name: data.name,
             employeeId: data.employee_id,
             department: data.department,
-            role: data.role,
+            role: data.highest_degree || data.role,
             email: data.email,
             phone: data.phone,
+            hireDate: data.hire_date,
+            photoUrl: data.photo_url,
+            surname: data.surname,
+            otherNames: data.other_names,
+            nationalId: data.national_id,
+            kraPin: data.kra_pin,
+            qualificationLevel: data.qualification_level,
+            specializationArea: data.specialization_area,
+            tscNumber: data.tsc_number,
+            highestDegree: data.highest_degree,
+            teachingSubjects: data.teaching_subjects,
+            leaveBalance: data.leave_balance ? { pointsRemaining: data.leave_balance.points_remaining } : undefined,
           });
         },
         error: () => this.error.set('Failed to load profile'),

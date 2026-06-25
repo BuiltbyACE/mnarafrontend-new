@@ -87,7 +87,7 @@ export class TeacherAssignmentService {
   fetchSubmissions(assignmentId: number): void {
     this.submissionsLoading.set(true);
     this.http.get<SubmissionsResponse>(
-      getApiUrl(`/lms/assignments/assignments/${assignmentId}/submissions/`)
+      getApiUrl(`/lms/assignments/${assignmentId}/submissions/`)
     ).pipe(finalize(() => this.submissionsLoading.set(false)))
       .subscribe({
         next: (data) => this.submissionsResponse.set(data),
@@ -95,21 +95,21 @@ export class TeacherAssignmentService {
       });
   }
 
-  gradeSubmission(submissionId: number, manualScore: number, feedback: string): void {
+  gradeSubmission(submissionId: number, score: number, feedback: string): void {
     this.isGrading.set(true);
-    this.http.post<{ message: string; score_awarded: number }>(
-      getApiUrl(`/lms/assignments/submissions/${submissionId}/grade/`),
-      { manual_grade_score: manualScore, teacher_feedback: feedback },
+    this.http.post<{ score: number; comment: string; status: string }>(
+      getApiUrl(`/lms/submissions/${submissionId}/grade/`),
+      { score, comment: feedback },
     ).pipe(finalize(() => this.isGrading.set(false)))
       .subscribe({
-        next: () => {
+        next: (res) => {
           const resp = this.submissionsResponse();
           if (resp) {
             const sub = resp.submissions.find(s => s.id === submissionId);
             if (sub) {
               sub.is_graded = true;
-              sub.manual_grade_score = manualScore;
-              sub.score_awarded = (sub.auto_grade_score ?? 0) + manualScore;
+              sub.manual_grade_score = res.score - (sub.auto_grade_score ?? 0);
+              sub.score_awarded = res.score;
               sub.teacher_feedback = feedback;
             }
             this.submissionsResponse.set({ ...resp });

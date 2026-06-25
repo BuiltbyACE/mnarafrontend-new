@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, OnInit, OnDestroy, inject } from '@angular/core';
+import { CommonModule, NgClass } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -12,7 +12,7 @@ import { getApiUrl } from '@sms/core/config';
 @Component({
   selector: 'app-finance-header',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatMenuModule, ReactiveFormsModule],
+  imports: [CommonModule, NgClass, MatIconModule, MatMenuModule, ReactiveFormsModule],
   template: `
     <header class="admin-header">
       <div class="header-left"><span class="portal-title">Finance Portal</span></div>
@@ -37,7 +37,11 @@ import { getApiUrl } from '@sms/core/config';
         </div>
         <div class="user-block" [matMenuTriggerFor]="userMenu">
           <div class="user-avatar">
-            <mat-icon>person</mat-icon>
+            @if (authStore.avatarUrl(); as avatarUrl) {
+              <img [src]="avatarUrl" class="avatar-img" alt="" />
+            } @else {
+              <span class="avatar-initials">{{ initials() }}</span>
+            }
           </div>
           <div class="user-info">
             <span class="user-name">{{ authStore.fullName() || 'Finance User' }}</span>
@@ -47,7 +51,7 @@ import { getApiUrl } from '@sms/core/config';
           <mat-icon class="user-chevron">expand_more</mat-icon>
         </div>
         <mat-menu #userMenu="matMenu">
-          <button mat-menu-item (click)="goToProfile()"><mat-icon>person</mat-icon><span>Profile</span></button>
+          <button mat-menu-item (click)="goToProfile()"><mat-icon>person</mat-icon><span>Profile &amp; Settings</span></button>
           <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon><span>Logout</span></button>
         </mat-menu>
       </div>
@@ -102,10 +106,13 @@ import { getApiUrl } from '@sms/core/config';
       display: flex; align-items: center; gap: 10px; cursor: pointer;
     }
     .user-avatar {
-      width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9;
+      width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #1d4ed8);
       display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
     }
     .user-avatar mat-icon { color: #94a3b8; font-size: 18px; width: 18px; height: 18px; }
+    .user-avatar .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-initials { color: white; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.02em; }
     .user-info { display: flex; flex-direction: column; line-height: 1.15; gap: 0; }
     .user-name { font-size: 0.8125rem; font-weight: 600; color: #1e293b; }
     .user-role { font-size: 0.625rem; color: #64748b; }
@@ -121,6 +128,11 @@ export class FinanceHeaderComponent implements OnInit, OnDestroy {
   currentDate = new Date();
   private destroy$ = new Subject<void>();
 
+  readonly initials = computed(() => {
+    const name = this.authStore.fullName() || this.authStore.identifier() || 'F';
+    return name.trim().split(/\s+/).slice(0, 2).map(p => p.charAt(0).toUpperCase()).join('');
+  });
+
   ngOnInit() {
     setInterval(() => { this.currentDate = new Date(); }, 60000);
     this.searchQuery.valueChanges.pipe(
@@ -134,6 +146,6 @@ export class FinanceHeaderComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 
-  goToProfile(): void {}
+  goToProfile(): void { this.router.navigate(['/settings']); }
   logout(): void { this.authStore.logout(); this.router.navigate(['/login']); }
 }

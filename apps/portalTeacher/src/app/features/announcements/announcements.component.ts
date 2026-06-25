@@ -1,23 +1,69 @@
 import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe, NgClass } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { Announcement } from '../../shared/models/teacher.models';
 import { TeacherAnnouncementService } from '../../core/services/teacher-announcement.service';
+import { BroadcastService } from '../../core/services/broadcast.service';
 
 type CategoryFilter = 'all' | 'general' | 'academic' | 'administrative' | 'emergency';
 
 @Component({
   selector: 'app-teacher-announcements',
-  imports: [DatePipe, NgClass, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule],
+  imports: [DatePipe, NgClass, FormsModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <div class="page">
       <div class="page-header">
         <h1 class="page-title">Announcements</h1>
-        <span class="page-count">{{ announcements().length }} total</span>
+        <div class="page-actions">
+          <span class="page-count">{{ announcements().length }} total</span>
+          <button class="btn-compose" (click)="showComposer.set(!showComposer())">
+            <mat-icon>campaign</mat-icon>
+            {{ showComposer() ? 'Cancel' : 'New Broadcast' }}
+          </button>
+        </div>
       </div>
+
+      @if (showComposer()) {
+        <mat-card class="composer-card">
+          <h2 class="composer-title">Compose Broadcast</h2>
+          <div class="composer-body">
+            <input class="composer-input" placeholder="Title" [(ngModel)]="broadcastTitle" />
+            <textarea class="composer-textarea" placeholder="Message body..." rows="4" [(ngModel)]="broadcastBody"></textarea>
+            <div class="composer-row">
+              <select class="composer-select" [(ngModel)]="broadcastPriority">
+                <option value="LOW">Low Priority</option>
+                <option value="NORMAL">Normal Priority</option>
+                <option value="HIGH">High Priority</option>
+                <option value="EMERGENCY">Emergency</option>
+              </select>
+              <select class="composer-select" [(ngModel)]="broadcastAudience">
+                <option value="ALL">Everyone</option>
+                <option value="STAFF">Staff Only</option>
+                <option value="TEACHING_STAFF">Teaching Staff</option>
+                <option value="STUDENTS">Students</option>
+                <option value="PARENTS">Parents</option>
+              </select>
+            </div>
+            @if (broadcastSvc.error(); as err) {
+              <div class="error-msg">{{ err }}</div>
+            }
+            <div class="composer-actions">
+              <button class="btn-cancel" (click)="showComposer.set(false)">Discard</button>
+              <button class="btn-save-draft" (click)="saveDraft()" [disabled]="!broadcastTitle()">Save Draft</button>
+              <button class="btn-send" (click)="sendBroadcast()" [disabled]="!broadcastTitle() || !broadcastBody()">
+                @if (broadcastSvc.isCreating()) { Sending... } @else { Send Now }
+              </button>
+            </div>
+          </div>
+        </mat-card>
+      }
 
       <div class="filters">
         <button class="filter-chip"
@@ -123,9 +169,31 @@ type CategoryFilter = 'all' | 'general' | 'academic' | 'administrative' | 'emerg
   styles: [`
     :host { display: block; font-family: 'Inter', sans-serif; }
     .page { padding: 24px 32px; max-width: 960px; }
-    .page-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 24px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .page-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0; }
+    .page-actions { display: flex; align-items: center; gap: 12px; }
     .page-count { font-size: 0.8125rem; color: #94a3b8; }
+    .btn-compose { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .btn-compose:hover { background: #1d4ed8; }
+    .btn-compose mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+    .composer-card { padding: 24px; margin-bottom: 24px; border: 1px solid #bfdbfe; border-radius: 12px; background: #f8faff; }
+    .composer-title { font-size: 1rem; font-weight: 600; color: #1e40af; margin: 0 0 16px; }
+    .composer-body { display: flex; flex-direction: column; gap: 12px; }
+    .composer-input, .composer-textarea, .composer-select { padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.875rem; font-family: 'Inter', sans-serif; color: #1e293b; width: 100%; }
+    .composer-textarea { resize: vertical; min-height: 100px; }
+    .composer-select { background: white; }
+    .composer-input:focus, .composer-textarea:focus { outline: 2px solid #2563eb; outline-offset: -1px; }
+    .composer-row { display: flex; gap: 12px; }
+    .composer-row select { flex: 1; }
+    .composer-actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
+    .btn-cancel { padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; color: #475569; font-size: 0.8125rem; font-weight: 500; cursor: pointer; }
+    .btn-save-draft { padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #475569; font-size: 0.8125rem; font-weight: 500; cursor: pointer; }
+    .btn-save-draft:disabled { opacity: .5; }
+    .btn-send { padding: 8px 20px; border: none; border-radius: 8px; background: #2563eb; color: white; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
+    .btn-send:hover { background: #1d4ed8; }
+    .btn-send:disabled { opacity: .5; }
+    .error-msg { padding: 8px 12px; background: #fee2e2; color: #991b1b; border-radius: 6px; font-size: 0.8125rem; }
 
     .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
     .filter-chip {
@@ -192,8 +260,15 @@ type CategoryFilter = 'all' | 'general' | 'academic' | 'administrative' | 'emerg
 })
 export class AnnouncementsComponent {
   private announcementService = inject(TeacherAnnouncementService);
+  readonly broadcastSvc = inject(BroadcastService);
 
   readonly selectedCategory = signal<CategoryFilter>('all');
+  readonly showComposer = signal(false);
+
+  readonly broadcastTitle = signal('');
+  readonly broadcastBody = signal('');
+  readonly broadcastPriority = signal<string>('NORMAL');
+  readonly broadcastAudience = signal<string>('ALL');
 
   readonly categories: { label: string; value: CategoryFilter; color: string }[] = [
     { label: 'General', value: 'general', color: '#2563eb' },
@@ -222,6 +297,65 @@ export class AnnouncementsComponent {
 
   constructor() {
     this.announcementService.fetchAnnouncements();
+  }
+
+  sendBroadcast(): void {
+    if (!this.broadcastTitle() || !this.broadcastBody()) return;
+    this.broadcastSvc.isCreating.set(true);
+    this.broadcastSvc.error.set(null);
+    this.broadcastSvc.createBroadcast({
+      title: this.broadcastTitle(),
+      body: this.broadcastBody(),
+      priority: this.broadcastPriority(),
+      audience_type: this.broadcastAudience(),
+      status: 'DRAFT',
+    }).subscribe({
+      next: (broadcast) => {
+        this.broadcastSvc.dispatchBroadcast(broadcast.id).subscribe({
+          next: () => {
+            this.broadcastSvc.isCreating.set(false);
+            this.showComposer.set(false);
+            this.broadcastTitle.set('');
+            this.broadcastBody.set('');
+            this.broadcastSvc.successMessage.set('Broadcast sent successfully');
+            this.announcementService.fetchAnnouncements();
+          },
+          error: () => {
+            this.broadcastSvc.isCreating.set(false);
+            this.broadcastSvc.error.set('Broadcast created but dispatch failed');
+          },
+        });
+      },
+      error: (err) => {
+        this.broadcastSvc.isCreating.set(false);
+        this.broadcastSvc.error.set(err.error?.detail || 'Failed to create broadcast');
+      },
+    });
+  }
+
+  saveDraft(): void {
+    if (!this.broadcastTitle()) return;
+    this.broadcastSvc.isCreating.set(true);
+    this.broadcastSvc.error.set(null);
+    this.broadcastSvc.createBroadcast({
+      title: this.broadcastTitle(),
+      body: this.broadcastBody(),
+      priority: this.broadcastPriority(),
+      audience_type: this.broadcastAudience(),
+      status: 'DRAFT',
+    }).subscribe({
+      next: () => {
+        this.broadcastSvc.isCreating.set(false);
+        this.showComposer.set(false);
+        this.broadcastTitle.set('');
+        this.broadcastBody.set('');
+        this.broadcastSvc.successMessage.set('Draft saved');
+      },
+      error: (err) => {
+        this.broadcastSvc.isCreating.set(false);
+        this.broadcastSvc.error.set(err.error?.detail || 'Failed to save draft');
+      },
+    });
   }
 
   categoryLabel(cat: string): string {

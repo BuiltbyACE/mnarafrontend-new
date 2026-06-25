@@ -33,7 +33,11 @@
     <div class="divider"></div>
 
     <button class="user-block" [matMenuTriggerFor]="userMenu" aria-label="User menu">
-      <div class="avatar">{{ initials() }}</div>
+      @if (authStore.avatarUrl(); as avatarUrl) {
+        <img [src]="avatarUrl" class="avatar avatar-img" alt="" />
+      } @else {
+        <div class="avatar">{{ initials() }}</div>
+      }
       <div class="user-info">
         <span class="user-name">{{ fullName() }}</span>
         <span class="user-meta">{{ grade() }}</span>
@@ -43,7 +47,11 @@
 
     <mat-menu #userMenu="matMenu" class="student-menu" xPosition="before">
       <div class="menu-header">
-        <div class="menu-avatar">{{ initials() }}</div>
+        @if (authStore.avatarUrl(); as avatarUrl) {
+          <img [src]="avatarUrl" class="menu-avatar-img" alt="" />
+        } @else {
+          <div class="menu-avatar">{{ initials() }}</div>
+        }
         <div class="menu-details">
           <span class="menu-name">{{ fullName() }}</span>
           <span class="menu-id">{{ admissionNo() }}</span>

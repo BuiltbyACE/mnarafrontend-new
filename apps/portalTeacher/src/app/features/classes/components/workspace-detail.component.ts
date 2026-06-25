@@ -76,6 +76,10 @@ export class WorkspaceDetailComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const url = this.router.url;
+    if (url.endsWith('/gradebook')) {
+      this.activeTab.set('gradebook');
+    }
     this.route.paramMap.pipe(
       switchMap((params) => {
         const id = params.get('id');

@@ -1,4 +1,5 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { TeacherAttendanceService, LiveRosterStudent } from '../../core/services/teacher-attendance.service';
@@ -6,7 +7,7 @@ import { TeacherAttendanceService, LiveRosterStudent } from '../../core/services
 @Component({
   selector: 'app-live-roster',
   standalone: true,
-  imports: [MatIconModule, MatButtonModule],
+  imports: [MatIconModule, MatButtonModule, DatePipe],
   templateUrl: './live-roster.component.html',
   styles: [`
     :host {
@@ -90,9 +91,25 @@ import { TeacherAttendanceService, LiveRosterStudent } from '../../core/services
     .action-btn.absent { color: var(--mnara-red); border-color: var(--mnara-red); }
     .action-btn.absent:hover { background: var(--mnara-red-light); }
 
+    .stats-section { margin: 28px 0; }
+    .stats-heading { font-size: 16px; font-weight: 600; color: var(--mnara-text); margin: 0 0 16px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    .stat-card { background: var(--mnara-surface); border: 1px solid var(--mnara-border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: var(--mnara-primary); line-height: 1.1; }
+    .stat-label { font-size: 13px; color: var(--mnara-text-secondary); }
+    .periods-table-wrapper { overflow-x: auto; background: var(--mnara-surface); border: 1px solid var(--mnara-border); border-radius: 12px; }
+    .periods-table { width: 100%; border-collapse: collapse; }
+    .periods-table thead th { text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mnara-text-secondary); padding: 12px 16px; border-bottom: 2px solid var(--mnara-border); }
+    .periods-table tbody td { padding: 10px 16px; font-size: 14px; color: var(--mnara-text); border-bottom: 1px solid var(--mnara-border); }
+    .periods-table tbody tr:last-child td { border-bottom: none; }
+    .rate-badge { display: inline-block; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 600; }
+    .rate-badge.good { background: #dcfce7; color: #16a34a; }
+    .rate-badge.ok { background: #fef3c7; color: #d97706; }
+    .rate-badge.poor { background: #fee2e2; color: #dc2626; }
     @media (max-width: 768px) {
       .roster-grid { grid-template-columns: 1fr; }
       .kpi-bar { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .roster-header { flex-direction: column; }
       .student-card { flex-direction: column; align-items: flex-start; }
     }
@@ -106,10 +123,15 @@ export class LiveRosterComponent {
   readonly loading = this.service.rosterLoading;
   readonly error = this.service.rosterError;
 
+  readonly stats = this.service.stats;
+  readonly statsLoading = this.service.statsLoading;
+  readonly statsError = this.service.statsError;
+
   readonly overridingAbsent = signal<Set<number>>(new Set());
 
   constructor() {
     this.service.fetchLiveRoster();
+    this.service.fetchStats();
   }
 
   markAbsent(student: LiveRosterStudent): void {

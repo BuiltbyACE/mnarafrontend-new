@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -6,6 +6,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthStore } from '@sms/core/auth';
 import { TeacherAssignmentService } from '../services/teacher-assignment.service';
+import { RealtimeService } from '../services/realtime.service';
 
 @Component({
   selector: 'app-teacher-navbar',
@@ -30,15 +31,23 @@ import { TeacherAssignmentService } from '../services/teacher-assignment.service
           <mat-icon>chat</mat-icon>
           <span class="badge badge-green">2</span>
         </button>
+        <div class="ws-indicator" [title]="realtime.isConnected() ? 'Connected' : 'Disconnected'">
+          <span class="ws-dot" [class.online]="realtime.isConnected()"></span>
+        </div>
         <div class="divider"></div>
         <div class="theme-toggle">
           <mat-icon class="theme-icon">light_mode</mat-icon>
-          <span class="toggle-track"></span>
+          <span class="toggle-track" (click)="toggleTheme()"></span>
           <mat-icon class="theme-icon">dark_mode</mat-icon>
         </div>
         <div class="divider"></div>
         <button class="user-block" [matMenuTriggerFor]="userMenu">
-          <div class="avatar">{{ initials() }}</div>
+          @if (authStore.avatarUrl(); as avatarUrl) {
+            <img [src]="avatarUrl" class="avatar-img" alt="" />
+          }
+          @if (!authStore.avatarUrl()) {
+            <div class="avatar">{{ initials() }}</div>
+          }
           <div class="user-info">
             <span class="user-name">{{ fullName() }}</span>
             <span class="user-meta">{{ roleName() }}</span>
@@ -48,7 +57,12 @@ import { TeacherAssignmentService } from '../services/teacher-assignment.service
 
         <mat-menu #userMenu="matMenu" class="teacher-menu" xPosition="before">
           <div class="menu-header">
-            <div class="menu-avatar">{{ initials() }}</div>
+            @if (authStore.avatarUrl(); as avatarUrl) {
+              <img [src]="avatarUrl" class="menu-avatar-img" alt="" />
+            }
+            @if (!authStore.avatarUrl()) {
+              <div class="menu-avatar">{{ initials() }}</div>
+            }
             <div class="menu-details">
               <span class="menu-name">{{ fullName() }}</span>
               <span class="menu-id">{{ identifier() }}</span>
@@ -66,24 +80,19 @@ import { TeacherAssignmentService } from '../services/teacher-assignment.service
         <mat-menu #notifMenu="matMenu" class="teacher-menu" xPosition="before">
           <div style="padding: 12px 16px; font-weight: 600; font-size: 0.875rem;">Notifications</div>
           <mat-divider />
-          <button mat-menu-item>
-            <div style="display:flex;flex-direction:column;gap:2px;padding:4px 0;">
-              <span style="font-size:0.8125rem;font-weight:500;">New assignment submission</span>
-              <span style="font-size:0.6875rem;color:#64748b;">5 min ago</span>
-            </div>
-          </button>
-          <button mat-menu-item>
-            <div style="display:flex;flex-direction:column;gap:2px;padding:4px 0;">
-              <span style="font-size:0.8125rem;font-weight:500;">Meeting reminder: Staff meeting</span>
-              <span style="font-size:0.6875rem;color:#64748b;">1 hour ago</span>
-            </div>
-          </button>
-          <button mat-menu-item>
-            <div style="display:flex;flex-direction:column;gap:2px;padding:4px 0;">
-              <span style="font-size:0.8125rem;font-weight:500;">Low attendance alert: Form 2A</span>
-              <span style="font-size:0.6875rem;color:#64748b;">2 hours ago</span>
-            </div>
-          </button>
+          @for (n of recentNotifications(); track n.id) {
+            <button mat-menu-item>
+              <div style="display:flex;flex-direction:column;gap:2px;padding:4px 0;">
+                <span style="font-size:0.8125rem;font-weight:500;">{{ n.content }}</span>
+                <span style="font-size:0.6875rem;color:#64748b;">{{ n.time }}</span>
+              </div>
+            </button>
+          }
+          @empty {
+            <button mat-menu-item disabled>
+              <span style="font-size:0.8125rem;color:#94a3b8;padding:4px 0;">No new notifications</span>
+            </button>
+          }
         </mat-menu>
       </div>
     </header>
@@ -121,9 +130,13 @@ import { TeacherAssignmentService } from '../services/teacher-assignment.service
     }
     .badge-green { background: #10b981; }
     .divider { width: 1px; height: 28px; background: #e2e8f0; margin: 0 4px; }
-    .theme-toggle { display: flex; align-items: center; gap: 6px; }
+    .ws-indicator { display: flex; align-items: center; padding: 0 4px; }
+    .ws-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; transition: background .3s; }
+    .ws-dot.online { background: #10b981; }
+    .theme-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; }
     .theme-icon { font-size: 18px; width: 18px; height: 18px; color: #94a3b8; }
-    .toggle-track { width: 32px; height: 18px; border-radius: 10px; background: #e2e8f0; position: relative; cursor: pointer; }
+    .toggle-track { width: 32px; height: 18px; border-radius: 10px; background: #e2e8f0; position: relative; cursor: pointer; transition: background .2s; }
+    .toggle-track.dark { background: #475569; }
     .user-block {
       display: flex; align-items: center; gap: 10px;
       padding: 6px 10px; border-radius: 8px; border: none;
@@ -131,6 +144,9 @@ import { TeacherAssignmentService } from '../services/teacher-assignment.service
       transition: background 0.15s ease;
     }
     .user-block:hover { background: #f1f5f9; }
+    .avatar-img {
+      width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+    }
     .avatar {
       width: 36px; height: 36px; border-radius: 50%;
       background: linear-gradient(135deg, #2563eb, #1d4ed8);
@@ -143,6 +159,9 @@ import { TeacherAssignmentService } from '../services/teacher-assignment.service
     .chevron { font-size: 18px; width: 18px; height: 18px; color: #94a3b8; }
     .menu-header {
       display: flex; align-items: center; gap: 12px; padding: 16px;
+    }
+    .menu-avatar-img {
+      width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
     }
     .menu-avatar {
       width: 40px; height: 40px; border-radius: 50%;
@@ -159,13 +178,45 @@ import { TeacherAssignmentService } from '../services/teacher-assignment.service
 })
 export class TeacherNavbarComponent implements OnInit {
   private router = inject(Router);
-  private authStore = inject(AuthStore);
+  readonly authStore = inject(AuthStore);
   private assignmentService = inject(TeacherAssignmentService);
+  readonly realtime = inject(RealtimeService);
   readonly unreadCount = this.assignmentService.unreadCount;
+
+  readonly recentNotifications = signal<{ id: string; content: string; time: string }[]>([]);
 
   ngOnInit(): void {
     this.authStore.restoreFromStorage();
     this.assignmentService.fetchUnreadCount();
+    this.realtime.connect();
+
+    this.realtime.newMessages$.subscribe(msg => {
+      this.recentNotifications.update(list => [
+        { id: msg.id, content: `New message from ${msg.sender_name}`, time: 'Just now' },
+        ...list.slice(0, 4),
+      ]);
+    });
+
+    this.realtime.announcements$.subscribe(msg => {
+      this.recentNotifications.update(list => [
+        { id: msg.id, content: `Announcement: ${msg.title}`, time: 'Just now' },
+        ...list.slice(0, 4),
+      ]);
+    });
+
+    this.realtime.broadcasts$.subscribe(msg => {
+      this.recentNotifications.update(list => [
+        { id: msg.id, content: `Broadcast: ${msg.title}`, time: 'Just now' },
+        ...list.slice(0, 4),
+      ]);
+    });
+  }
+
+  toggleTheme(): void {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('mnara-theme', isDark ? 'light' : 'dark');
   }
 
   readonly fullName = this.authStore.fullName;

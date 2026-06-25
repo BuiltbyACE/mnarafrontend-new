@@ -27,6 +27,16 @@ export interface LiveRosterStudent {
   photo?: string;
 }
 
+export interface AttendanceStats {
+  total_classes: number;
+  total_students: number;
+  present_today: number;
+  absent_today: number;
+  weekly: { present: number; total: number; rate: number };
+  monthly: { present: number; total: number; rate: number };
+  periods: { period_name: string; present: number; total: number; rate: number }[];
+}
+
 export interface LiveRosterPayload {
   has_active_class: boolean;
   class_info: {
@@ -57,6 +67,10 @@ export class TeacherAttendanceService {
   readonly liveRoster = signal<LiveRosterPayload | null>(null);
   readonly rosterLoading = signal(false);
   readonly rosterError = signal<string | null>(null);
+
+  readonly stats = signal<AttendanceStats | null>(null);
+  readonly statsLoading = signal(false);
+  readonly statsError = signal<string | null>(null);
 
   fetchRecords(classId?: string, date?: string): void {
     this.isLoading.set(true);
@@ -103,11 +117,22 @@ export class TeacherAttendanceService {
 
   markAsAbsent(studentId: number): void {
     this.rosterLoading.set(true);
-    this.http.post(getApiUrl(`/lms/attendance/live-roster/${studentId}/mark-absent/`), {})
+    this.http.post(getApiUrl('/teachers/attendance/live-roster/'), { student_id: studentId, status: 'ABSENT' })
       .pipe(finalize(() => this.rosterLoading.set(false)))
       .subscribe({
         next: () => this.fetchLiveRoster(),
         error: () => this.rosterError.set('Failed to update status'),
+      });
+  }
+
+  fetchStats(): void {
+    this.statsLoading.set(true);
+    this.statsError.set(null);
+    this.http.get<AttendanceStats>(getApiUrl('/teachers/attendance/stats/'))
+      .pipe(finalize(() => this.statsLoading.set(false)))
+      .subscribe({
+        next: (data) => this.stats.set(data),
+        error: () => this.statsError.set('Failed to load attendance stats'),
       });
   }
 }

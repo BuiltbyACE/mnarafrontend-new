@@ -7,7 +7,8 @@ import {
   OnInit,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -18,495 +19,572 @@ import {
   TimetableVersion,
   TeacherOption,
   AuditLogEntry,
+  TimetableStats,
 } from '@sms/domain/timetable';
+import { SharedCalendarService } from '@sms/shared/services';
 
-const JUNE_2026 = [
-  [ 1,  2,  3,  4,  5,  6,  7],
-  [ 8,  9, 10, 11, 12, 13, 14],
-  [15, 16, 17, 18, 19, 20, 21],
-  [22, 23, 24, 25, 26, 27, 28],
-  [29, 30],
+type NavTab = 'Overview' | 'Versions' | 'Drafts' | 'Conflicts' | 'Publish Center' | 'Audit Log';
+
+const NAV_TABS: { label: NavTab; icon: string }[] = [
+  { label: 'Overview',      icon: 'grid_view'    },
+  { label: 'Versions',      icon: 'account_tree' },
+  { label: 'Drafts',        icon: 'description'  },
+  { label: 'Conflicts',     icon: 'warning'      },
+  { label: 'Publish Center',icon: 'rocket_launch'},
+  { label: 'Audit Log',     icon: 'history'      },
 ];
 
-const DAY_HEADERS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const ACTION_ICON_MAP: Record<string, string> = {
+  CREATE: 'add_circle', UPDATE: 'edit', DELETE: 'delete',
+  PUBLISH: 'cloud_done', ARCHIVE: 'archive', CLONE: 'content_copy', ROLLBACK: 'history',
+};
+const ACTION_BG_MAP: Record<string, string> = {
+  CREATE: '#ecfdf5', UPDATE: '#eef2ff', DELETE: '#fef2f2',
+  PUBLISH: '#f0fdf4', ARCHIVE: '#fdf4ff', CLONE: '#fffbeb', ROLLBACK: '#eff6ff',
+};
+const ACTION_COLOR_MAP: Record<string, string> = {
+  CREATE: '#059669', UPDATE: '#4f46e5', DELETE: '#dc2626',
+  PUBLISH: '#16a34a', ARCHIVE: '#c026d3', CLONE: '#d97706', ROLLBACK: '#3b82f6',
+};
 
 @Component({
   selector: 'app-timetable-view',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    FormsModule,
-    MatSelectModule,
-    MatIconModule,
-    TimetableGridComponent,
-  ],
+  imports: [FormsModule, RouterLink, DatePipe, MatSelectModule, MatIconModule, TimetableGridComponent],
+  styles: [`
+    :host { display: block; min-height: 100vh; }
+    .nav-tab {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; font-size: 14px; font-weight: 500;
+      color: #64748b; cursor: pointer; white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      border-top: none; border-left: none; border-right: none;
+      background: transparent; transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-tab:hover  { color: #0f172a; }
+    .nav-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+    .avatar-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #e2e8f0; color: #334155;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .stat-card {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+      padding: 16px; display: flex; align-items: center; gap: 14px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .stat-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .stat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .qa-card {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+      padding: 16px; display: flex; flex-direction: column;
+      align-items: center; gap: 6px; text-align: center; cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+      border-top: none; border-left: none; border-right: none;
+      border: 1px solid #e2e8f0;
+    }
+    .qa-card:hover { box-shadow: 0 8px 32px rgba(37,99,235,0.10); transform: translateY(-3px); border-color: #bfdbfe; }
+    .qa-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: #eff6ff; color: #2563eb;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; transition: background 0.2s, color 0.2s;
+    }
+    .qa-card:hover .qa-icon { background: #2563eb; color: #fff; }
+    .tbl-row { border-bottom: 1px solid #f1f5f9; transition: background 0.15s; cursor: pointer; }
+    .tbl-row:last-child { border-bottom: none; }
+    .tbl-row:hover { background: #f8fafc; }
+    .act-row { display: flex; gap: 14px; padding: 10px 12px; border-radius: 12px; transition: background 0.15s; }
+    .act-row:hover { background: #f8fafc; }
+  `],
   template: `
-    <div class="min-h-screen bg-[#f1f4f9] font-['Inter',sans-serif]">
+    <div style="background:#f1f4f9; min-height:100vh; font-family:'Inter',system-ui,sans-serif;">
 
-      <!-- ===== TOP BAR ===== -->
-      <header class="flex items-center justify-between px-8 py-3.5 bg-white border-b border-[#e9eef4]">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 bg-[#1a2a6c] rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm">M</div>
-          <span class="text-sm font-semibold text-[#0b1a2e]">Mnara School</span>
+      <!-- ── OUTER CARD ───────────────────────────────────────── -->
+      <div style="max-width:1440px; margin:24px auto; background:#fff; border-radius:20px; box-shadow:0 1px 6px rgba(0,0,0,0.06); border:1px solid #e2e8f0; padding:32px;">
 
-        </div>
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-sm font-semibold text-[#0b1a2e] cursor-pointer select-none transition-shadow hover:shadow-md">
-            {{ avatarLabel() }}
+        <!-- HEADER -->
+        <header style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:44px; height:44px; background:#2563eb; border-radius:14px; box-shadow:0 4px 12px rgba(37,99,235,0.25); display:flex; align-items:center; justify-content:center; color:#fff;">
+              <mat-icon>calendar_month</mat-icon>
+            </div>
+            <div>
+              <h1 style="font-size:1.5rem; font-weight:800; color:#0f172a; margin:0; letter-spacing:-0.5px;">Timetable Management</h1>
+              <p style="font-size:13px; color:#64748b; margin:2px 0 0;">Create, manage, and publish school timetables with confidence</p>
+            </div>
           </div>
-        </div>
-      </header>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="display:flex; align-items:center; gap:8px; border:1px solid #e2e8f0; border-radius:999px; padding:6px 16px; font-size:13px; font-weight:500; color:#475569; background:#fff;">
+              <mat-icon style="font-size:16px; color:#94a3b8;">calendar_today</mat-icon>
+              {{ activeTermName() }}
+            </span>
+            <div style="width:36px; height:36px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#334155;">{{ avatarLabel() }}</div>
+          </div>
+        </header>
 
-      <!-- ===== PAGE CONTENT ===== -->
-      <div class="max-w-[1360px] mx-auto px-8 py-7 page-fade-in">
+        <!-- NAV TABS -->
+        <nav style="display:flex; border-bottom:2px solid #e2e8f0; margin-bottom:32px; gap:4px; overflow-x:auto;">
+          @for (tab of navTabs; track tab.label) {
+            <button class="nav-tab" [class.active]="activeTab()===tab.label" (click)="activeTab.set(tab.label)">
+              <mat-icon style="font-size:18px;">{{ tab.icon }}</mat-icon> {{ tab.label }}
+            </button>
+          }
+        </nav>
 
-        <!-- ===== PAGE TITLE ===== -->
-        <div class="mb-6">
-          <h1 class="text-2xl font-bold text-[#0b1a2e] tracking-tight">Timetable Management</h1>
-          <p class="text-sm text-[#5e6f8d] mt-1">Create, manage, and publish school timetables with confidence</p>
-        </div>
-
-        <!-- ===== STATS ROW ===== -->
-        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-          @for (stat of stats(); track stat.label) {
-            <div class="bg-white rounded-xl p-4 border border-[#e9eef4] shadow-sm flex items-center gap-3.5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-              <div class="w-10 h-10 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-                   [style.background]="stat.iconBg"
-                   [style.color]="stat.iconColor">
-                <mat-icon>{{ stat.icon }}</mat-icon>
+        <!-- ── STATS CARDS ──────────────────────────────────────── -->
+        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:32px;">
+          @for (s of stats(); track s.label) {
+            <div class="stat-card">
+              <div class="stat-icon" [style.background]="s.iconBg" [style.color]="s.iconColor">
+                <mat-icon>{{ s.icon }}</mat-icon>
               </div>
               <div>
-                <div class="text-lg font-bold text-[#0b1a2e] leading-tight">{{ stat.value }}</div>
-                <div class="text-xs text-[#5e6f8d] mt-0.5">{{ stat.label }}</div>
+                <div style="font-size:1.2rem; font-weight:800; color:#0f172a; line-height:1.1;">{{ s.value }}</div>
+                <div style="font-size:11px; color:#64748b; margin-top:2px;">{{ s.label }}</div>
               </div>
             </div>
           }
         </div>
 
-        <!-- ===== VERSION INFO BAR ===== -->
+        <!-- ── VERSION INFO BAR ───────────────────────────────── -->
         @if (publishedVersion(); as pv) {
-          <div class="flex items-center justify-between bg-white rounded-xl px-6 py-4 border border-[#e9eef4] shadow-sm mb-6">
-            <div class="flex items-center gap-4 flex-wrap">
+          <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; background:linear-gradient(90deg,#f8fafc 0%,#fff 100%); border:1px solid #e2e8f0; border-radius:14px; padding:18px 24px; margin-bottom:32px;">
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:16px;">
               <div>
-                <div class="text-[11px] font-semibold text-[#5e6f8d] uppercase tracking-wider">Current Version</div>
-                <div class="flex items-center gap-2 mt-0.5">
-                  <span class="text-base font-bold text-[#0b1a2e]">{{ pv.name }}</span>
-                  <span class="text-xs font-medium text-[#dc2626] bg-[#fef2f2] px-2.5 py-0.5 rounded-full">REQUIRES ATTENTION</span>
+                <div style="font-size:18px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:10px;">
+                  Version {{ pv.name }}
+                  @if (pv.published_at) { <span style="font-size:13px; font-weight:400; color:#64748b;">Published {{ pv.published_at | date:'d MMM y' }}</span> }
+                </div>
+                <div style="display:flex; align-items:center; gap:16px; margin-top:6px; font-size:13px; color:#64748b; flex-wrap:wrap;">
+                  <span style="display:flex; align-items:center; gap:6px;"><mat-icon style="font-size:16px; color:#94a3b8;">group</mat-icon> All class groups</span>
+                  <span style="width:4px; height:4px; border-radius:50%; background:#cbd5e1;"></span>
+                  <span style="display:flex; align-items:center; gap:6px;"><mat-icon style="font-size:16px; color:#94a3b8;">schedule</mat-icon> Across all timetables</span>
                 </div>
               </div>
-              <span class="text-sm text-[#5e6f8d] hidden sm:inline">Published {{ formatDate(pv.published_at) }}</span>
+              <span style="background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; padding:4px 12px; border-radius:999px; text-transform:uppercase; letter-spacing:0.8px; display:flex; align-items:center; gap:4px;">
+                <mat-icon style="font-size:14px;">warning_amber</mat-icon> Requires attention
+              </span>
             </div>
-            <div class="flex items-center gap-2">
-              <button class="text-sm font-medium text-[#5e6f8d] bg-transparent border border-[#edf2f7] px-4 py-2 rounded-lg hover:bg-[#f8faff] transition-colors flex items-center gap-1.5"
-                      (click)="navigateTo('/admin/timetable/admin')">
-                <mat-icon class="text-sm">edit</mat-icon> Edit
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button style="border:1px solid #e2e8f0; background:#fff; color:#475569; padding:8px 18px; border-radius:999px; font-size:13px; font-weight:500; display:flex; align-items:center; gap:6px; cursor:pointer;" (click)="navigateTo('/admin/timetable/admin')">
+                <mat-icon style="font-size:18px;">edit</mat-icon> Edit
               </button>
-              <button class="text-sm font-medium text-white bg-[#1a2a6c] px-4 py-2 rounded-lg hover:bg-[#14225a] transition-colors flex items-center gap-1.5 shadow-sm"
-                      (click)="publishFirstDraft()">
-                <mat-icon class="text-sm">cloud_upload</mat-icon> Publish Draft
+              <button style="background:#2563eb; color:#fff; padding:8px 18px; border-radius:999px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 2px 8px rgba(37,99,235,0.25); border:none;" (click)="createDraft()">
+                <mat-icon style="font-size:18px;">add</mat-icon> Create New Version
               </button>
             </div>
           </div>
         }
 
-        <!-- ===== MAIN GRID ===== -->
-        <div class="grid grid-cols-[1fr_340px] max-xl:grid-cols-1 gap-6 mb-8">
+        <!-- ── MAIN GRID ──────────────────────────────────────── -->
+        <div style="display:grid; grid-template-columns:1fr 340px; gap:32px; align-items:start;">
 
-          <!-- LEFT: Timetable Table -->
-          <section class="bg-white rounded-xl border border-[#e9eef4] overflow-hidden shadow-sm">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-[#e9eef4] flex-wrap gap-2">
-              <div class="flex items-center gap-2 flex-wrap">
-                <mat-icon class="text-base text-[#1a2a6c]">list</mat-icon>
-                <span class="text-sm font-semibold text-[#0b1a2e]">Timetable</span>
-                <mat-select [(ngModel)]="selectedTermId" placeholder="Term"
-                  class="!w-36 !text-xs" appearance="outline">
-                  @for (v of uniqueTerms(); track v.termId) {
-                    <mat-option [value]="v.termId">{{ v.termName }}</mat-option>
+          <!-- LEFT COLUMN -->
+          <div style="display:flex; flex-direction:column; gap:32px;">
+
+            <!-- VERSION TABLE -->
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #f1f5f9;">
+                <h3 style="font-size:15px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px; margin:0;">
+                  <mat-icon style="color:#2563eb; font-size:20px;">list_alt</mat-icon> Timetable Versions
+                </h3>
+                <div style="display:flex; gap:8px;">
+                  <button style="display:flex; align-items:center; gap:6px; padding:5px 14px; border:1px solid #e2e8f0; border-radius:999px; font-size:12px; font-weight:500; color:#64748b; cursor:pointer; background:#fff;">
+                    <mat-icon style="font-size:16px; color:#94a3b8;">filter_alt</mat-icon> Filter
+                  </button>
+                  <button style="display:flex; align-items:center; gap:6px; padding:5px 14px; border:1px solid #e2e8f0; border-radius:999px; font-size:12px; font-weight:500; color:#64748b; cursor:pointer; background:#fff;">
+                    <mat-icon style="font-size:16px; color:#94a3b8;">download</mat-icon> Export
+                  </button>
+                </div>
+              </div>
+              <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; min-width:700px;">
+                  <thead style="background:#f8fafc;">
+                    <tr>
+                      @for (col of ['Version','Status','Created By','Created On','Published On','Actions']; track col) {
+                        <th style="padding:12px 20px; font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; border-bottom:1px solid #e2e8f0; text-align:left; white-space:nowrap;">{{ col }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (v of state.versions(); track v.id) {
+                      <tr class="tbl-row" (click)="navigateTo('/admin/timetable/versions/'+v.id)">
+                        <td style="padding:14px 20px;">
+                          <div style="font-weight:600; font-size:14px; color:#0f172a;">{{ v.name }}</div>
+                          <div style="font-size:12px; color:#64748b; margin-top:2px;">{{ v.academic_term_name }}</div>
+                        </td>
+                        <td style="padding:14px 20px;">
+                          <span style="font-size:11px; font-weight:700; padding:4px 12px; border-radius:999px; text-transform:uppercase; letter-spacing:0.5px;"
+                                [style.background]="statusBg(v.status)" [style.color]="statusColor(v.status)">{{ v.status }}</span>
+                        </td>
+                        <td style="padding:14px 20px;">
+                          <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="avatar-circle">{{ getInitials(v.created_by_name) }}</div>
+                            <div style="font-size:13px; font-weight:600; color:#0f172a;">{{ v.created_by_name }}</div>
+                          </div>
+                        </td>
+                        <td style="padding:14px 20px; font-size:13px; color:#475569; white-space:nowrap;">{{ v.created_at | date:'MMM d, y, h:mm a' }}</td>
+                        <td style="padding:14px 20px; font-size:13px; color:#475569; white-space:nowrap;">{{ v.published_at ? (v.published_at | date:'MMM d, y, h:mm a') : '—' }}</td>
+                        <td style="padding:14px 20px; text-align:center;">
+                          <button style="color:#94a3b8; background:none; border:none; cursor:pointer; padding:6px; border-radius:8px; display:inline-flex;" (click)="$event.stopPropagation()">
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="6" style="padding:48px 20px; text-align:center; color:#94a3b8; font-size:14px;">
+                          <mat-icon style="font-size:40px; display:block; margin:0 auto 12px;">inbox</mat-icon>
+                          No versions yet. Create your first draft to get started.
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- TIMETABLE GRID (existing) -->
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <mat-icon style="font-size:18px; color:#2563eb;">grid_on</mat-icon>
+                  <span style="font-size:14px; font-weight:600; color:#0f172a;">Timetable Grid</span>
+                  <mat-select [(ngModel)]="selectedTermId" placeholder="Select Term" style="width:160px; font-size:13px;" appearance="outline">
+                    @for (v of uniqueTerms(); track v.termId) {
+                      <mat-option [value]="v.termId">{{ v.termName }}</mat-option>
+                    }
+                  </mat-select>
+                  @if (selectedTermId()) {
+                    <mat-select [(ngModel)]="selectedYearGroupId" placeholder="All Years" style="width:130px; font-size:13px;" appearance="outline">
+                      <mat-option [value]="null">All Years</mat-option>
+                      @for (yg of yearGroups(); track yg.id) { <mat-option [value]="yg.id">{{ yg.name }}</mat-option> }
+                    </mat-select>
+                    <mat-select [(ngModel)]="selectedTeacherId" placeholder="All Teachers" style="width:130px; font-size:13px;" appearance="outline">
+                      <mat-option [value]="null">All Teachers</mat-option>
+                      @for (t of teachers(); track t.id) { <mat-option [value]="t.id">{{ t.name }}</mat-option> }
+                    </mat-select>
                   }
-                </mat-select>
-                @if (selectedTermId()) {
-                  <mat-select [(ngModel)]="selectedYearGroupId" placeholder="Year"
-                    class="!w-32 !text-xs" appearance="outline">
-                    <mat-option [value]="null">All</mat-option>
-                    @for (yg of yearGroups(); track yg.id) {
-                      <mat-option [value]="yg.id">{{ yg.name }}</mat-option>
-                    }
-                  </mat-select>
-                  <mat-select [(ngModel)]="selectedTeacherId" placeholder="Teacher"
-                    class="!w-32 !text-xs" appearance="outline">
-                    <mat-option [value]="null">All</mat-option>
-                    @for (t of teachers(); track t.id) {
-                      <mat-option [value]="t.id">{{ t.name }}</mat-option>
-                    }
-                  </mat-select>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button style="font-size:12px; color:#64748b; border:1px solid #e2e8f0; padding:6px 14px; border-radius:999px; cursor:pointer; background:#fff; display:flex; align-items:center; gap:4px;">
+                    <mat-icon style="font-size:16px;">filter_list</mat-icon> Filter
+                  </button>
+                  <button style="font-size:12px; color:#64748b; border:1px solid #e2e8f0; padding:6px 14px; border-radius:999px; cursor:pointer; background:#fff; display:flex; align-items:center; gap:4px;">
+                    <mat-icon style="font-size:16px;">download</mat-icon> Export
+                  </button>
+                </div>
+              </div>
+              <div style="height:calc(100vh - 700px); min-height:400px; padding:4px;">
+                <app-timetable-grid
+                  [termId]="selectedTermId() ?? undefined"
+                  [yearGroupId]="selectedYearGroupId() ?? undefined"
+                  [teacherId]="selectedTeacherId() ?? undefined" />
+              </div>
+            </div>
+
+            <!-- QUICK ACTIONS -->
+            <div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <h3 style="font-size:15px; font-weight:700; color:#0f172a; margin:0;">Quick Actions</h3>
+                <a routerLink="/admin/timetable/audit" style="font-size:13px; color:#2563eb; font-weight:500; text-decoration:none; display:flex; align-items:center; gap:4px;">
+                  View all actions <mat-icon style="font-size:16px;">arrow_forward</mat-icon>
+                </a>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:14px;">
+                @for (qa of quickActions(); track qa.label) {
+                  <button class="qa-card" (click)="qa.action?.()">
+                    <div class="qa-icon"><mat-icon>{{ qa.icon }}</mat-icon></div>
+                    <span style="font-size:13px; font-weight:600; color:#0f172a; margin-top:4px;">{{ qa.label }}</span>
+                    <span style="font-size:11px; color:#64748b; line-height:1.4;">{{ qa.desc }}</span>
+                  </button>
                 }
               </div>
-              <div class="flex items-center gap-2">
-                <button class="text-xs font-medium text-[#5e6f8d] bg-transparent border border-[#edf2f7] px-3 py-1.5 rounded-lg hover:bg-[#f8faff] transition-colors flex items-center gap-1">
-                  <mat-icon class="text-xs">filter_list</mat-icon> Filter
-                </button>
-                <button class="text-xs font-medium text-[#5e6f8d] bg-transparent border border-[#edf2f7] px-3 py-1.5 rounded-lg hover:bg-[#f8faff] transition-colors flex items-center gap-1">
-                  <mat-icon class="text-xs">download</mat-icon> Export
-                </button>
-              </div>
             </div>
-            <div class="h-[calc(100vh-500px)] min-h-[400px] p-1">
-              <app-timetable-grid
-                [termId]="selectedTermId() ?? undefined"
-                [yearGroupId]="selectedYearGroupId() ?? undefined"
-                [teacherId]="selectedTeacherId() ?? undefined" />
-            </div>
-          </section>
 
-          <!-- RIGHT: Calendar + Activity -->
-          <aside class="flex flex-col gap-6">
+          </div>
 
-            <!-- Calendar Card -->
-            <div class="bg-white rounded-xl border border-[#e9eef4] overflow-hidden shadow-sm">
-              <div class="flex items-center justify-between px-5 py-3.5 border-b border-[#e9eef4]">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="text-sm text-[#1a2a6c]">calendar_month</mat-icon>
-                  <span class="text-sm font-semibold text-[#0b1a2e]">Calendar</span>
+          <!-- RIGHT COLUMN -->
+          <div style="display:flex; flex-direction:column; gap:20px;">
+
+            <!-- MINI CALENDAR (live from backend via SharedCalendarService) -->
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <mat-icon style="font-size:18px; color:#2563eb;">calendar_month</mat-icon>
+                  <span style="font-size:14px; font-weight:600; color:#0f172a;">{{ calSvc.monthLabel() }}</span>
                 </div>
-                <div class="flex items-center gap-1">
-                  <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-[#f1f4f9] text-[#5e6f8d] transition-colors">
-                    <mat-icon class="text-sm">chevron_left</mat-icon>
+                <div style="display:flex; align-items:center; gap:4px;">
+                  <button style="width:28px; height:28px; border:none; border-radius:8px; background:none; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;" (click)="prevMonth()">
+                    <mat-icon style="font-size:18px;">chevron_left</mat-icon>
                   </button>
-                  <span class="text-xs font-medium text-[#0b1a2e] min-w-[72px] text-center">June 2026</span>
-                  <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-[#f1f4f9] text-[#5e6f8d] transition-colors">
-                    <mat-icon class="text-sm">chevron_right</mat-icon>
+                  <button style="border:1px solid #e2e8f0; background:#fff; padding:3px 12px; border-radius:999px; font-size:12px; font-weight:500; color:#475569; cursor:pointer;" (click)="goToday()">Today</button>
+                  <button style="width:28px; height:28px; border:none; border-radius:8px; background:none; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;" (click)="nextMonth()">
+                    <mat-icon style="font-size:18px;">chevron_right</mat-icon>
                   </button>
                 </div>
               </div>
-              <div class="p-4">
-                <div class="grid grid-cols-7 mb-1">
+              <div style="padding:12px;">
+                <!-- Day headers -->
+                <div style="display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:4px;">
                   @for (d of dayHeaders; track d) {
-                    <div class="text-center text-[10px] font-semibold text-[#5e6f8d] uppercase tracking-wider py-1">{{ d }}</div>
+                    <div style="text-align:center; font-size:10px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; padding:4px 0;">{{ d }}</div>
                   }
                 </div>
-                @for (week of calendarWeeks; track week; let rowIdx = $index) {
-                  <div class="grid grid-cols-7">
-                    @for (day of week; track day; let colIdx = $index) {
-                      <div class="text-center text-xs py-1 rounded-md transition-colors"
-                           [class.text-[#5e6f8d]]="!isToday(day)"
-                           [class.text-white]="isToday(day)"
-                           [class.bg-[#1a2a6c]]="isToday(day)"
-                           [class.font-bold]="isToday(day)">
-                        {{ day || '' }}
-                      </div>
-                    }
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- Recent Activity Card -->
-            <div class="bg-white rounded-xl border border-[#e9eef4] overflow-hidden shadow-sm">
-              <div class="px-5 py-3.5 border-b border-[#e9eef4]">
-                <div class="flex items-center gap-2">
-                  <mat-icon class="text-sm text-[#1a2a6c]">history</mat-icon>
-                  <span class="text-sm font-semibold text-[#0b1a2e]">Recent Activity</span>
-                </div>
-              </div>
-              <div class="max-h-[240px] overflow-y-auto p-1">
-                @for (act of recentActivity(); track act.id) {
-                  <div class="flex gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[#f8faff]">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0 mt-0.5"
-                         [style.background]="act.iconBg"
-                         [style.color]="act.iconColor">
-                      <mat-icon class="text-sm">{{ act.icon }}</mat-icon>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="text-sm font-medium text-[#0b1a2e] leading-tight" [innerHTML]="act.title"></div>
-                      <div class="text-xs text-[#5e6f8d] mt-0.5 leading-relaxed" [innerHTML]="act.desc"></div>
-                      <div class="text-[11px] text-[#8a9bb5] mt-1 flex items-center gap-2">
-                        <span class="flex items-center gap-1"><mat-icon class="text-[11px]">schedule</mat-icon> {{ act.time }}</span>
-                        @if (act.user) {
-                          <span class="flex items-center gap-1"><mat-icon class="text-[11px]">person</mat-icon> {{ act.user }}</span>
+                <!-- Calendar grid -->
+                @for (week of calendarGrid(); track $index) {
+                  <div style="display:grid; grid-template-columns:repeat(7,1fr);">
+                    @for (cell of week; track $index) {
+                      <div style="text-align:center; padding:5px 2px; border-radius:8px; font-size:12px; cursor:default;"
+                           [style.background]="cell.today ? '#2563eb' : cell.hasEvent ? '#eff6ff' : 'transparent'"
+                           [style.color]="cell.today ? '#fff' : cell.day ? '#334155' : '#cbd5e1'"
+                           [style.fontWeight]="cell.today ? '700' : '400'">
+                        {{ cell.day || '' }}
+                        @if (cell.hasEvent && !cell.today) {
+                          <div style="width:4px; height:4px; border-radius:50%; background:#2563eb; margin:0 auto;"></div>
                         }
                       </div>
-                    </div>
-                    @if (act.badge) {
-                      <span class="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 mt-0.5"
-                            [style.background]="act.badgeBg"
-                            [style.color]="act.badgeColor">{{ act.badge }}</span>
                     }
                   </div>
+                }
+                <!-- Legend -->
+                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid #f1f5f9;">
+                  @for (leg of calLegend; track leg.label) {
+                    <span style="display:flex; align-items:center; gap:5px; font-size:11px; font-weight:500; color:#475569;">
+                      <span style="width:10px; height:10px; border-radius:3px; display:inline-block;" [style.background]="leg.color"></span>{{ leg.label }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- RECENT ACTIVITY -->
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; max-height:440px;">
+              <div style="padding:14px 18px; border-bottom:1px solid #f1f5f9; flex-shrink:0;">
+                <h3 style="font-size:14px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px; margin:0;">
+                  <mat-icon style="color:#2563eb; font-size:20px;">history</mat-icon> Recent Activity
+                </h3>
+              </div>
+              <div style="flex:1; overflow-y:auto; padding:8px;">
+                @for (act of recentActivity(); track act.id) {
+                  <div class="act-row">
+                    <div style="width:36px; height:36px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; margin-top:2px;"
+                         [style.background]="act.iconBg" [style.color]="act.iconColor">
+                      <mat-icon style="font-size:18px;">{{ act.icon }}</mat-icon>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:13px; font-weight:600; color:#0f172a; line-height:1.3;">
+                        {{ act.entity }} <span [style.color]="act.iconColor">{{ act.action }}</span>
+                      </div>
+                      <div style="font-size:12px; color:#64748b; margin-top:2px;">by {{ act.user }}</div>
+                      <div style="font-size:11px; color:#94a3b8; margin-top:4px; display:flex; align-items:center; gap:4px;">
+                        <mat-icon style="font-size:12px;">schedule</mat-icon>
+                        {{ act.timestamp | date:'MMM d, y, h:mm a' }}
+                      </div>
+                    </div>
+                    <span style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:3px 10px; border-radius:999px; align-self:flex-start; white-space:nowrap;"
+                          [style.background]="act.iconBg" [style.color]="act.iconColor">{{ act.action }}</span>
+                  </div>
                 } @empty {
-                  <div class="flex flex-col items-center justify-center py-10 text-center">
-                    <mat-icon class="text-3xl text-[#8a9bb5] mb-3">history</mat-icon>
-                    <p class="text-sm text-[#5e6f8d]">No recent activity</p>
-                    <p class="text-xs text-[#8a9bb5] mt-1">Changes to timetables will appear here</p>
+                  <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center;">
+                    <mat-icon style="font-size:36px; color:#cbd5e1; display:block; margin-bottom:10px;">history</mat-icon>
+                    <p style="color:#64748b; font-size:14px; margin:0;">No recent activity</p>
+                    <p style="color:#94a3b8; font-size:12px; margin:4px 0 0;">Changes to timetables will appear here</p>
                   </div>
                 }
               </div>
+              <div style="padding:10px 18px; border-top:1px solid #f1f5f9; flex-shrink:0;">
+                <a routerLink="/admin/timetable/audit" style="font-size:12px; color:#2563eb; font-weight:500; text-decoration:none; display:flex; align-items:center; gap:4px;">
+                  View all activity <mat-icon style="font-size:14px;">arrow_forward</mat-icon>
+                </a>
+              </div>
             </div>
-          </aside>
-        </div>
 
-        <!-- ===== QUICK ACTIONS ===== -->
-        <div class="mb-8">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <mat-icon class="text-base text-[#1a2a6c]">bolt</mat-icon>
-              <span class="text-sm font-semibold text-[#0b1a2e]">Quick Actions</span>
-            </div>
-            <button class="text-xs font-medium text-[#1a2a6c] hover:underline flex items-center gap-1 bg-transparent border-none cursor-pointer"
-                    (click)="navigateTo('/admin/timetable/audit')">
-              View all actions <mat-icon class="text-xs">arrow_forward</mat-icon>
-            </button>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            @for (qa of quickActions(); track qa.label) {
-              <button class="bg-white border border-[#e9eef4] rounded-xl p-4 text-center cursor-pointer transition-all duration-200 flex flex-col items-center gap-1.5 shadow-sm hover:shadow-md hover:-translate-y-0.5"
-                      (click)="qa.action?.()">
-                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-base transition-all duration-200"
-                     [style.background]="qa.iconBg"
-                     [style.color]="qa.iconColor"
-                     (mouseenter)="onQaHover($event)"
-                     (mouseleave)="onQaLeave($event)">
-                  <mat-icon>{{ qa.icon }}</mat-icon>
-                </div>
-                <span class="text-sm font-medium text-[#0b1a2e]">{{ qa.label }}</span>
-                <span class="text-[11px] text-[#5e6f8d] leading-tight">{{ qa.desc }}</span>
-              </button>
-            }
           </div>
         </div>
-
 
       </div>
     </div>
   `,
-  styles: [`
-    :host { display: block; min-height: 100vh; }
-  `],
 })
 export class TimetableViewPage implements OnInit {
-  private api = inject(TimetableApiService);
-  private state = inject(TimetableStateService);
-  protected router = inject(Router);
-  private snackbar = inject(MatSnackBar);
+  private api    = inject(TimetableApiService);
+  protected state   = inject(TimetableStateService);
+  protected router  = inject(Router);
+  private snackbar  = inject(MatSnackBar);
+  protected calSvc  = inject(SharedCalendarService);
 
-  protected versions = this.state.versions;
+  protected navTabs = NAV_TABS;
+  protected activeTab = signal<NavTab>('Overview');
+  protected dayHeaders = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  protected calLegend = [
+    { label: 'Term', color: '#2563eb' }, { label: 'Holiday', color: '#ef4444' },
+    { label: 'Exam', color: '#f59e0b' }, { label: 'Meeting', color: '#8b5cf6' },
+  ];
 
-  protected dayHeaders = DAY_HEADERS;
-  protected calendarWeeks = JUNE_2026;
+  protected auditLogEntries   = signal<AuditLogEntry[]>([]);
+  protected backendStats       = signal<TimetableStats | null>(null);
 
-  protected auditLogEntries = signal<AuditLogEntry[]>([]);
-  protected conflictCount = signal<number>(0);
+  protected selectedTermId      = signal<number | null>(null);
+  protected selectedYearGroupId = signal<number | null>(null);
+  protected selectedTeacherId   = signal<number | null>(null);
 
-  protected isToday(day: number | null): boolean {
-    return day === 22;
-  }
+  protected yearGroups = signal<{ id: number; name: string }[]>([]);
+  protected teachers   = signal<TeacherOption[]>([]);
+  protected isCreating = signal(false);
 
-  protected publishedVersion = computed<TimetableVersion | null>(() =>
-    this.state.versions().find((v) => v.status === 'PUBLISHED') ?? null
+  // ── Computed ────────────────────────────────────────────────────────────────
+  protected publishedVersion = computed<TimetableVersion | null>(
+    () => this.state.versions().find(v => v.status === 'PUBLISHED') ?? null
   );
-
+  protected activeTermName = computed(
+    () => this.publishedVersion()?.academic_term_name ?? 'Current Term'
+  );
   protected uniqueTerms = computed(() => {
     const seen = new Set<number>();
     return this.state.versions()
-      .filter((v) => { if (seen.has(v.academic_term)) return false; seen.add(v.academic_term); return true; })
-      .map((v) => ({ termId: v.academic_term, termName: v.academic_term_name }));
+      .filter(v => { if (seen.has(v.academic_term)) return false; seen.add(v.academic_term); return true; })
+      .map(v => ({ termId: v.academic_term, termName: v.academic_term_name }));
   });
-
-  protected selectedTermId = signal<number | null>(null);
-  protected selectedYearGroupId = signal<number | null>(null);
-  protected selectedTeacherId = signal<number | null>(null);
-
-  protected yearGroups = signal<{ id: number; name: string }[]>([]);
-  protected teachers = signal<TeacherOption[]>([]);
-  protected isCreating = signal(false);
-
   protected avatarLabel = computed(() => {
-    const pv = this.publishedVersion();
-    return pv?.created_by_name ? pv.created_by_name.split(' ').map(s => s[0]).join('').toUpperCase().slice(0, 2) : 'AD';
+    const n = this.publishedVersion()?.created_by_name ?? '';
+    return n ? n.split(' ').map((s: string) => s[0]).join('').toUpperCase().slice(0, 2) : 'AD';
   });
-
   protected stats = computed(() => {
+    const s = this.backendStats();
     const pv = this.publishedVersion();
-    const entryCount = pv?.entry_count ?? 0;
-    const classCount = Math.round(entryCount / 25);
-    const conflicts = this.conflictCount();
     return [
-      { icon: 'description', label: 'Active Version', value: pv?.name ?? '\u2014',   iconBg: '#e8edfb', iconColor: '#1a2a6c' },
-      { icon: 'group',       label: 'Total Classes',   value: classCount.toString(), iconBg: '#dbeafe', iconColor: '#2563eb' },
-      { icon: 'book',        label: 'Total Lessons',   value: entryCount.toString(), iconBg: '#d1fae5', iconColor: '#059669' },
-      { icon: 'warning',     label: 'Conflicts',       value: conflicts.toString(),  iconBg: '#fef3c7', iconColor: '#d97706' },
-      { icon: 'warning',     label: 'Capacity Warn',   value: '0',                   iconBg: '#fee2e2', iconColor: '#e11d48' },
-      { icon: 'schedule',    label: 'Availability',    value: '0',                   iconBg: '#ccfbf1', iconColor: '#0d9488' },
+      { icon: 'check_circle', iconBg: '#eef2ff', iconColor: '#4f46e5', value: s?.active_version ?? pv?.name ?? '—', label: 'Active Version' },
+      { icon: 'group',        iconBg: '#ecfdf5', iconColor: '#059669', value: String(s?.total_classes ?? 0),         label: 'Total Classes'  },
+      { icon: 'book',         iconBg: '#f5f3ff', iconColor: '#7c3aed', value: String(s?.total_entries ?? 0),         label: 'Total Lessons'  },
+      { icon: 'bolt',         iconBg: '#fffbeb', iconColor: '#d97706', value: String(s?.conflicts ?? 0),             label: 'Conflicts'      },
+      { icon: 'error',        iconBg: '#fff1f2', iconColor: '#e11d48', value: String(s?.capacity_warnings ?? 0),     label: 'Capacity Warns' },
+      { icon: 'schedule',     iconBg: '#ecfdf3', iconColor: '#0d9488', value: String(s?.availability_issues ?? 0),   label: 'Availability'   },
     ];
   });
-
-  protected recentActivity = computed(() => {
-    const logs = this.auditLogEntries();
-    if (logs.length > 0) {
-      return logs.slice(0, 10).map((log) => ({
-        id: log.id,
-        icon: this._actionIcon(log.action),
-        iconBg: '#e8edfb',
-        iconColor: '#1a2a6c',
-        title: `<strong style="color:#1a2a6c">${log.action}</strong> ${log.entity_type.replace('Timetable', '')}`,
-        desc: log.detail ? JSON.stringify(log.detail).slice(0, 100) : `${log.action.toLowerCase()}d by ${log.user_name}`,
-        time: this._relativeTime(log.timestamp || new Date().toISOString()),
-        user: log.user_name,
-        badge: log.action,
-        badgeBg: '#e8edfb',
-        badgeColor: '#1a2a6c',
-      }));
-    }
-    const pv = this.publishedVersion();
-    if (!pv) return [];
-    return [{
-      id: pv.id, icon: 'check', iconBg: '#dcfce7', iconColor: '#15803d',
-      title: `Version <strong style="color:#1a2a6c">${pv.name}</strong> published`,
-      desc: 'Published by ' + (pv.created_by_name || 'System'),
-      time: 'Today', user: pv.created_by_name, badge: 'Live', badgeBg: '#dcfce7', badgeColor: '#15803d',
-    }];
-  });
-
+  protected recentActivity = computed(() =>
+    this.auditLogEntries().slice(0, 8).map(log => ({
+      id:        log.id,
+      icon:      ACTION_ICON_MAP[log.action]   ?? 'info',
+      iconBg:    ACTION_BG_MAP[log.action]     ?? '#f8fafc',
+      iconColor: ACTION_COLOR_MAP[log.action]  ?? '#475569',
+      entity:    log.entity_type,
+      action:    log.action,
+      user:      log.user_name,
+      timestamp: log.timestamp,
+    }))
+  );
   protected quickActions = computed(() => {
     const pv = this.publishedVersion();
     const creating = this.isCreating();
     return [
-      { label: 'Create New Draft',  desc: 'Start a new timetable draft from scratch',    icon: 'add',          iconBg: '#e8edfb', iconColor: '#1a2a6c', action: () => this.createDraft() },
-      { label: 'Clone Version', desc: 'Clone the published version with all entries',  icon: 'content_copy', iconBg: '#e8edfb', iconColor: '#1a2a6c', action: () => this._cloneVersion(pv) },
-      { label: 'Check Conflicts', desc: 'Run conflict validation for the selected term', icon: 'search',       iconBg: '#e8edfb', iconColor: '#1a2a6c', action: () => this._checkConflicts() },
-      { label: 'Publish Draft', desc: creating ? 'Publishing...' : 'Publish the first available draft',  icon: 'cloud_upload', iconBg: '#e8edfb', iconColor: '#1a2a6c', action: () => this.publishFirstDraft() },
-      { label: 'Compare Versions', desc: 'Compare two versions side by side',      icon: 'call_split',   iconBg: '#e8edfb', iconColor: '#1a2a6c', action: () => this.router.navigate(['/admin/timetable/versions']) },
-      { label: 'View Audit Log',   desc: 'View the complete change history',       icon: 'list',         iconBg: '#e8edfb', iconColor: '#1a2a6c', action: () => this.router.navigate(['/admin/timetable/audit']) },
+      { label: 'Create Draft',     desc: 'Start a new draft',               icon: 'add',           action: () => this.createDraft()      },
+      { label: 'Clone Version',    desc: 'Clone existing version',           icon: 'content_copy',  action: () => this._cloneVersion(pv)  },
+      { label: 'Check Conflicts',  desc: 'Run conflict validation',          icon: 'search',        action: () => this._checkConflicts()  },
+      { label: 'Publish Draft',    desc: creating ? 'Publishing…' : 'Publish first draft', icon: 'cloud_upload', action: () => this.publishFirstDraft() },
+      { label: 'Compare Versions', desc: 'Compare two versions',             icon: 'compare_arrows',action: () => this.router.navigate(['/admin/timetable/versions']) },
+      { label: 'Audit Log',        desc: 'View change history',              icon: 'list_alt',      action: () => this.router.navigate(['/admin/timetable/audit'])    },
     ];
   });
 
+  // Calendar grid from service events
+  protected calendarGrid = computed(() => {
+    const year  = this.calSvc.currentYear();
+    const month = this.calSvc.currentMonth(); // 0-indexed
+    const events = this.calSvc.events();
+    const eventDays = new Set(events.filter(e => !!e.start_date).map(e => new Date(e.start_date!).getDate()));
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const todayNum = (today.getFullYear() === year && today.getMonth() === month) ? today.getDate() : -1;
+
+    const cells: { day: number | null; today: boolean; hasEvent: boolean }[] = [];
+    for (let i = 0; i < firstDay; i++) cells.push({ day: null, today: false, hasEvent: false });
+    for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, today: d === todayNum, hasEvent: eventDays.has(d) });
+    while (cells.length % 7 !== 0) cells.push({ day: null, today: false, hasEvent: false });
+
+    const weeks = [];
+    for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+    return weeks;
+  });
+
   ngOnInit(): void {
+    // Load versions
     if (this.state.versions().length === 0) {
-      this.api.getVersions().subscribe({
-        next: (list) => {
-          this.state.setVersions(list);
-          const published = list.find((v) => v.status === 'PUBLISHED');
-          if (published) {
-            this.selectedTermId.set(published.academic_term);
-            this._loadSecondaryData(published.academic_term);
-          }
-        },
+      this.api.getVersions().subscribe(list => {
+        this.state.setVersions(list);
+        const pub = list.find(v => v.status === 'PUBLISHED');
+        if (pub) { this.selectedTermId.set(pub.academic_term); this._loadSecondaryData(pub.academic_term); }
       });
     } else {
-      const published = this.publishedVersion();
-      if (published) this._loadSecondaryData(published.academic_term);
+      const pub = this.publishedVersion();
+      if (pub) this._loadSecondaryData(pub.academic_term);
     }
-
-    this.api.getTeachers().subscribe({
-      next: (list) => this.teachers.set(list),
-    });
-
-    this.api.getClassrooms().subscribe({
-      next: (list) => this.yearGroups.set(
-        list.map((c) => ({ id: c.id, name: c.year_level_name + ' ' + c.name }))
-      ),
-    });
+    this.api.getTeachers().subscribe(list => this.teachers.set(list));
+    this.api.getClassrooms().subscribe(list => this.yearGroups.set(list.map(c => ({ id: c.id, name: c.year_level_name + ' ' + c.name }))));
+    this.calSvc.fetchCurrentMonth().subscribe();
   }
 
   private _loadSecondaryData(termId: number): void {
-    this.api.getAuditLog({ page: 1 }).subscribe({
-      next: (res) => {
-        this.auditLogEntries.set(res.results || []);
-      },
-    });
-
-    this.api.checkConflicts(termId).subscribe({
-      next: (res) => this.conflictCount.set(res.count ?? 0),
-    });
+    this.api.getStats(termId).subscribe(s => this.backendStats.set(s));
+    this.api.getAuditLog({ page: 1 }).subscribe(res => this.auditLogEntries.set(res.results ?? []));
   }
+
+  protected prevMonth()  { this.calSvc.goToPreviousMonth().subscribe(); }
+  protected nextMonth()  { this.calSvc.goToNextMonth().subscribe(); }
+  protected goToday()    { this.calSvc.goToToday().subscribe(); }
 
   protected createDraft(): void {
     const pv = this.publishedVersion();
     if (!pv) { this.snackbar.open('No published version to base draft on', 'Close', { duration: 3000 }); return; }
     this.isCreating.set(true);
-    this.api.createVersion({
-      name: `Draft — ${pv.academic_term_name} (${new Date().toLocaleDateString()})`,
-      academic_term: pv.academic_term,
-    }).subscribe({
-      next: (v) => {
-        this.state.setVersions([...this.state.versions(), v]);
-        this.snackbar.open(`Draft "${v.name}" created`, 'Close', { duration: 3000 });
-        this.isCreating.set(false);
-      },
+    this.api.createVersion({ name: `Draft — ${pv.academic_term_name} (${new Date().toLocaleDateString()})`, academic_term: pv.academic_term }).subscribe({
+      next: v => { this.state.setVersions([...this.state.versions(), v]); this.snackbar.open(`Draft "${v.name}" created`, 'Close', { duration: 3000 }); this.isCreating.set(false); },
       error: () => { this.snackbar.open('Failed to create draft', 'Close', { duration: 3000 }); this.isCreating.set(false); },
     });
   }
-
   private _cloneVersion(pv: TimetableVersion | null): void {
     if (!pv) { this.snackbar.open('No version to clone', 'Close', { duration: 3000 }); return; }
     this.api.cloneVersion(pv.id, { name: `Clone — ${pv.name}`, copy_entries: true }).subscribe({
-      next: (v) => {
-        this.state.setVersions([...this.state.versions(), v]);
-        this.snackbar.open(`Version "${v.name}" created from clone`, 'Close', { duration: 3000 });
-      },
+      next: v => { this.state.setVersions([...this.state.versions(), v]); this.snackbar.open(`"${v.name}" created`, 'Close', { duration: 3000 }); },
       error: () => this.snackbar.open('Failed to clone version', 'Close', { duration: 3000 }),
     });
   }
-
   private _checkConflicts(): void {
     const termId = this.selectedTermId();
     if (!termId) { this.snackbar.open('Select a term first', 'Close', { duration: 3000 }); return; }
     this.api.checkConflicts(termId).subscribe({
-      next: (res) => {
-        this.conflictCount.set(res.count ?? 0);
-        this.snackbar.open(`${res.count} conflict(s) found`, 'Close', { duration: 3000 });
-      },
+      next: res => this.snackbar.open(`${res.count} conflict(s) found`, 'Close', { duration: 3000 }),
       error: () => this.snackbar.open('Failed to check conflicts', 'Close', { duration: 3000 }),
     });
   }
-
   protected publishFirstDraft(): void {
-    const drafts = this.state.versions().filter((v) => v.status === 'DRAFT');
-    if (drafts.length === 0) { this.snackbar.open('No draft versions to publish', 'Close', { duration: 3000 }); return; }
+    const drafts = this.state.versions().filter(v => v.status === 'DRAFT');
+    if (!drafts.length) { this.snackbar.open('No draft versions to publish', 'Close', { duration: 3000 }); return; }
     this.isCreating.set(true);
     this.api.publishVersion(drafts[0].id).subscribe({
-      next: (v) => {
-        this.state.updateVersion(v);
-        this.snackbar.open(`"${v.name}" published`, 'Close', { duration: 3000 });
-        this.isCreating.set(false);
-      },
+      next: v => { this.state.updateVersion(v); this.snackbar.open(`"${v.name}" published`, 'Close', { duration: 3000 }); this.isCreating.set(false); },
       error: () => { this.snackbar.open('Failed to publish draft', 'Close', { duration: 3000 }); this.isCreating.set(false); },
     });
   }
-
-  protected navigateTo(path: string): void {
-    this.router.navigate([path]);
+  protected navigateTo(path: string): void { this.router.navigate([path]); }
+  protected getInitials(name: string): string {
+    if (!name) return 'U';
+    const p = name.trim().split(' ');
+    return p.length > 1 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
   }
-
-  protected formatDate(d: string | null | undefined): string {
-    if (!d) return '';
-    return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  protected statusBg(s: string): string {
+    return s==='PUBLISHED'?'#dcfce7':s==='DRAFT'?'#dbeafe':s==='ARCHIVED'?'#f1f5f9':'#fef3c7';
   }
-
-  protected onQaHover(ev: MouseEvent): void {
-    const el = ev.currentTarget as HTMLElement;
-    el.style.background = '#1a2a6c';
-    el.style.color = '#fff';
-  }
-
-  protected onQaLeave(ev: MouseEvent): void {
-    const el = ev.currentTarget as HTMLElement;
-    el.style.background = '';
-    el.style.color = '';
-  }
-
-  private _actionIcon(action: string): string {
-    const map: Record<string, string> = { CREATE: 'add_circle', UPDATE: 'edit', DELETE: 'delete', PUBLISH: 'check', ARCHIVE: 'archive', ROLLBACK: 'undo', CLONE: 'content_copy' };
-    return map[action] || 'history';
-  }
-
-  private _relativeTime(ts: string): string {
-    const diff = Date.now() - new Date(ts).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
+  protected statusColor(s: string): string {
+    return s==='PUBLISHED'?'#15803d':s==='DRAFT'?'#1d4ed8':s==='ARCHIVED'?'#64748b':'#92400e';
   }
 }

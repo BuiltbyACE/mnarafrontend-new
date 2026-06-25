@@ -82,6 +82,12 @@ export const remoteRoutes: Route[] = [
         loadComponent: () =>
           import('./features/calendar/calendar.component').then(m => m.CalendarComponent),
       },
+      // Profile / Settings
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/profile/profile.component').then(m => m.ProfileComponent),
+      },
     ],
   },
 ];

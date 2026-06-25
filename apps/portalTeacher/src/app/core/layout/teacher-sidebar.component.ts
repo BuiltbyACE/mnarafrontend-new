@@ -1,5 +1,6 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Location } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 
 interface NavItem {
@@ -42,7 +43,7 @@ interface NavGroup {
                   <div class="nav-children">
                     @for (child of item.children; track child.label) {
                       <a class="child-item"
-                         [routerLink]="child.route"
+                         [routerLink]="link(child.route)"
                          routerLinkActive="child-active"
                          [routerLinkActiveOptions]="{ exact: false }">
                         <span class="child-dot"></span>
@@ -54,9 +55,9 @@ interface NavGroup {
               </div>
             } @else {
               <a class="nav-item"
-                 [routerLink]="item.route"
+                 [routerLink]="link(item.route)"
                  routerLinkActive="active"
-                 [routerLinkActiveOptions]="{ exact: item.route === '/teacher/dashboard' }">
+                 [routerLinkActiveOptions]="{ exact: item.route === 'dashboard' }">
                 <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
                 <span class="nav-label">{{ item.label }}</span>
               </a>
@@ -126,48 +127,62 @@ interface NavGroup {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TeacherSidebarComponent {
+  private location = inject(Location);
+
   readonly expandedItem = signal<string | null>(null);
+
+  readonly teacherBase = computed(() => {
+    const path = this.location.path();
+    if (path.startsWith('/teacher')) return '/teacher';
+    return '/portalTeacher';
+  });
+
+  link(route?: string): string {
+    if (!route) return this.teacherBase();
+    return `${this.teacherBase()}/${route}`;
+  }
 
   readonly navGroups: NavGroup[] = [
     {
       label: 'Overview',
-      items: [{ label: 'Dashboard', icon: 'dashboard', route: '/teacher/dashboard' }],
+      items: [{ label: 'Dashboard', icon: 'dashboard', route: 'dashboard' }],
     },
     {
       label: 'Academics',
       items: [
-        { label: 'My Classes', icon: 'school', route: '/teacher/classes' },
-        { label: 'Grading Pipeline', icon: 'view_kanban', route: '/teacher/grading' },
-        { label: 'Timetable', icon: 'calendar_month', route: '/teacher/timetable' },
+        { label: 'My Classes', icon: 'school', route: 'classes' },
+        { label: 'Exam Results', icon: 'assessment', route: 'exams' },
+        { label: 'Grading Pipeline', icon: 'view_kanban', route: 'grading' },
+        { label: 'Timetable', icon: 'calendar_month', route: 'timetable' },
       ],
     },
     {
       label: 'Students',
       items: [
-        { label: 'Student Directory', icon: 'people', route: '/teacher/students' },
-        { label: 'Live Attendance', icon: 'fact_check', route: '/teacher/attendance' },
-        { label: 'Behaviour & Discipline', icon: 'gavel', route: '/teacher/behaviour' },
+        { label: 'Student Directory', icon: 'people', route: 'students' },
+        { label: 'Live Attendance', icon: 'fact_check', route: 'attendance' },
+        { label: 'Behaviour & Discipline', icon: 'gavel', route: 'behaviour' },
       ],
     },
     {
       label: 'Communication',
       items: [
-        { label: 'Messages', icon: 'chat', route: '/teacher/messages' },
-        { label: 'Announcements', icon: 'campaign', route: '/teacher/announcements' },
+        { label: 'Messages', icon: 'chat', route: 'messages' },
+        { label: 'Announcements', icon: 'campaign', route: 'announcements' },
       ],
     },
     {
       label: 'Administration',
       items: [
-        { label: 'HR & Leave', icon: 'badge', route: '/teacher/hr' },
-        { label: 'Payslips', icon: 'payments', route: '/teacher/payslips' },
-        { label: 'Calendar', icon: 'event', route: '/teacher/calendar' },
+        { label: 'HR & Leave', icon: 'badge', route: 'hr' },
+        { label: 'Payslips', icon: 'payments', route: 'payslips' },
+        { label: 'Calendar', icon: 'event', route: 'calendar' },
       ],
     },
     {
       label: 'Utilities',
       items: [
-        { label: 'Settings', icon: 'settings', route: '/teacher/settings' },
+        { label: 'Settings', icon: 'settings', route: 'settings' },
       ],
     },
   ];
@@ -177,6 +192,11 @@ export class TeacherSidebarComponent {
   }
 
   isParentActive(item: NavItem): boolean {
-    return false;
+    if (!item.children) return false;
+    const base = this.teacherBase();
+    return item.children.some(c => {
+      const full = c.route ? `${base}/${c.route}` : base;
+      return this.location.path().startsWith(full);
+    });
   }
 }

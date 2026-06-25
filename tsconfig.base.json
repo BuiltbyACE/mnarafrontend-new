@@ -34,6 +34,7 @@
         "apps/portalFinance/src/app/remote-entry/entry.routes.ts"
       ],
       "@sms/core/auth": ["libs/core/auth/src/index.ts"],
+      "@sms/core/avatar": ["libs/core/avatar/src/index.ts"],
       "@sms/core/http": ["libs/core/http/src/index.ts"],
       "@sms/core/state": ["libs/core/state/src/index.ts"],
       "@sms/core/config": ["libs/core/config/src/index.ts"],

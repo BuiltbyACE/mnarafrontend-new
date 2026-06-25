@@ -7,7 +7,7 @@ import { AuthStore } from '@sms/core/auth';
 import { AvatarUploadService } from '@sms/core/avatar';
 
 @Component({
-  selector: 'app-global-settings',
+  selector: 'app-finance-settings',
   standalone: true,
   imports: [
     NgClass,
@@ -17,17 +17,16 @@ import { AvatarUploadService } from '@sms/core/avatar';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page-container">
-      <div class="page-header">
-        <h1 class="page-title">Settings</h1>
-        <p class="page-subtitle">Manage your profile and school-wide parameters.</p>
-      </div>
+    <div class="settings-container">
+      <header class="page-header">
+        <h1>Settings</h1>
+        <p class="subtitle">Manage your profile and preferences</p>
+      </header>
 
-      <!-- Personal Profile Section -->
       <section class="settings-section">
         <h2 class="section-title">
           <mat-icon>person</mat-icon>
-          My Profile
+          Profile Settings
         </h2>
         <mat-card class="settings-card" appearance="outlined">
           <mat-card-content>
@@ -76,26 +75,12 @@ import { AvatarUploadService } from '@sms/core/avatar';
                   <span class="field-value">{{ role() }}</span>
                 </div>
                 <div class="field">
-                  <span class="field-label">ID</span>
+                  <span class="field-label">Employee ID</span>
                   <span class="field-value">{{ identifier() }}</span>
                 </div>
               </div>
             </div>
           </mat-card-content>
-        </mat-card>
-      </section>
-
-      <!-- System Configuration Section -->
-      <section class="settings-section">
-        <h2 class="section-title">
-          <mat-icon>settings</mat-icon>
-          Global System Configuration
-        </h2>
-        <mat-card class="placeholder-card" appearance="outlined">
-          <div class="placeholder-content">
-            <mat-icon class="placeholder-icon">settings</mat-icon>
-            <p class="placeholder-text">The System Configuration Matrix is currently under construction.</p>
-          </div>
         </mat-card>
       </section>
     </div>
@@ -104,9 +89,7 @@ import { AvatarUploadService } from '@sms/core/avatar';
     :host {
       --mnara-primary: #2563eb;
       --mnara-primary-dark: #1d4ed8;
-      --mnara-primary-light: #dbeafe;
       --mnara-surface: #ffffff;
-      --mnara-surface-hover: #f1f5f9;
       --mnara-background: #f0f4ff;
       --mnara-text: #1e293b;
       --mnara-text-secondary: #64748b;
@@ -117,10 +100,10 @@ import { AvatarUploadService } from '@sms/core/avatar';
       font-family: 'Inter', system-ui, sans-serif;
       color: var(--mnara-text);
     }
-    .page-container { max-width: 960px; margin: 0 auto; padding: 32px; }
+    .settings-container { max-width: 720px; margin: 0 auto; padding: 24px; }
     .page-header { margin-bottom: 32px; }
-    .page-title { font-size: 1.375rem; font-weight: 700; color: var(--mnara-text); letter-spacing: -0.02em; margin: 0 0 4px; }
-    .page-subtitle { font-size: 0.8125rem; color: var(--mnara-text-secondary); margin: 0; }
+    .page-header h1 { font-size: 28px; font-weight: 600; margin: 0 0 4px; }
+    .subtitle { color: var(--mnara-text-secondary); font-size: 14px; margin: 0; }
     .settings-section { margin-bottom: 32px; }
     .section-title {
       display: flex; align-items: center; gap: 8px;
@@ -128,7 +111,6 @@ import { AvatarUploadService } from '@sms/core/avatar';
     }
     .section-title mat-icon { color: var(--mnara-primary); font-size: 22px; width: 22px; height: 22px; }
     .settings-card { background: var(--mnara-surface); }
-
     .profile-header-row {
       display: flex; align-items: center; gap: 16px;
       padding-bottom: 20px; border-bottom: 1px solid var(--mnara-border); margin-bottom: 16px;
@@ -163,23 +145,14 @@ import { AvatarUploadService } from '@sms/core/avatar';
     .upload-status.uploading { color: var(--mnara-primary); }
     .upload-status.error { color: #ef4444; }
     .upload-status.success { color: #10b981; }
-
     .profile-fields { display: flex; flex-direction: column; gap: 16px; }
     .field-row { display: flex; gap: 24px; }
     .field { flex: 1; display: flex; flex-direction: column; gap: 2px; }
     .field-label { font-size: 12px; color: var(--mnara-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
     .field-value { font-size: 16px; font-weight: 500; color: var(--mnara-text); }
-
-    .placeholder-card { background: var(--mnara-surface); border-radius: 8px; border: 1px solid var(--mnara-border); }
-    .placeholder-content {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 80px 24px; gap: 16px;
-    }
-    .placeholder-icon { font-size: 56px; width: 56px; height: 56px; color: #94a3b8; }
-    .placeholder-text { font-size: 1rem; font-weight: 500; color: var(--mnara-text-secondary); text-align: center; margin: 0; }
   `],
 })
-export class GlobalSettingsComponent {
+export class SettingsComponent {
   readonly authStore = inject(AuthStore);
   readonly avatarUpload = inject(AvatarUploadService);
 
