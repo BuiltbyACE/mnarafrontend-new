@@ -1,8 +1,8 @@
 {
-  "portalAdmin": "http://localhost:4201/mf-manifest.json",
-  "portalTeacher": "http://localhost:4202/mf-manifest.json",
-  "portalStudent": "http://localhost:4203/mf-manifest.json",
-  "portalParent": "http://localhost:4204/mf-manifest.json",
-  "portalTransport": "http://localhost:4205/mf-manifest.json",
-  "portalFinance": "http://localhost:4206/mf-manifest.json"
+  "portalAdmin": "https://mnara-portal-admin.vercel.app/mf-manifest.json",
+  "portalTeacher": "https://mnara-portal-teacher.vercel.app/mf-manifest.json",
+  "portalStudent": "https://mnara-portal-student.vercel.app/mf-manifest.json",
+  "portalParent": "https://mnara-portal-parent.vercel.app/mf-manifest.json",
+  "portalTransport": "https://mnara-portal-transport.vercel.app/mf-manifest.json",
+  "portalFinance": "https://mnara-portal-finance.vercel.app/mf-manifest.json"
 }
