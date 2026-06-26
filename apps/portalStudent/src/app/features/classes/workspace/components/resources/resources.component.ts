@@ -1,12 +1,15 @@
 import { Component, ChangeDetectionStrategy, inject, computed, signal, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DatePipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ResourcesService, ResourceDTO } from '../../services/resources.service';
+import { ResourceViewerComponent } from '@sms/shared/ui';
 
-type FilterKey = 'ALL' | 'video' | 'textbook' | 'coursebook' | 'past-paper';
+type FilterKey = 'ALL' | 'favorites' | 'document' | 'video' | 'link' | 'slides' | 'textbook' | 'coursebook' | 'past-paper';
 
 interface FilterTab {
   key: FilterKey;
@@ -18,7 +21,7 @@ interface FilterTab {
   selector: 'app-resources',
   imports: [
     MatCardModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule,
-    DatePipe, NgClass,
+    DatePipe, NgClass, MatDialogModule,
   ],
   template: `
     <div class="resources-page">
@@ -48,12 +51,27 @@ interface FilterTab {
             <mat-card class="resource-card" appearance="outlined">
               <mat-card-content>
                 <div class="card-top">
-                  <span class="type-badge" [ngClass]="'type-' + r.resource_type">
+                  <span class="type-badge" [ngClass]="'type-' + r.resource_type.toLowerCase().replace('_', '-')">
                     <mat-icon>
-                      {{ r.resource_type === 'video' ? 'play_circle' : r.resource_type === 'textbook' ? 'menu_book' : r.resource_type === 'coursebook' ? 'auto_stories' : 'description' }}
+                      {{ r.resource_type === 'VIDEO' ? 'play_circle' : 
+                         r.resource_type === 'TEXTBOOK' ? 'menu_book' : 
+                         r.resource_type === 'COURSEBOOK' ? 'auto_stories' : 
+                         r.resource_type === 'DOCUMENT' ? 'article' : 
+                         r.resource_type === 'LINK' ? 'link' : 
+                         r.resource_type === 'SLIDES' ? 'slideshow' : 'description' }}
                     </mat-icon>
-                    {{ r.resource_type === 'video' ? 'Video' : r.resource_type === 'textbook' ? 'Textbook' : r.resource_type === 'coursebook' ? 'Coursebook' : 'Past Paper' }}
+                    {{ r.resource_type === 'VIDEO' ? 'Video' : 
+                       r.resource_type === 'TEXTBOOK' ? 'Textbook' : 
+                       r.resource_type === 'COURSEBOOK' ? 'Coursebook' : 
+                       r.resource_type === 'DOCUMENT' ? 'Document' : 
+                       r.resource_type === 'LINK' ? 'Link' : 
+                       r.resource_type === 'SLIDES' ? 'Slides' : 'Past Paper' }}
                   </span>
+                  <div class="favorite-action">
+                    <button mat-icon-button (click)="toggleFavorite(r)" [style.color]="r.is_favorite ? '#ef4444' : '#cbd5e1'">
+                      <mat-icon>{{ r.is_favorite ? 'favorite' : 'favorite_border' }}</mat-icon>
+                    </button>
+                  </div>
                 </div>
                 <h3 class="card-title">{{ r.title }}</h3>
                 <div class="card-subject">
@@ -67,12 +85,18 @@ interface FilterTab {
                   <div class="footer-meta">
                     <span class="meta-date">{{ r.created_at | date:'mediumDate' }}</span>
                     <span class="meta-sep">&middot;</span>
-                    <span class="meta-size">{{ r.file_size_mb }} MB</span>
+                    <span class="meta-size">{{ r.file_size_mb || '0' }} MB</span>
                   </div>
-                  <button mat-raised-button color="primary" class="action-btn">
-                    <mat-icon>{{ r.resource_type === 'video' ? 'play_arrow' : 'download' }}</mat-icon>
-                    {{ r.resource_type === 'video' ? 'Watch' : 'Download' }}
-                  </button>
+                  <div class="action-buttons">
+                    <button mat-button color="primary" class="action-btn" (click)="openResource(r)">
+                      <mat-icon>{{ r.resource_type === 'VIDEO' ? 'play_arrow' : 'visibility' }}</mat-icon>
+                      {{ r.resource_type === 'VIDEO' ? 'Watch' : 'Read' }}
+                    </button>
+                    <a mat-raised-button color="primary" class="action-btn" [href]="r.file_attachment || r.external_url" download>
+                      <mat-icon>download</mat-icon>
+                      Download
+                    </a>
+                  </div>
                 </div>
               </mat-card-actions>
             </mat-card>
@@ -120,6 +144,7 @@ interface FilterTab {
     }
 
     .resource-card {
+      position: relative;
       border: 1px solid #e2e8f0 !important;
       border-radius: 14px !important;
       overflow: hidden;
@@ -132,7 +157,9 @@ interface FilterTab {
     .resource-card mat-card-content { padding: 20px 20px 0 !important; }
     .resource-card mat-card-actions { padding: 12px 20px !important; }
 
-    .card-top { margin-bottom: 14px; }
+    .card-top { margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-start; }
+
+    .favorite-action { margin-top: -8px; margin-right: -8px; }
 
     .type-badge {
       display: inline-flex; align-items: center; gap: 4px;
@@ -145,6 +172,9 @@ interface FilterTab {
     .type-badge.type-textbook { color: #2563eb; background: #eff6ff; }
     .type-badge.type-coursebook { color: #059669; background: #ecfdf5; }
     .type-badge.type-past-paper { color: #d97706; background: #fffbeb; }
+    .type-badge.type-document { color: #475569; background: #f1f5f9; }
+    .type-badge.type-link { color: #0284c7; background: #e0f2fe; }
+    .type-badge.type-slides { color: #ea580c; background: #ffedd5; }
 
     .card-title {
       margin: 0 0 8px; font-size: 1.05rem; font-weight: 700; color: #0f172a;
@@ -173,8 +203,12 @@ interface FilterTab {
     }
     .meta-sep { color: #cbd5e1; margin: 0 2px; }
 
+    .action-buttons {
+      display: flex; gap: 8px;
+    }
+
     .action-btn {
-      min-width: unset !important; padding: 4px 16px !important;
+      min-width: unset !important; padding: 4px 12px !important;
       font-size: 0.8rem !important;
     }
     .action-btn mat-icon { font-size: 16px; width: 16px; height: 16px; margin-right: 4px; }
@@ -194,19 +228,57 @@ export class ResourcesComponent implements OnInit {
 
   readonly filterTabs: FilterTab[] = [
     { key: 'ALL', label: 'All', icon: 'library_books' },
+    { key: 'favorites', label: 'Favorites', icon: 'favorite' },
+    { key: 'document', label: 'Documents', icon: 'article' },
     { key: 'video', label: 'Videos', icon: 'play_circle' },
+    { key: 'link', label: 'Links', icon: 'link' },
+    { key: 'slides', label: 'Slides', icon: 'slideshow' },
     { key: 'textbook', label: 'Textbooks', icon: 'menu_book' },
     { key: 'coursebook', label: 'Coursebooks', icon: 'auto_stories' },
-    { key: 'past-paper', label: 'Past Papers', icon: 'description' },
+    { key: 'past-paper', label: 'Past Papers', icon: 'history_edu' },
   ];
 
   readonly filteredResources = computed(() => {
     const all = this.service.resources();
     const f = this.activeFilter();
-    return f === 'ALL' ? all : all.filter(r => r.resource_type === f);
+    if (f === 'ALL') return all;
+    if (f === 'favorites') return all.filter(r => r.is_favorite);
+    return all.filter(r => r.resource_type.toLowerCase().replace('_', '-') === f);
   });
 
+  toggleFavorite(r: ResourceDTO): void {
+    this.service.toggleFavorite(r.id).subscribe({
+      next: (res) => {
+        this.service.resources.update(list =>
+          list.map(item =>
+            item.id === r.id ? { ...item, is_favorite: res.is_favorite } : item
+          )
+        );
+      }
+    });
+  }
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly dialog = inject(MatDialog);
+
   ngOnInit(): void {
-    this.service.fetchResources();
+    const wId = this.route.parent?.snapshot.paramMap.get('workspaceId');
+    const workspaceId = wId ? parseInt(wId, 10) : undefined;
+    this.service.fetchResources(workspaceId);
+  }
+
+  openResource(r: ResourceDTO): void {
+    const url = r.file_attachment || r.external_url;
+    this.dialog.open(ResourceViewerComponent, {
+      width: '90vw',
+      maxWidth: '1200px',
+      height: '90vh',
+      data: {
+        title: r.title,
+        type: r.resource_type,
+        url: url
+      },
+      panelClass: 'resource-viewer-dialog'
+    });
   }
 }

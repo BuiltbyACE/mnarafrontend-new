@@ -45,11 +45,7 @@ export const remoteRoutes: Route[] = [
         loadChildren: () =>
           import('../features/announcements/announcements.routes').then((m) => m.announcementsRoutes),
       },
-      {
-        path: 'elearning',
-        loadChildren: () =>
-          import('../features/elearning/elearning.routes').then((m) => m.elearningRoutes),
-      },
+
       {
         path: 'clubs',
         loadChildren: () =>

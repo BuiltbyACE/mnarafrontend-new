@@ -10,6 +10,8 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ResourceViewerComponent } from '@sms/shared/ui';
 import {
   WorkspacesService,
   CourseWorkspace,
@@ -19,7 +21,7 @@ import {
   GradebookData,
 } from '../services/workspaces.service';
 
-type TabId = 'assignments' | 'resources' | 'gradebook' | 'attendance' | 'roster';
+type TabId = 'assignments' | 'cats' | 'resources' | 'gradebook' | 'attendance' | 'roster';
 type FilterType = 'ALL' | 'QUIZ' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'PHYSICAL';
 
 @Component({
@@ -50,13 +52,27 @@ export class WorkspaceDetailComponent implements OnInit {
   readonly activeFilter = signal<FilterType>('ALL');
   readonly displayedColumns = ['title', 'type', 'dueDate', 'submissions', 'status', 'actions'];
 
+  readonly filterTabs = [
+    { key: 'All', label: 'All', icon: 'library_books' },
+    { key: 'Favorites', label: 'Favorites', icon: 'favorite' },
+    { key: 'DOCUMENT', label: 'Documents', icon: 'article' },
+    { key: 'VIDEO', label: 'Videos', icon: 'play_circle' },
+    { key: 'LINK', label: 'Links', icon: 'link' },
+    { key: 'SLIDES', label: 'Slides', icon: 'slideshow' },
+    { key: 'TEXTBOOK', label: 'Textbooks', icon: 'menu_book' },
+    { key: 'COURSEBOOK', label: 'Coursebooks', icon: 'auto_stories' },
+    { key: 'PAST_PAPER', label: 'Past Papers', icon: 'history_edu' },
+  ];
+
   readonly resourceSearchQuery = signal<string>('');
   readonly resourceTypeFilter = signal<string>('All');
 
   readonly filteredWorkspaceResources = computed(() => {
     let items = this.resources();
     const type = this.resourceTypeFilter();
-    if (type !== 'All') {
+    if (type === 'Favorites') {
+      items = items.filter(r => r.is_favorite);
+    } else if (type !== 'All') {
       items = items.filter(r => r.type === type);
     }
     const query = this.resourceSearchQuery().toLowerCase().trim();
@@ -70,7 +86,14 @@ export class WorkspaceDetailComponent implements OnInit {
 
   readonly filteredAssignments = computed(() => {
     const filter = this.activeFilter();
-    const all = this.assignments();
+    const all = this.assignments().filter(a => !a.assignment_category || a.assignment_category === 'GENERAL');
+    if (filter === 'ALL') return all;
+    return all.filter(a => a.submission_type === filter);
+  });
+
+  readonly filteredCats = computed(() => {
+    const filter = this.activeFilter();
+    const all = this.assignments().filter(a => a.assignment_category && a.assignment_category !== 'GENERAL');
     if (filter === 'ALL') return all;
     return all.filter(a => a.submission_type === filter);
   });
@@ -246,6 +269,18 @@ export class WorkspaceDetailComponent implements OnInit {
     });
   }
 
+  toggleResourceFavorite(r: Resource): void {
+    this.workspacesService.toggleResourceFavorite(r.id).subscribe({
+      next: (res) => {
+        this.resources.update(list =>
+          list.map(item =>
+            item.id === r.id ? { ...item, is_favorite: res.is_favorite } : item
+          )
+        );
+      },
+    });
+  }
+
   uploadResource() {
     const ws = this.workspace();
     if (ws) {
@@ -253,5 +288,21 @@ export class WorkspaceDetailComponent implements OnInit {
         queryParams: { courseId: ws.id }
       });
     }
+  }
+
+  private readonly dialog = inject(MatDialog);
+
+  openResource(r: Resource): void {
+    this.dialog.open(ResourceViewerComponent, {
+      width: '90vw',
+      maxWidth: '1200px',
+      height: '90vh',
+      data: {
+        title: r.title,
+        type: r.type,
+        url: r.url
+      },
+      panelClass: 'resource-viewer-dialog'
+    });
   }
 }

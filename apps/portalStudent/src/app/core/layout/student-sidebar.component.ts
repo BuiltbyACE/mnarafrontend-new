@@ -26,7 +26,6 @@ export class StudentSidebarComponent implements OnInit {
     { label: 'Timetable', icon: 'calendar_month', route: '/student/timetable' },
     { label: 'Attendance', icon: 'fact_check', route: '/student/attendance' },
     { label: 'Announcements', icon: 'campaign', route: '/student/announcements' },
-    { label: 'E-learning', icon: 'computer', route: '/student/elearning' },
     { label: 'School Calendar', icon: 'event', route: '/student/calendar' },
     { label: 'Clubs and activities', icon: 'groups', route: '/student/clubs' },
     { label: 'My profile', icon: 'person', route: '/student/profile' },

@@ -28,9 +28,8 @@ export class ClassesComponent implements OnInit {
   }
 
   enterWorkspace(workspaceId: number): void {
-    this.router.navigate(['../elearning'], {
+    this.router.navigate([workspaceId, 'dashboard'], {
       relativeTo: this.route,
-      queryParams: { workspaceId },
     });
   }
 }

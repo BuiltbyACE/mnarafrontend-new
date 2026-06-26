@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -331,8 +332,11 @@ import { ElearningService } from '../../services/elearning.service';
 })
 export class ElearningDashboardComponent implements OnInit {
   readonly elearningService = inject(ElearningService);
+  private readonly route = inject(ActivatedRoute);
 
   ngOnInit(): void {
-    this.elearningService.loadDashboard();
+    const wId = this.route.parent?.snapshot.paramMap.get('workspaceId');
+    const workspaceId = wId ? parseInt(wId, 10) : undefined;
+    this.elearningService.loadDashboard(workspaceId);
   }
 }

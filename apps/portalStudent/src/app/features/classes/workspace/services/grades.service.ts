@@ -37,9 +37,13 @@ export class GradesService {
   readonly performanceData = signal<PerformancePayload | null>(null);
   readonly isLoading = signal(true);
 
-  fetchPerformance(): void {
+  fetchPerformance(workspaceId?: number): void {
     this.isLoading.set(true);
-    this.http.get<PerformancePayload>(getApiUrl('/lms/grades/performance/'))
+    let url = '/lms/grades/performance/';
+    if (workspaceId) {
+      url += `?workspace_id=${workspaceId}`;
+    }
+    this.http.get<PerformancePayload>(getApiUrl(url))
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (data) => this.performanceData.set(data),

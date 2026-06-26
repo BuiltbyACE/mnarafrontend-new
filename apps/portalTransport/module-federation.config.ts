@@ -5,6 +5,12 @@ const config: ModuleFederationConfig = {
   exposes: {
     './Routes': 'apps/portalTransport/src/app/remote-entry/entry.routes.ts',
   },
+  shared: (libraryName, defaultConfig) => {
+    if (libraryName.startsWith('@angular/material')) {
+      return { ...defaultConfig, singleton: true, strictVersion: false };
+    }
+    return defaultConfig;
+  }
 };
 
 /**

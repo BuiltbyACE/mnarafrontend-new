@@ -1,12 +1,14 @@
 import { Route } from '@angular/router';
 import { authGuard } from '@sms/core/auth';
 import { TeacherLayoutComponent } from '../core/layout/teacher-layout.component';
+import { provideNativeDateAdapter } from '@angular/material/core';
 
 export const remoteRoutes: Route[] = [
   {
     path: '',
     component: TeacherLayoutComponent,
     canActivate: [authGuard],
+    providers: [provideNativeDateAdapter()],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
@@ -23,6 +25,26 @@ export const remoteRoutes: Route[] = [
         path: 'workspace/:id/assignments/create',
         loadComponent: () =>
           import('../features/assignments/create/create-assignment.component').then(m => m.CreateAssignmentComponent),
+      },
+      {
+        path: 'workspace/:id/assignments/:aid',
+        loadComponent: () =>
+          import('../features/assignments/view/view-assignment.component').then(m => m.ViewAssignmentComponent),
+      },
+      {
+        path: 'workspace/:id/assignments/:aid/edit',
+        loadComponent: () =>
+          import('../features/assignments/edit/edit-assignment.component').then(m => m.EditAssignmentComponent),
+      },
+      {
+        path: 'assignments/:id',
+        loadComponent: () =>
+          import('../features/assignments/view/view-assignment.component').then(m => m.ViewAssignmentComponent),
+      },
+      {
+        path: 'assignments/:id/edit',
+        loadComponent: () =>
+          import('../features/assignments/edit/edit-assignment.component').then(m => m.EditAssignmentComponent),
       },
       {
         path: 'workspace/:id/assignments/:aid/submissions',

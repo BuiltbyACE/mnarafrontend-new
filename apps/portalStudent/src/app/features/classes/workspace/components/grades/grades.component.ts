@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, computed, effect, viewChild, ElementRef, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DatePipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -256,8 +257,12 @@ export class GradesComponent implements OnInit {
     });
   }
 
+  private readonly route = inject(ActivatedRoute);
+
   ngOnInit(): void {
-    this.gradesService.fetchPerformance();
+    const wId = this.route.parent?.snapshot.paramMap.get('workspaceId');
+    const workspaceId = wId ? parseInt(wId, 10) : undefined;
+    this.gradesService.fetchPerformance(workspaceId);
   }
 
   private renderChart(canvas: HTMLCanvasElement, trend: TrendData[]): void {

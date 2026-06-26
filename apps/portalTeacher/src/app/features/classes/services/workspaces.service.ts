@@ -19,6 +19,8 @@ export interface Assignment {
   title: string;
   instructions: string;
   submission_type: string;
+  assignment_category?: string;
+  exam_code?: string;
   due_date: string | null;
   max_score: number;
   status: 'OPEN' | 'GRADED';
@@ -34,6 +36,7 @@ export interface Resource {
   description: string;
   url: string;
   is_published: boolean;
+  is_favorite?: boolean;
   created_at: string;
 }
 
@@ -119,6 +122,13 @@ export class WorkspacesService {
   toggleResourcePublish(resourceId: number): Observable<{ is_published: boolean }> {
     return this.http.post<{ is_published: boolean }>(
       getApiUrl(`/lms/lesson-resources/${resourceId}/toggle_publish/`),
+      {}
+    );
+  }
+
+  toggleResourceFavorite(resourceId: number): Observable<{ is_favorite: boolean }> {
+    return this.http.post<{ is_favorite: boolean }>(
+      getApiUrl(`/lms/resources/${resourceId}/favorite/`),
       {}
     );
   }

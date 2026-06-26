@@ -72,6 +72,7 @@ export class TeacherResourceService {
     formData.append('course', String(payload.course));
     formData.append('title', payload.title);
     formData.append('resource_type', payload.resource_type);
+    formData.append('is_published', 'true');
     if (payload.description) formData.append('description', payload.description);
     if (payload.file_attachment) formData.append('file_attachment', payload.file_attachment);
     if (payload.external_url) formData.append('external_url', payload.external_url);

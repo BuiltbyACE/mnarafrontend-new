@@ -159,10 +159,14 @@ export class ElearningService {
     return Math.round(total / graded.length);
   }
 
-  loadDashboard(): void {
+  loadDashboard(workspaceId?: number): void {
     this.isLoading.set(true);
     this.dashboardError.set(null);
-    this.http.get<ELearningPayload>(getApiUrl('/lms/elearning-dashboard/'))
+    let url = '/lms/elearning-dashboard/';
+    if (workspaceId) {
+      url += `?workspace_id=${workspaceId}`;
+    }
+    this.http.get<ELearningPayload>(getApiUrl(url))
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (payload) => this.dashboardData.set(payload),

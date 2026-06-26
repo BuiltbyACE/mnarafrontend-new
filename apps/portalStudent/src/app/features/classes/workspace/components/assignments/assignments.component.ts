@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, DestroyRef, effect } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DatePipe, LowerCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -620,8 +621,13 @@ export class AssignmentsComponent implements OnInit {
     return formatCountdown(ms);
   };
 
+  private readonly route = inject(ActivatedRoute);
+
   ngOnInit(): void {
-    this.service.loadAssignments();
+    const wId = this.route.parent?.snapshot.paramMap.get('workspaceId');
+    const workspaceId = wId ? parseInt(wId, 10) : undefined;
+    this.service.loadAssignments(workspaceId);
+    
     const timer = setInterval(() => {
       this.countdownTicks.update(v => v + 1);
     }, 1000);

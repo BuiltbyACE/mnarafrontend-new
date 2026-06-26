@@ -6,12 +6,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material/core';
 import { Gender } from '../../../../../shared/models/students.models';
 
 @Component({
   selector: 'app-student-info-step',
   standalone: true,
+  providers: [provideNativeDateAdapter()],
   imports: [
     CommonModule, FormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonToggleModule, MatDatepickerModule, MatNativeDateModule,

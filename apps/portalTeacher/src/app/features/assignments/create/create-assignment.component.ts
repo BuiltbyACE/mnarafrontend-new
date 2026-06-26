@@ -5,7 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,6 +20,7 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
 @Component({
   selector: 'app-create-assignment',
   standalone: true,
+  providers: [provideNativeDateAdapter()],
   imports: [
     FormsModule, RouterLink,
     MatCardModule, MatInputModule, MatFormFieldModule,
@@ -50,6 +51,15 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
               @if (titleModel.invalid && titleModel.touched) {
                 <mat-error>Title is required</mat-error>
               }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Category / CAT Type</mat-label>
+              <mat-select [(ngModel)]="assignmentCategory" name="assignmentCategory" required>
+                @for (cat of assignmentCategories; track cat.value) {
+                  <mat-option [value]="cat.value">{{ cat.label }}</mat-option>
+                }
+              </mat-select>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
@@ -293,8 +303,24 @@ export class CreateAssignmentComponent {
     { value: 'PHYSICAL', label: 'Physical', icon: 'description' },
   ] as const;
 
+  readonly assignmentCategories = [
+    { value: 'GENERAL', label: 'General Assignment (Homework)' },
+    { value: 'TEST1', label: 'Test 1 (CAT 1)' },
+    { value: 'TEST2', label: 'Test 2 (CAT 2)' },
+    { value: 'TEST3', label: 'Test 3 (CAT 3)' },
+    { value: 'TEST4', label: 'Test 4 (CAT 4)' },
+    { value: 'CUMULATIVE', label: 'Cumulative Test' },
+    { value: 'PP1', label: 'Progression Test 1 (Term 3)' },
+    { value: 'PP2', label: 'Progression Test 2 (Term 3)' },
+    { value: 'MOCK_P1', label: 'Mock Paper 1 (Term 3)' },
+    { value: 'MOCK_P2', label: 'Mock Paper 2 (Term 3)' },
+    { value: 'MOCK_P3', label: 'Mock Paper 3 (Term 3)' },
+    { value: 'MOCK_P4', label: 'Mock Paper 4 (Term 3)' },
+  ];
+
   title = '';
   instructions = '';
+  assignmentCategory = 'GENERAL';
   submissionType = signal<'PHYSICAL' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'QUIZ'>('ONLINE_TEXT');
   maxScore = 100;
   dueDate: Date | null = null;
@@ -368,6 +394,7 @@ export class CreateAssignmentComponent {
       title: this.title,
       instructions: this.instructions,
       submission_type: this.submissionType(),
+      assignment_category: this.assignmentCategory,
       max_score: this.maxScore,
       due_date: this.dueDate.toISOString().split('T')[0],
       is_published: this.isPublished,

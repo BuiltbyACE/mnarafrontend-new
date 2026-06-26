@@ -1,10 +1,10 @@
 import { Route } from '@angular/router';
 
-export const elearningRoutes: Route[] = [
+export const workspaceRoutes: Route[] = [
   {
     path: '',
     loadComponent: () =>
-      import('./components/elearning-layout.component').then((m) => m.ElearningLayoutComponent),
+      import('./components/workspace-layout.component').then((m) => m.WorkspaceLayoutComponent),
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {

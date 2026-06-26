@@ -58,10 +58,14 @@ export class AssignmentsService {
   readonly isLoading = signal<boolean>(true);
   readonly error = signal<string | null>(null);
 
-  loadAssignments(): void {
+  loadAssignments(workspaceId?: number): void {
     this.isLoading.set(true);
     this.error.set(null);
-    this.http.get<PaginatedResponse>(getApiUrl('/lms/my-assignments/'))
+    let url = '/lms/my-assignments/';
+    if (workspaceId) {
+      url += `?workspace_id=${workspaceId}`;
+    }
+    this.http.get<PaginatedResponse>(getApiUrl(url))
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (res) => this.assignments.set(res.results),

@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, OnDestroy, computed } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -356,8 +357,12 @@ export class LiveClassesComponent implements OnInit, OnDestroy {
   private timerInterval: ReturnType<typeof setInterval> | null = null;
   private startTime = 0;
 
+  private readonly route = inject(ActivatedRoute);
+
   ngOnInit(): void {
-    this.service.fetchClasses();
+    const wId = this.route.parent?.snapshot.paramMap.get('workspaceId');
+    const workspaceId = wId ? parseInt(wId, 10) : undefined;
+    this.service.fetchClasses(workspaceId);
   }
 
   ngOnDestroy(): void {

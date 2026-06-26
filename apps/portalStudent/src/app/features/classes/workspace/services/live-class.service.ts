@@ -49,9 +49,13 @@ export class LiveClassService {
     { id: 'p7', name: 'Esther Akinyi', initials: 'EA', isMuted: false, isVideoOn: true, isSpeaking: false, isTeacher: false },
   ]);
 
-  fetchClasses(): void {
+  fetchClasses(workspaceId?: number): void {
     this.isLoading.set(true);
-    this.http.get<LiveClassesPayload>(getApiUrl('/lms/live-classes/'))
+    let url = '/lms/live-classes/';
+    if (workspaceId) {
+      url += `?workspace_id=${workspaceId}`;
+    }
+    this.http.get<LiveClassesPayload>(getApiUrl(url))
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (data) => this.payload.set(data),

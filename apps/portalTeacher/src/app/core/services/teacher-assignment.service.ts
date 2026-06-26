@@ -84,6 +84,17 @@ export class TeacherAssignmentService {
       });
   }
 
+  fetchAssignmentDetails(id: number | string) {
+    return this.http.get<any>(getApiUrl(`/lms/assignments/${id}/`));
+  }
+
+  updateAssignment(id: number | string, payload: any) {
+    this.isCreating.set(true);
+    this.error.set(null);
+    return this.http.patch<any>(getApiUrl(`/lms/assignments/${id}/`), payload)
+      .pipe(finalize(() => this.isCreating.set(false)));
+  }
+
   fetchSubmissions(assignmentId: number): void {
     this.submissionsLoading.set(true);
     this.http.get<SubmissionsResponse>(

@@ -152,7 +152,6 @@ export class TeacherSidebarComponent {
       items: [
         { label: 'My Classes', icon: 'school', route: 'classes' },
         { label: 'Exam Results', icon: 'assessment', route: 'exams' },
-        { label: 'Grading Pipeline', icon: 'view_kanban', route: 'grading' },
         { label: 'Timetable', icon: 'calendar_month', route: 'timetable' },
       ],
     },

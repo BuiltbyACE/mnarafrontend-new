@@ -76,6 +76,8 @@ export interface Assignment {
   id: number;
   title: string;
   type: 'QUIZ' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'PHYSICAL';
+  assignment_category?: string;
+  exam_code?: string;
   class: string;
   subject: string;
   dueDate: string;
@@ -90,6 +92,7 @@ export interface CreateAssignmentPayload {
   title: string;
   instructions: string;
   submission_type: 'PHYSICAL' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'QUIZ';
+  assignment_category?: string;
   max_score: number;
   due_date: string;
   is_published: boolean;
