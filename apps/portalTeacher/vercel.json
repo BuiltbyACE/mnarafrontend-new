@@ -1,0 +1,34 @@
+{
+  "buildCommand": "npx nx build portalTeacher --configuration=production",
+  "outputDirectory": "dist/apps/portalTeacher/browser",
+  "framework": "angular",
+  "headers": [
+    {
+      "source": "/mf-manifest.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/remoteEntry.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ]
+}
