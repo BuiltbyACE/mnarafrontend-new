@@ -1,13 +1,12 @@
-/**
- * Staff & HR Service
- * Manages faculty and support staff
- */
-
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, throwError, finalize } from 'rxjs';
+import { Observable, catchError, throwError, finalize, map } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
-import { Faculty, StaffProfile, StaffFormData, LeaveRequest, LeaveBalance } from '../../../shared/models/staff.models';
+import {
+  Faculty, StaffProfile, StaffFormData, LeaveRequest, LeaveBalance,
+  StaffProfileMe, StaffDetailResponse, DirectoryResponse, DirectorySummary,
+  PayrollSummary, MyRolesResponse, StaffSettings
+} from '../../../shared/models/staff.models';
 
 interface PaginatedResponse<T> {
   count: number;
@@ -16,24 +15,7 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
-interface DepartmentBreakdown {
-  name: string;
-  count: number;
-  payroll: number;
-}
-
-interface PayrollSummary {
-  total_staff: number;
-  total_payroll: number;
-  departments: number;
-  on_leave: number;
-  department_breakdown: DepartmentBreakdown[];
-  employees: any[];
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class StaffService {
   private http = inject(HttpClient);
 
@@ -45,15 +27,48 @@ export class StaffService {
   readonly payrollSummary = signal<PayrollSummary | null>(null);
   readonly payrollError = signal<string | null>(null);
 
+  // Directory state
+  readonly directory = signal<DirectoryResponse | null>(null);
+  readonly directorySummary = signal<DirectorySummary | null>(null);
+
   // Leave management state
   readonly leaveRequests = signal<LeaveRequest[]>([]);
   readonly leaveBalances = signal<LeaveBalance[]>([]);
   readonly isLeaveLoading = signal<boolean>(false);
   readonly leaveError = signal<string | null>(null);
 
-  /**
-   * Fetch faculty list with pagination
-   */
+  // ═══════════════════════════════════════════════════════════════
+  // DIRECTORY
+  // ═══════════════════════════════════════════════════════════════
+
+  getDirectory(): Observable<DirectoryResponse> {
+    return this.http.get<DirectoryResponse>(getApiUrl('/staff/directory/'));
+  }
+
+  getDirectoryById(id: number): Observable<StaffDetailResponse> {
+    return this.http.get<StaffDetailResponse>(getApiUrl(`/staff/directory/${id}/`));
+  }
+
+  getDirectorySummary(): Observable<DirectorySummary> {
+    return this.http.get<DirectorySummary>(getApiUrl('/staff/directory/summary/'));
+  }
+
+  loadDirectory(): void {
+    this.getDirectory().subscribe({
+      next: (data) => this.directory.set(data),
+    });
+  }
+
+  loadDirectorySummary(): void {
+    this.getDirectorySummary().subscribe({
+      next: (data) => this.directorySummary.set(data),
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // FACULTY
+  // ═══════════════════════════════════════════════════════════════
+
   getFaculty(
     page: number = 1,
     pageSize: number = 25,
@@ -85,49 +100,53 @@ export class StaffService {
       );
   }
 
-  /**
-   * Get single faculty member
-   */
   getFacultyById(id: number): Observable<Faculty> {
     return this.http.get<Faculty>(getApiUrl(`/staff/faculty/${id}/`));
   }
 
-  /**
-   * Create new faculty member
-   */
   createFaculty(data: StaffFormData): Observable<Faculty> {
     return this.http.post<Faculty>(getApiUrl('/staff/faculty/'), data);
   }
 
-  /**
-   * Update faculty member
-   */
   updateFaculty(id: number, data: Partial<StaffFormData>): Observable<Faculty> {
     return this.http.patch<Faculty>(getApiUrl(`/staff/faculty/${id}/`), data);
   }
 
-  /**
-   * Deactivate faculty member
-   */
   deactivateFaculty(id: number): Observable<Faculty> {
     return this.http.patch<Faculty>(getApiUrl(`/staff/faculty/${id}/`), {
       is_active: false,
     });
   }
 
-  /**
-   * Get staff profile (detailed)
-   */
   getStaffProfile(staffId: number): Observable<StaffProfile> {
     return this.http.get<StaffProfile>(getApiUrl(`/staff/${staffId}/`));
   }
 
-  /**
-   * Get payroll summary (with 403 defensive guard)
-   */
+  getProfilesSelect(subjectId?: number): Observable<{ id: number; full_name: string }[]> {
+    let url = getApiUrl('/staff/profiles/select/');
+    if (subjectId) {
+      url += `?subject_id=${subjectId}`;
+    }
+    return this.http.get<{ id: number; full_name: string }[]>(url);
+  }
+
+  getProfileMe(): Observable<StaffProfileMe> {
+    return this.http.get<StaffProfileMe>(getApiUrl('/staff/profiles/me/'));
+  }
+
+  setStaff(data: Faculty[], total: number): void {
+    this.staff.set(data);
+    this.totalCount.set(total);
+    this.isLoading.set(false);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // PAYROLL
+  // ═══════════════════════════════════════════════════════════════
+
   getPayrollSummary(): Observable<PayrollSummary> {
     return this.http
-      .get<PayrollSummary>(getApiUrl('/payroll/summary/'))
+      .get<PayrollSummary>(getApiUrl('/staff/summary/'))
       .pipe(
         catchError((err: HttpErrorResponse) => {
           const msg = err.status === 403
@@ -139,18 +158,6 @@ export class StaffService {
       );
   }
 
-  /**
-   * Set staff data in signal
-   */
-  setStaff(data: Faculty[], total: number): void {
-    this.staff.set(data);
-    this.totalCount.set(total);
-    this.isLoading.set(false);
-  }
-
-  /**
-   * Load payroll summary
-   */
   loadPayrollSummary(): void {
     this.payrollError.set(null);
     this.getPayrollSummary().subscribe({
@@ -163,9 +170,6 @@ export class StaffService {
   // HR RECORDS
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * Fetch all HR records (teaching + non-teaching staff) with pagination
-   */
   getAllHrRecords(
     page: number = 1,
     pageSize: number = 25
@@ -193,9 +197,6 @@ export class StaffService {
   // LEAVE MANAGEMENT
   // ═══════════════════════════════════════════════════════════════
 
-  /**
-   * Fetch all leave requests (paginated)
-   */
   getLeaveRequests(): Observable<PaginatedResponse<LeaveRequest>> {
     this.isLeaveLoading.set(true);
     this.leaveError.set(null);
@@ -212,9 +213,6 @@ export class StaffService {
       );
   }
 
-  /**
-   * Fetch leave balances for all staff (paginated)
-   */
   getLeaveBalances(): Observable<PaginatedResponse<LeaveBalance>> {
     this.isLeaveLoading.set(true);
     this.leaveError.set(null);
@@ -231,9 +229,6 @@ export class StaffService {
       );
   }
 
-  /**
-   * Approve a leave request
-   */
   approveLeave(id: number): Observable<LeaveRequest> {
     return this.http
       .patch<LeaveRequest>(getApiUrl(`/staff/leave-requests/${id}/approve/`), {})
@@ -245,9 +240,6 @@ export class StaffService {
       );
   }
 
-  /**
-   * Reject a leave request
-   */
   rejectLeave(id: number): Observable<LeaveRequest> {
     return this.http
       .patch<LeaveRequest>(getApiUrl(`/staff/leave-requests/${id}/reject/`), {})
@@ -257,5 +249,41 @@ export class StaffService {
           return throwError(() => new Error(message));
         })
       );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MY DATA (current user)
+  // ═══════════════════════════════════════════════════════════════
+
+  getMyAssignments(): Observable<any[]> {
+    return this.http.get<any[]>(getApiUrl('/staff/my-assignments/'));
+  }
+
+  getMyRoles(): Observable<MyRolesResponse> {
+    return this.http.get<MyRolesResponse>(getApiUrl('/staff/my-roles/'));
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ACADEMICS LOOKUPS (for Add Staff form)
+  // ═══════════════════════════════════════════════════════════════
+
+  getDepartments(): Observable<any[]> {
+    return this.http.get<any[]>(getApiUrl('/academics/departments/'));
+  }
+
+  getSubjects(): Observable<any[]> {
+    return this.http.get<any[]>(getApiUrl('/academics/subjects/'));
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SETTINGS
+  // ═══════════════════════════════════════════════════════════════
+
+  getSettings(): Observable<StaffSettings> {
+    return this.http.get<StaffSettings>(getApiUrl('/staff/settings/'));
+  }
+
+  updateSettings(data: Partial<StaffSettings>): Observable<StaffSettings> {
+    return this.http.patch<StaffSettings>(getApiUrl('/staff/settings/'), data);
   }
 }

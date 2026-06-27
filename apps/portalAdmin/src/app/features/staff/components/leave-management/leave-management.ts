@@ -227,12 +227,9 @@ import { StatusBadgeComponent, BadgeType } from '../../../../shared/components/s
       font-size: 0.8rem;
       font-weight: 600;
     }
-    .leave-type-chip.annual { background: #dbeafe; color: #1d4ed8; }
     .leave-type-chip.sick { background: #fce7f3; color: #be185d; }
     .leave-type-chip.maternity { background: #f3e8ff; color: #7c3aed; }
-    .leave-type-chip.paternity { background: #e0f2fe; color: #0369a1; }
     .leave-type-chip.compassionate { background: #fff7ed; color: #ea580c; }
-    .leave-type-chip.study { background: #ecfdf5; color: #059669; }
 
     .dates-cell {
       display: flex;

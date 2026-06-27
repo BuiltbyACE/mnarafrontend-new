@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { DatePipe, NgClass, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -463,6 +463,12 @@ export class HrComponent {
 
   constructor() {
     this.settingsService.fetchProfile();
+    this.leaveService.fetchBalances();
+    this.leaveService.fetchRequests();
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {
     this.leaveService.fetchBalances();
     this.leaveService.fetchRequests();
   }

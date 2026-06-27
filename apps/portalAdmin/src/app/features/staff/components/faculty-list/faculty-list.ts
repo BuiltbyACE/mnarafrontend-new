@@ -586,15 +586,14 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
 
             <div class="form-row two-col">
               <div class="form-field">
-                <label class="input-label">First Name</label>
+                <label class="input-label">First Name *</label>
                 <input formControlName="first_name" placeholder="e.g. Amina" />
                 @if (identityForm.get('first_name')?.hasError('required') && identityForm.get('first_name')?.touched) {
                   <span class="error-text">First name is required</span>
                 }
               </div>
-
               <div class="form-field">
-                <label class="input-label">Last Name</label>
+                <label class="input-label">Last Name *</label>
                 <input formControlName="last_name" placeholder="e.g. Odhiambo" />
                 @if (identityForm.get('last_name')?.hasError('required') && identityForm.get('last_name')?.touched) {
                   <span class="error-text">Last name is required</span>
@@ -604,7 +603,18 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
 
             <div class="form-row two-col">
               <div class="form-field">
-                <label class="input-label">National ID</label>
+                <label class="input-label">Surname</label>
+                <input formControlName="surname" placeholder="e.g. Odhiambo" />
+              </div>
+              <div class="form-field">
+                <label class="input-label">Other Names</label>
+                <input formControlName="other_names" placeholder="e.g. Amina Wanjiku" />
+              </div>
+            </div>
+
+            <div class="form-row two-col">
+              <div class="form-field">
+                <label class="input-label">National ID *</label>
                 <input formControlName="national_id" placeholder="e.g. 32456789" />
                 @if (identityForm.get('national_id')?.hasError('required') && identityForm.get('national_id')?.touched) {
                   <span class="error-text">National ID is required</span>
@@ -613,9 +623,8 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                   <span class="error-text">Must be 7–8 digits</span>
                 }
               </div>
-
               <div class="form-field">
-                <label class="input-label">KRA PIN</label>
+                <label class="input-label">KRA PIN *</label>
                 <input formControlName="kra_pin" placeholder="e.g. A012345678Z" />
                 @if (identityForm.get('kra_pin')?.hasError('required') && identityForm.get('kra_pin')?.touched) {
                   <span class="error-text">KRA PIN is required</span>
@@ -626,16 +635,60 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
               </div>
             </div>
 
+            <div class="form-row two-col">
+              <div class="form-field">
+                <label class="input-label">Staff Role *</label>
+                <select formControlName="staff_role">
+                  <option value="TEACHER">Teacher — Academic Staff</option>
+                  <option value="STAFF">Staff — Non-Teaching</option>
+                  <option value="FINANCE">Finance</option>
+                  <option value="ADMIN">Administrator</option>
+                  <option value="SUPPORT_STAFF">Support Staff</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label class="input-label">Department</label>
+                <select formControlName="department">
+                  <option value="">— Select Department —</option>
+                  @for (dept of departments(); track dept.id) {
+                    <option [value]="dept.name">{{ dept.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
             <div class="form-row one-col">
               <div class="form-field">
-                <label class="input-label">Staff Role</label>
-                <select formControlName="is_teacher">
-                  <option [ngValue]="true">Teacher — Academic Staff</option>
-                  <option [ngValue]="false">Support Staff — Non-Teaching</option>
+                <label class="input-label">Qualification Level</label>
+                <select formControlName="qualification_level">
+                  <option value="DIPLOMA">Diploma</option>
+                  <option value="DEGREE">Degree</option>
+                  <option value="MASTERS">Masters</option>
+                  <option value="PHD">PhD</option>
+                  <option value="OTHER">Other</option>
                 </select>
-                @if (identityForm.get('is_teacher')?.hasError('required') && identityForm.get('is_teacher')?.touched) {
-                  <span class="error-text">Please select a role</span>
-                }
+              </div>
+            </div>
+
+            <div class="form-row two-col">
+              <div class="form-field">
+                <label class="input-label">Email</label>
+                <input formControlName="email" placeholder="e.g. amina.odhiambo@school.ac.ke" />
+              </div>
+              <div class="form-field">
+                <label class="input-label">Phone</label>
+                <input formControlName="phone" placeholder="e.g. +254 712 345 678" />
+              </div>
+            </div>
+
+            <div class="form-row two-col">
+              <div class="form-field">
+                <label class="input-label">NSSF Number</label>
+                <input formControlName="nssf_number" placeholder="e.g. NSSF/001234" />
+              </div>
+              <div class="form-field">
+                <label class="input-label">NHIF Number</label>
+                <input formControlName="nhif_number" placeholder="e.g. NHIF/001234" />
               </div>
             </div>
 
@@ -681,22 +734,54 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                 </div>
               </div>
 
-              <div class="form-row one-col">
+              <div class="form-row two-col">
                 <div class="form-field">
-                  <label class="input-label">TSC Number</label>
+                  <label class="input-label">TSC Number *</label>
                   <input formControlName="tsc_number" placeholder="e.g. TSC/0012345" />
                   @if (pedagogyForm.get('tsc_number')?.hasError('required') && pedagogyForm.get('tsc_number')?.touched) {
-                    <span class="error-text">TSC Number is required for teachers</span>
+                    <span class="error-text">TSC Number is required</span>
+                  }
+                </div>
+                <div class="form-field">
+                  <label class="input-label">Highest Degree *</label>
+                  <input formControlName="highest_degree" placeholder="e.g. B.Ed. Mathematics" />
+                  @if (pedagogyForm.get('highest_degree')?.hasError('required') && pedagogyForm.get('highest_degree')?.touched) {
+                    <span class="error-text">Highest degree is required</span>
                   }
                 </div>
               </div>
 
               <div class="form-row one-col">
                 <div class="form-field">
-                  <label class="input-label">Specialization / Teaching Area</label>
+                  <label class="input-label">Specialization / Teaching Area *</label>
                   <input formControlName="specialization_area" placeholder="e.g. Mathematics & Physics" />
                   @if (pedagogyForm.get('specialization_area')?.hasError('required') && pedagogyForm.get('specialization_area')?.touched) {
                     <span class="error-text">Specialization area is required</span>
+                  }
+                </div>
+              </div>
+
+              <div class="form-row one-col">
+                <div class="form-field">
+                  <label class="input-label">Teaching Subjects</label>
+                  @if (loadingLookups()) {
+                    <div class="subjects-loading">Loading subjects…</div>
+                  } @else {
+                    <div class="subjects-grid">
+                      @for (sub of subjects(); track sub.id) {
+                        <label class="subject-checkbox-label">
+                          <input
+                            type="checkbox"
+                            [checked]="selectedSubjectIds().has(sub.id)"
+                            (change)="toggleSubject(sub.id, sub.name)"
+                          />
+                          <span>{{ sub.name }}</span>
+                        </label>
+                      }
+                      @if (subjects().length === 0) {
+                        <span class="no-subjects">No subjects available</span>
+                      }
+                    </div>
                   }
                 </div>
               </div>
@@ -762,17 +847,10 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
 
             <!-- Role Badge -->
             <div class="role-badge-row">
-              @if (isTeacher()) {
-                <div class="role-badge teacher">
-                  <mat-icon>school</mat-icon>
-                  <span>Teacher — Academic Staff</span>
-                </div>
-              } @else {
-                <div class="role-badge support">
-                  <mat-icon>engineering</mat-icon>
-                  <span>Support Staff — Non-Teaching</span>
-                </div>
-              }
+              <div class="role-badge" [class.teacher]="isTeacher()" [class.support]="!isTeacher()">
+                <mat-icon>{{ isTeacher() ? 'school' : 'engineering' }}</mat-icon>
+                <span>{{ getRoleLabel(identityForm.value.staff_role) }}</span>
+              </div>
             </div>
 
             <!-- Summary Grid -->
@@ -792,6 +870,18 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                       {{ identityForm.value.first_name }} {{ identityForm.value.last_name }}
                     </span>
                   </div>
+                  @if (identityForm.value.surname) {
+                    <div class="review-row">
+                      <span class="review-label">Surname</span>
+                      <span class="review-value">{{ identityForm.value.surname }}</span>
+                    </div>
+                  }
+                  @if (identityForm.value.other_names) {
+                    <div class="review-row">
+                      <span class="review-label">Other Names</span>
+                      <span class="review-value">{{ identityForm.value.other_names }}</span>
+                    </div>
+                  }
                   <div class="review-row">
                     <span class="review-label">National ID</span>
                     <span class="review-value">{{ identityForm.value.national_id }}</span>
@@ -801,11 +891,43 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                     <span class="review-value">{{ identityForm.value.kra_pin }}</span>
                   </div>
                   <div class="review-row">
-                    <span class="review-label">Role</span>
-                    <span class="review-value">
-                      {{ identityForm.value.is_teacher ? 'Teacher' : 'Support Staff' }}
-                    </span>
+                    <span class="review-label">Staff Role</span>
+                    <span class="review-value">{{ getRoleLabel(identityForm.value.staff_role) }}</span>
                   </div>
+                  @if (identityForm.value.department) {
+                    <div class="review-row">
+                      <span class="review-label">Department</span>
+                      <span class="review-value">{{ identityForm.value.department }}</span>
+                    </div>
+                  }
+                  <div class="review-row">
+                    <span class="review-label">Qualification</span>
+                    <span class="review-value">{{ identityForm.value.qualification_level }}</span>
+                  </div>
+                  @if (identityForm.value.email) {
+                    <div class="review-row">
+                      <span class="review-label">Email</span>
+                      <span class="review-value">{{ identityForm.value.email }}</span>
+                    </div>
+                  }
+                  @if (identityForm.value.phone) {
+                    <div class="review-row">
+                      <span class="review-label">Phone</span>
+                      <span class="review-value">{{ identityForm.value.phone }}</span>
+                    </div>
+                  }
+                  @if (identityForm.value.nssf_number) {
+                    <div class="review-row">
+                      <span class="review-label">NSSF</span>
+                      <span class="review-value">{{ identityForm.value.nssf_number }}</span>
+                    </div>
+                  }
+                  @if (identityForm.value.nhif_number) {
+                    <div class="review-row">
+                      <span class="review-label">NHIF</span>
+                      <span class="review-value">{{ identityForm.value.nhif_number }}</span>
+                    </div>
+                  }
                 </div>
               </div>
 
@@ -822,11 +944,21 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                       <span class="review-label">TSC Number</span>
                       <span class="review-value">{{ pedagogyForm.value.tsc_number || '—' }}</span>
                     </div>
+                    <div class="review-row">
+                      <span class="review-label">Highest Degree</span>
+                      <span class="review-value">{{ pedagogyForm.value.highest_degree || '—' }}</span>
+                    </div>
                   }
                   <div class="review-row">
                     <span class="review-label">Specialization</span>
                     <span class="review-value">{{ pedagogyForm.value.specialization_area || '—' }}</span>
                   </div>
+                  @if (pedagogyForm.value.teaching_subjects?.length) {
+                    <div class="review-row">
+                      <span class="review-label">Subjects</span>
+                      <span class="review-value">{{ pedagogyForm.value.teaching_subjects.join(', ') }}</span>
+                    </div>
+                  }
                 </div>
               </div>
 
@@ -1032,7 +1164,42 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
       margin-left: 4px;
     }
 
-    /* ── Skip notice (support staff) ── */
+    /* ── Subjects Checkbox Grid ── */
+    .subjects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fafafa;
+    }
+    .subject-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: #374151;
+      cursor: pointer;
+      padding: 2px 0;
+    }
+    .subject-checkbox-label input[type="checkbox"] {
+      accent-color: #1976d2;
+      cursor: pointer;
+    }
+    .subjects-loading {
+      font-size: 0.85rem;
+      color: #9e9e9e;
+      padding: 8px 0;
+    }
+    .no-subjects {
+      font-size: 0.85rem;
+      color: #9e9e9e;
+      grid-column: 1 / -1;
+    }
+
     .skip-notice {
       display: flex;
       align-items: center;
@@ -1251,46 +1418,92 @@ export class AddStaffWizardComponent {
 
   // ── Step 1: Identity & Role ───────────────────────────
   identityForm: FormGroup = this.fb.group({
-    first_name:  ['', [Validators.required, Validators.minLength(2)]],
-    last_name:   ['', [Validators.required, Validators.minLength(2)]],
-    national_id: ['', [Validators.required, Validators.pattern(/^\d{7,8}$/)]],
-    kra_pin:     ['', [Validators.required, Validators.pattern(/^[A-Z]\d{9}[A-Z]$/)]],
-    is_teacher:  [null, Validators.required],
+    first_name:          ['', [Validators.required, Validators.minLength(2)]],
+    last_name:           ['', [Validators.required, Validators.minLength(2)]],
+    surname:             [''],
+    other_names:         [''],
+    national_id:         ['', [Validators.required, Validators.pattern(/^\d{7,8}$/)]],
+    kra_pin:             ['', [Validators.required, Validators.pattern(/^[A-Z]\d{9}[A-Z]$/)]],
+    staff_role:          ['TEACHER', Validators.required],
+    department:          [''],
+    qualification_level: ['DEGREE'],
+    email:               [''],
+    phone:               [''],
+    nssf_number:         [''],
+    nhif_number:         [''],
   });
 
   // ── Step 2: Pedagogical Data ──────────────────────────
-  // Validators applied dynamically based on is_teacher
   pedagogyForm: FormGroup = this.fb.group({
     tsc_number:          [''],
     specialization_area: [''],
+    highest_degree:      [''],
+    teaching_subjects:   [[] as string[]],
   });
 
-  // ── Derived: is the selected role "teacher"? ──────────
-  isTeacher = computed(() => this.identityForm.get('is_teacher')?.value === true);
+  // ── Data from API ─────────────────────────────────────
+  departments = signal<any[]>([]);
+  subjects    = signal<any[]>([]);
+  loadingLookups = signal(false);
 
-  // ── Watch role changes and update validators live ─────
+  // ── Derived ───────────────────────────────────────────
+  isTeacher = computed(() => this.identityForm.get('staff_role')?.value === 'TEACHER');
+
+  selectedSubjectIds = signal<Set<number>>(new Set());
+
+  toggleSubject(id: number, name: string): void {
+    const set = new Set(this.selectedSubjectIds());
+    if (set.has(id)) {
+      set.delete(id);
+    } else {
+      set.add(id);
+    }
+    this.selectedSubjectIds.set(set);
+    this.pedagogyForm.patchValue({
+      teaching_subjects: Array.from(set).map(sid => {
+        const sub = this.subjects().find(s => s.id === sid);
+        return sub ? sub.name : String(sid);
+      })
+    });
+  }
+
+  // ── Load lookups on init ──────────────────────────────
   constructor() {
-    this.identityForm.get('is_teacher')!.valueChanges.subscribe((val: boolean) => {
-      const tsc  = this.pedagogyForm.get('tsc_number')!;
-      const spec = this.pedagogyForm.get('specialization_area')!;
+    this.loadingLookups.set(true);
+    this.staffService.getDepartments().subscribe({
+      next: (deps) => this.departments.set(deps),
+      error: () => this.departments.set([]),
+    });
+    this.staffService.getSubjects().subscribe({
+      next: (subs) => { this.subjects.set(subs); this.loadingLookups.set(false); },
+      error: () => { this.subjects.set([]); this.loadingLookups.set(false); },
+    });
 
-      if (val === true) {
+    this.identityForm.get('staff_role')!.valueChanges.subscribe((role: string) => {
+      const tsc   = this.pedagogyForm.get('tsc_number')!;
+      const spec  = this.pedagogyForm.get('specialization_area')!;
+      const degree = this.pedagogyForm.get('highest_degree')!;
+
+      if (role === 'TEACHER') {
         tsc.setValidators([Validators.required]);
         spec.setValidators([Validators.required]);
+        degree.setValidators([Validators.required]);
       } else {
         tsc.clearValidators();
         spec.clearValidators();
+        degree.clearValidators();
       }
 
       tsc.updateValueAndValidity();
       spec.updateValueAndValidity();
+      degree.updateValueAndValidity();
     });
   }
 
   // ── Step 2 completion guard ───────────────────────────
   isPedagogyStepComplete(): boolean {
     if (this.isTeacher()) return this.pedagogyForm.valid;
-    return true; // support staff: step is always passable
+    return true;
   }
 
   // ── Submit ────────────────────────────────────────────
@@ -1300,37 +1513,53 @@ export class AddStaffWizardComponent {
     this.isSubmitting.set(true);
     this.submitError.set(null);
 
-    const payload = {
-      ...this.identityForm.value,
-      ...this.pedagogyForm.value,
+    const payload: any = {
+      first_name:         this.identityForm.value.first_name,
+      last_name:          this.identityForm.value.last_name,
+      national_id:        this.identityForm.value.national_id,
+      kra_pin:            this.identityForm.value.kra_pin,
+      staff_role:         this.identityForm.value.staff_role,
     };
 
-    // this.staffService.createStaffMember(payload).subscribe({
-    //   next: (created) => {
-    //     this.isSubmitting.set(false);
-    //     this.dialogRef.close({ success: true, data: created });
-    //   },
-    //   error: (err) => {
-    //     this.isSubmitting.set(false);
-    //     this.submitError.set(
-    //       err?.error?.detail ?? err?.message ?? 'Submission failed. Please try again.'
-    //     );
-    //   },
-    // });
+    if (this.identityForm.value.surname)             payload.surname             = this.identityForm.value.surname;
+    if (this.identityForm.value.other_names)         payload.other_names         = this.identityForm.value.other_names;
+    if (this.identityForm.value.email)               payload.email               = this.identityForm.value.email;
+    if (this.identityForm.value.phone)               payload.phone               = this.identityForm.value.phone;
+    if (this.identityForm.value.nssf_number)         payload.nssf_number         = this.identityForm.value.nssf_number;
+    if (this.identityForm.value.nhif_number)         payload.nhif_number         = this.identityForm.value.nhif_number;
+    if (this.identityForm.value.department)           payload.department          = this.identityForm.value.department;
+    if (this.identityForm.value.qualification_level)  payload.qualification_level = this.identityForm.value.qualification_level;
 
-    // Replace the broken submission block with this:
-this.staffService.createFaculty(payload).subscribe({
-  next: (created: Faculty) => {
-    this.isSubmitting.set(false);
-    this.dialogRef.close({ success: true, data: created });
-  },
-  error: (err: any) => {
-    this.isSubmitting.set(false);
-    this.submitError.set(
-      err?.error?.detail ?? err?.message ?? 'Submission failed. Please try again.'
-    );
-  },
-});
+    if (this.pedagogyForm.value.specialization_area) payload.specialization_area = this.pedagogyForm.value.specialization_area;
+    if (this.pedagogyForm.value.tsc_number)          payload.tsc_number          = this.pedagogyForm.value.tsc_number;
+    if (this.pedagogyForm.value.highest_degree)      payload.highest_degree      = this.pedagogyForm.value.highest_degree;
+
+    const subjects = this.pedagogyForm.value.teaching_subjects || [];
+    if (subjects.length > 0) payload.teaching_subjects = subjects;
+
+    this.staffService.createFaculty(payload).subscribe({
+      next: (created: Faculty) => {
+        this.isSubmitting.set(false);
+        this.dialogRef.close({ success: true, data: created });
+      },
+      error: (err: any) => {
+        this.isSubmitting.set(false);
+        this.submitError.set(
+          err?.error?.detail ?? err?.message ?? 'Submission failed. Please try again.'
+        );
+      },
+    });
+  }
+
+  getRoleLabel(role: string): string {
+    const labels: Record<string, string> = {
+      TEACHER: 'Teacher — Academic Staff',
+      STAFF: 'Staff — Non-Teaching',
+      FINANCE: 'Finance',
+      ADMIN: 'Administrator',
+      SUPPORT_STAFF: 'Support Staff',
+    };
+    return labels[role] || role || '—';
   }
 
   close(): void {
@@ -1415,7 +1644,11 @@ this.staffService.createFaculty(payload).subscribe({
                 <th mat-header-cell *matHeaderCellDef>Staff Member</th>
                 <td mat-cell *matCellDef="let element">
                   <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="avatar sm">{{ getInitials(element.full_name) }}</div>
+                    @if (element.photo_url) {
+                      <img [src]="element.photo_url" alt="" class="avatar-img sm" />
+                    } @else {
+                      <div class="avatar sm">{{ getInitials(element.full_name) }}</div>
+                    }
                     <div style="display:flex; flex-direction:column;">
                       <span style="font-weight:600; color:#1f2937;">{{ element.full_name }}</span>
                       <span style="font-size:0.75rem; color:#64748b;">{{ element.school_id }}</span>
@@ -1429,8 +1662,12 @@ this.staffService.createFaculty(payload).subscribe({
                 <th mat-header-cell *matHeaderCellDef>Role & Department</th>
                 <td mat-cell *matCellDef="let element">
                   <div style="display:flex; flex-direction:column;">
-                    <span style="font-weight:500;">{{ element.user_role }}</span>
-                    <span style="font-size:0.75rem; color:#64748b;">{{ element.department_name }}</span>
+                    <span style="font-weight:500;">{{ element.user_role || element.role }}</span>
+                    <span style="font-size:0.75rem; color:#64748b;">{{ element.department_name || element.department }}</span>
+                    @let isTeaching = element.staff_category === 'TEACHING' || element.role === 'TEACHER' || element.user_role === 'TEACHER' || !!element.teacher_profile;
+                    <span class="staff-category-badge" [class.teaching]="isTeaching" [class.non-teaching]="!isTeaching">
+                      {{ isTeaching ? 'Teaching' : 'Non-Teaching' }}
+                    </span>
                   </div>
                 </td>
               </ng-container>
@@ -1438,14 +1675,14 @@ this.staffService.createFaculty(payload).subscribe({
               <!-- Qualification Column -->
               <ng-container matColumnDef="qualification">
                 <th mat-header-cell *matHeaderCellDef>Qualification</th>
-                <td mat-cell *matCellDef="let element">{{ element.qualification_level }}</td>
+                <td mat-cell *matCellDef="let element">{{ element.qualification || element.qualification_level }}</td>
               </ng-container>
 
               <!-- Status Column -->
               <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef>Status</th>
                 <td mat-cell *matCellDef="let element">
-                  <app-status-badge [type]="element.is_active ? 'active' : 'inactive'">
+                  <app-status-badge [type]="element.is_active !== false ? 'active' : 'inactive'">
                   </app-status-badge>
                 </td>
               </ng-container>
@@ -1469,9 +1706,18 @@ this.staffService.createFaculty(payload).subscribe({
 
                     <div class="detail-grid">
 
-                      <!-- Statutory Details -->
+                      <!-- Contact & Statutory Details -->
                       <div class="detail-block">
-                        <h4><mat-icon>account_balance</mat-icon> Statutory Details</h4>
+                        <h4><mat-icon>contact_mail</mat-icon> Contact & ID</h4>
+                        <div class="info-row">
+                          <strong>Email:</strong><span>{{ element.email || '—' }}</span>
+                        </div>
+                        <div class="info-row">
+                          <strong>Phone:</strong><span>{{ element.phone || '—' }}</span>
+                        </div>
+                        <div class="info-row">
+                          <strong>Hire Date:</strong><span>{{ element.hire_date | date: 'mediumDate' }}</span>
+                        </div>
                         <div class="info-row">
                           <strong>National ID:</strong><span>{{ element.national_id }}</span>
                         </div>
@@ -1479,26 +1725,33 @@ this.staffService.createFaculty(payload).subscribe({
                           <strong>KRA PIN:</strong><span>{{ element.kra_pin }}</span>
                         </div>
                         <div class="info-row">
-                          <strong>NSSF:</strong><span>{{ element.nssf_number || 'Pending' }}</span>
+                          <strong>NSSF:</strong><span>{{ element.nssf_number || '—' }}</span>
+                        </div>
+                        <div class="info-row">
+                          <strong>NHIF:</strong><span>{{ element.nhif_number || '—' }}</span>
                         </div>
                       </div>
 
                       <!-- Teacher or Support block -->
-                      @if (element.user_role === 'TEACHER' || element.teacher_profile) {
+                      @if ((element.role || element.user_role) === 'TEACHER' || element.teacher_profile) {
                         <div class="detail-block teacher-block">
                           <h4><mat-icon>school</mat-icon> Pedagogical Profile</h4>
                           <div class="info-row">
                             <strong>TSC Number:</strong>
-                            <span>{{ element.teacher_profile.tsc_number }}</span>
+                            <span>{{ element.tsc_number || element.teacher_profile?.tsc_number || '—' }}</span>
                           </div>
                           <div class="info-row">
                             <strong>Highest Degree:</strong>
-                            <span>{{ element.teacher_profile.highest_degree }}</span>
+                            <span>{{ element.highest_degree || element.teacher_profile?.highest_degree || '—' }}</span>
+                          </div>
+                          <div class="info-row">
+                            <strong>Specialization:</strong>
+                            <span>{{ element.specialization || element.specialization_area || '—' }}</span>
                           </div>
                           <div class="info-row">
                             <strong>Teaching Subjects:</strong>
                             <div class="subject-chips">
-                              @for (sub of element.teacher_profile.teaching_subjects; track sub) {
+                              @for (sub of (element.teaching_subjects?.length ? element.teaching_subjects : element.teacher_profile?.teaching_subjects || []); track sub) {
                                 <span class="chip">{{ sub }}</span>
                               }
                             </div>
@@ -1509,7 +1762,7 @@ this.staffService.createFaculty(payload).subscribe({
                           <h4><mat-icon>engineering</mat-icon> Support Staff Profile</h4>
                           <div class="info-row">
                             <strong>Specialization:</strong>
-                            <span>{{ element.specialization_area }}</span>
+                            <span>{{ element.specialization || element.specialization_area || '—' }}</span>
                           </div>
                         </div>
                       }
@@ -1612,6 +1865,26 @@ this.staffService.createFaculty(payload).subscribe({
       font-weight: 600;
       flex-shrink: 0;
     }
+    .avatar-img.sm {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .staff-category-badge {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      line-height: 1.6;
+      width: fit-content;
+    }
+    .staff-category-badge.teaching { background: #dbeafe; color: #1d4ed8; }
+    .staff-category-badge.non-teaching { background: #f3e8ff; color: #7c3aed; }
 
     tr.staff-row:not(.expanded-row):hover { background: #f8fafc; cursor: pointer; }
     tr.staff-row:not(.expanded-row):active { background: #eff6ff; }
@@ -1725,7 +1998,10 @@ export class FacultyListComponent implements OnInit {
   expandedElement: Faculty | null = null;
 
   readonly monthlyPayroll = computed(() =>
-    this.staff().reduce((sum, s) => sum + (Number(s.base_salary) || 0), 0)
+    this.staff().reduce((sum, s) => {
+      const salary = s.salary?.gross_pay ?? s.base_salary ?? 0;
+      return sum + Number(salary);
+    }, 0)
   );
 
   currentPage = 0;
