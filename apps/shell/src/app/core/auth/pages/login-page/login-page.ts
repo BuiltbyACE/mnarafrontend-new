@@ -60,10 +60,8 @@ export class LoginPage {
       .pipe(
         switchMap(() => this.authService.fetchUserContext()),
         finalize(() => {
-          setTimeout(() => {
-            this.isLoading = false;
-            this.authStore.setLoading(false);
-          });
+          this.isLoading = false;
+          this.authStore.setLoading(false);
         })
       )
       .subscribe({

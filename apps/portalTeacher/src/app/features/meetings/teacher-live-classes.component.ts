@@ -1,16 +1,31 @@
 import {
   Component, ChangeDetectionStrategy, inject, signal, OnInit,
 } from '@angular/core';
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe, NgClass, CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { TeacherLiveClassService, TeacherRoom, ZoomStartConfig } from '../../core/services/teacher-live-class.service';
+import { ZoomMeetingService } from '../../core/services/zoom-meeting.service';
+import { ZoomAttendancePanelComponent } from './zoom-attendance-panel.component';
+import { ZoomEngagementReportComponent } from './zoom-engagement-report.component';
+
+// @ts-ignore
+import { ZoomMtg } from '@zoom/meetingsdk';
 
 @Component({
   selector: 'app-teacher-live-classes',
   standalone: true,
-  imports: [DatePipe, NgClass, MatIconModule, MatProgressSpinnerModule, MatButtonModule],
+  imports: [
+    CommonModule, 
+    DatePipe, 
+    NgClass, 
+    MatIconModule, 
+    MatProgressSpinnerModule, 
+    MatButtonModule,
+    ZoomAttendancePanelComponent,
+    ZoomEngagementReportComponent
+  ],
   template: `
     @if (!activeSession()) {
       <!-- ═══════════════════════ ROOM LIST ═══════════════════════ -->
@@ -113,50 +128,45 @@ import { TeacherLiveClassService, TeacherRoom, ZoomStartConfig } from '../../cor
         </div>
 
         <div class="session-body">
-          <div class="launch-card">
-            <mat-icon class="launch-icon">videocam</mat-icon>
-            <h3>Zoom Meeting Ready</h3>
-            <p class="launch-desc">Click below to open Zoom and start teaching.</p>
-            <button class="btn-launch" (click)="launchZoom()">
-              <mat-icon>open_in_new</mat-icon> Launch Zoom
-            </button>
-          </div>
-
-          <div class="share-card">
-            <h4>Share with Students</h4>
-            <p class="share-desc">Students can join via the link or enter the meeting ID manually in Zoom.</p>
-
-            <div class="field-row">
-              <span class="field-label">Meeting Link</span>
-              <div class="field-value">
-                <input type="text" [value]="activeSession()!.join_url" readonly class="copy-input" #linkInput />
-                <button class="copy-btn" (click)="copyText(activeSession()!.join_url, linkInput)">
-                  <mat-icon>content_copy</mat-icon>
-                </button>
-              </div>
-            </div>
-
-            <div class="inline-fields">
-              <div class="field-row half">
-                <span class="field-label">Meeting ID</span>
-                <div class="field-value">
-                  <input type="text" [value]="activeSession()!.meeting_id" readonly class="copy-input" #idInput />
-                  <button class="copy-btn" (click)="copyText(activeSession()!.meeting_id, idInput)">
-                    <mat-icon>content_copy</mat-icon>
+          @if (activeSession()?.status === 'LIVE') {
+            <!-- Live Meeting View -->
+            <div class="live-grid">
+              <div class="meeting-container">
+                <div id="zmmtg-root"></div>
+                <div class="meeting-placeholder" [hidden]="zoomStarted()">
+                  <mat-icon class="launch-icon">videocam</mat-icon>
+                  <h3>Zoom Meeting Ready</h3>
+                  <p class="launch-desc">Initialize the SDK to start teaching directly in the browser.</p>
+                  <button class="btn-launch" (click)="launchZoom()" [disabled]="zoomLoading()">
+                    @if (zoomLoading()) { <mat-spinner diameter="20" color="accent"></mat-spinner> }
+                    @else { <mat-icon>play_arrow</mat-icon> }
+                    Start SDK
                   </button>
                 </div>
               </div>
-              <div class="field-row half">
-                <span class="field-label">Password</span>
-                <div class="field-value">
-                  <input type="text" [value]="activeSession()!.password" readonly class="copy-input" #pwInput />
-                  <button class="copy-btn" (click)="copyText(activeSession()!.password, pwInput)">
-                    <mat-icon>content_copy</mat-icon>
-                  </button>
+              <div class="sidebar">
+                <app-zoom-attendance-panel [classroomId]="activeRoom()!.id"></app-zoom-attendance-panel>
+                
+                <div class="share-card mt-4">
+                  <h4>Share with Students</h4>
+                  <div class="field-row">
+                    <div class="field-value">
+                      <input type="text" [value]="activeSession()!.join_url" readonly class="copy-input" #linkInput />
+                      <button class="copy-btn" (click)="copyText(activeSession()!.join_url, linkInput)">
+                        <mat-icon>content_copy</mat-icon>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          } @else {
+            <!-- Post-Meeting Report -->
+            <div class="post-meeting">
+              <h3>Session Concluded</h3>
+              <app-zoom-engagement-report [classroomId]="activeRoom()!.id"></app-zoom-engagement-report>
+            </div>
+          }
         </div>
       </div>
     }
@@ -279,14 +289,24 @@ import { TeacherLiveClassService, TeacherRoom, ZoomStartConfig } from '../../cor
       display: flex; flex-direction: column; gap: 24px;
     }
 
-    .launch-card, .share-card {
-      background: #fff; border: 1px solid #e2e8f0;
-      border-radius: 16px; padding: 32px;
-      text-align: center;
+    .live-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; max-width: 1400px; margin: 0 auto; }
+    
+    .meeting-container { 
+      background: #000; border-radius: 12px; overflow: hidden; position: relative;
+      min-height: 600px; display: flex; align-items: center; justify-content: center;
     }
-    .launch-icon { font-size: 48px; width: 48px; height: 48px; color: #2d8cff; margin-bottom: 12px; }
-    .launch-card h3 { margin: 0 0 8px; font-size: 1.25rem; font-weight: 700; color: #0f172a; }
-    .launch-desc { margin: 0 0 20px; font-size: 0.875rem; color: #64748b; }
+    
+    #zmmtg-root { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10; }
+    
+    .meeting-placeholder { text-align: center; color: white; z-index: 1; }
+    .meeting-placeholder h3 { font-size: 1.5rem; margin: 0 0 10px; }
+    .meeting-placeholder p { color: #94a3b8; margin: 0 0 24px; }
+    .mt-4 { margin-top: 16px; }
+
+    .post-meeting { max-width: 800px; margin: 0 auto; }
+    .post-meeting h3 { font-size: 1.5rem; color: #0f172a; margin-bottom: 24px; }
+    
+    .launch-icon { font-size: 64px; width: 64px; height: 64px; color: #2d8cff; margin-bottom: 16px; }
 
     .btn-launch {
       display: inline-flex; align-items: center; gap: 8px;
@@ -295,12 +315,13 @@ import { TeacherLiveClassService, TeacherRoom, ZoomStartConfig } from '../../cor
       font-size: 1rem; font-weight: 600; cursor: pointer;
       transition: background 0.15s; font-family: inherit;
     }
-    .btn-launch:hover { background: #1a7aff; }
+    .btn-launch:hover:not(:disabled) { background: #1a7aff; }
+    .btn-launch:disabled { opacity: 0.7; cursor: wait; }
     .btn-launch mat-icon { font-size: 20px; width: 20px; height: 20px; }
 
-    .share-card { text-align: left; }
-    .share-card h4 { margin: 0 0 4px; font-size: 1rem; font-weight: 700; color: #0f172a; }
-    .share-desc { margin: 0 0 20px; font-size: 0.8125rem; color: #64748b; }
+    .share-card { text-align: left; background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .share-card h4 { margin: 0 0 12px; font-size: 1rem; font-weight: 700; color: #0f172a; }
+
 
     .field-row { margin-bottom: 16px; }
     .field-row.half { flex: 1; }
@@ -332,18 +353,25 @@ import { TeacherLiveClassService, TeacherRoom, ZoomStartConfig } from '../../cor
 })
 export class TeacherLiveClassesComponent implements OnInit {
   readonly svc = inject(TeacherLiveClassService);
+  readonly zoomSvc = inject(ZoomMeetingService);
 
   readonly activeSession = signal<ZoomStartConfig | null>(null);
   readonly activeRoom = signal<TeacherRoom | null>(null);
   readonly startingId = signal<number | null>(null);
   readonly endingId = signal<number | null>(null);
   readonly elapsedTime = signal('00:00');
+  
+  readonly zoomLoading = signal(false);
+  readonly zoomStarted = signal(false);
 
   private timerInterval: ReturnType<typeof setInterval> | null = null;
   private startTimestamp = 0;
 
   ngOnInit(): void {
     this.svc.fetchRooms();
+    ZoomMtg.setZoomJSLib('https://source.zoom.us/3.1.6/lib', '/av');
+    ZoomMtg.preLoadWasm();
+    ZoomMtg.prepareWebSDK();
   }
 
   startClass(room: TeacherRoom): void {
@@ -385,13 +413,57 @@ export class TeacherLiveClassesComponent implements OnInit {
 
   endActiveSession(): void {
     this.stopTimer();
+    this.zoomStarted.set(false);
+    
+    // Attempt to leave SDK meeting cleanly if active
+    try {
+       ZoomMtg.leaveMeeting({});
+    } catch(e) {}
+    
     this.activeSession.set(null);
     this.activeRoom.set(null);
   }
 
   launchZoom(): void {
-    const url = this.activeSession()?.start_url;
-    if (url) window.open(url, '_blank');
+    const session = this.activeSession();
+    if (!session) return;
+    
+    this.zoomLoading.set(true);
+    
+    this.zoomSvc.getSdkSignature(session.meeting_id, 1).subscribe({
+      next: (config) => {
+        const root = document.getElementById('zmmtg-root');
+        if (root) {
+          ZoomMtg.init({
+            leaveUrl: window.location.href,
+            patchJsMedia: true,
+            success: (success: any) => {
+              ZoomMtg.join({
+                signature: config.signature,
+                sdkKey: config.sdkKey,
+                meetingNumber: config.meetingNumber,
+                passWord: config.passWord || '',
+                userName: config.userName,
+                userEmail: config.userEmail,
+                success: (success: any) => {
+                  this.zoomStarted.set(true);
+                  this.zoomLoading.set(false);
+                },
+                error: (error: any) => {
+                  console.error("Zoom join error", error);
+                  this.zoomLoading.set(false);
+                }
+              });
+            },
+            error: (error: any) => {
+              console.error("Zoom init error", error);
+              this.zoomLoading.set(false);
+            }
+          });
+        }
+      },
+      error: () => this.zoomLoading.set(false)
+    });
   }
 
   copyText(text: string, input: HTMLInputElement): void {
