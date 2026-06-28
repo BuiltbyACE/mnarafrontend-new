@@ -12,12 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
-import { TimetableApiService } from '@sms/domain/timetable';
-
-interface AcademicTermOption {
-  id: number;
-  name: string;
-}
+import { AcademicTerm, TimetableApiService } from '@sms/domain/timetable';
 
 @Component({
   selector: 'app-create-version-dialog',
@@ -100,7 +95,7 @@ export class CreateVersionDialogComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<CreateVersionDialogComponent>);
   private api = inject(TimetableApiService);
 
-  protected terms = signal<AcademicTermOption[]>([]);
+  protected terms = signal<AcademicTerm[]>([]);
   protected loadingTerms = signal(false);
   protected loading = signal(false);
   protected errorMsg = signal<string | null>(null);
@@ -116,14 +111,8 @@ export class CreateVersionDialogComponent implements OnInit {
 
   private loadTerms(): void {
     this.loadingTerms.set(true);
-    this.api.getBellSchedules().subscribe({
-      next: () => {
-        this.loadingTerms.set(false);
-      },
-      error: () => this.loadingTerms.set(false),
-    });
-    (this.api as any).getAcademicTerms?.().subscribe({
-      next: (list: AcademicTermOption[]) => {
+    this.api.getAcademicTerms().subscribe({
+      next: (list) => {
         this.terms.set(list);
         this.loadingTerms.set(false);
       },

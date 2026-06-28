@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, ChangeDetectionStrategy, HostListener } from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy, HostListener, effect } from '@angular/core';
 import { DatePipe, NgClass, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -154,7 +154,7 @@ import { TeacherLeaveService } from '../../core/services/teacher-leave.service';
             <mat-card class="leave-card">
               <div class="leave-header">
                 <span class="leave-type">{{ lb.type }}</span>
-                <span class="leave-total" [class.unlimited]="lb.total === 0">{{ lb.total > 0 ? lb.remaining + ' / ' + lb.total : 'Available' }}</span>
+                <span class="leave-total" [class.unlimited]="lb.total === 0">{{ lb.total > 0 ? lb.remaining + ' / ' + lb.total : (lb.type === 'Sick Leave' ? 'Unlimited' : 'Available') }}</span>
               </div>
               @if (lb.total > 0) {
                 <div class="progress-track">
@@ -164,7 +164,7 @@ import { TeacherLeaveService } from '../../core/services/teacher-leave.service';
               <div class="leave-stats">
                 <div class="stat">
                   <span class="stat-label">Total</span>
-                  <span class="stat-value">{{ lb.total > 0 ? lb.total : '—' }}</span>
+                  <span class="stat-value">{{ lb.total > 0 ? lb.total : (lb.type === 'Sick Leave' ? 'Unlimited' : '—') }}</span>
                 </div>
                 <div class="stat">
                   <span class="stat-label">Used</span>
@@ -172,7 +172,7 @@ import { TeacherLeaveService } from '../../core/services/teacher-leave.service';
                 </div>
                 <div class="stat">
                   <span class="stat-label">Remaining</span>
-                  <span class="stat-value remaining">{{ lb.total > 0 ? lb.remaining : '—' }}</span>
+                  <span class="stat-value remaining">{{ lb.total > 0 ? lb.remaining : (lb.type === 'Sick Leave' ? 'Unlimited' : '—') }}</span>
                 </div>
               </div>
             </mat-card>
@@ -467,9 +467,17 @@ export class HrComponent {
     this.leaveService.fetchRequests();
   }
 
+  /** Re-fetch balances once the profile is loaded so we can match by name */
+  private readonly _profileEffect = effect(() => {
+    const name = this.profile().name;
+    if (name && name !== '—') {
+      this.leaveService.fetchBalances(name);
+    }
+  });
+
   @HostListener('window:focus')
   onWindowFocus(): void {
-    this.leaveService.fetchBalances();
+    this.leaveService.fetchBalances(this.profile().name);
     this.leaveService.fetchRequests();
   }
 

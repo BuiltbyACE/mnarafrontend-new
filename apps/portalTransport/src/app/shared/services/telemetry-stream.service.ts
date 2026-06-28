@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, OnDestroy } from '@angular/core';
-import { getApiUrl, environment } from '@sms/core/config';
+import { environment } from '@sms/core/config';
 import { ConductorApiService } from './conductor-api.service';
 import type { TelemetryPayload } from '../models/transport.models';
 
@@ -97,9 +97,9 @@ export class TelemetryStreamService implements OnDestroy {
     const baseUrl = environment.apiBaseUrl
       .replace(/^https?:\/\//, '')
       .replace(/\/api\/v1\/?$/, '');
-    const wsUrl = `${wsProtocol}//${baseUrl}/ws/transport/trips/${this.tripId}/stream/?token=${token}`;
+    const wsUrl = `${wsProtocol}//${baseUrl}/ws/transport/trips/${this.tripId}/stream/`;
 
-    this.ws = new WebSocket(wsUrl);
+    this.ws = new WebSocket(wsUrl, [token]);
     this.connectionState.set('connecting');
 
     this.ws.onopen = () => {
@@ -108,6 +108,8 @@ export class TelemetryStreamService implements OnDestroy {
       this.error.set(null);
       this.reconnectAttempts = 0;
       this.currentReconnectDelay = this.INITIAL_RECONNECT_DELAY;
+      // Start keepalive ping to prevent proxy/load-balancer timeouts
+      this.startPingInterval();
       // Flush any buffered data immediately on reconnect
       this.flushBuffer();
     };
@@ -233,6 +235,15 @@ export class TelemetryStreamService implements OnDestroy {
   /**
    * Start periodic buffer flush attempts
    */
+  private startPingInterval(): void {
+    const PING_INTERVAL_MS = 25_000;
+    this.pingInterval = setInterval(() => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, PING_INTERVAL_MS);
+  }
+
   private startBufferFlushCycle(): void {
     this.flushTimer = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN && this.buffer.length > 0) {

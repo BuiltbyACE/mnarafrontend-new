@@ -8,6 +8,9 @@ interface RawLeaveBalance {
   id: number;
   staff_name?: string;
   points_remaining: number;
+  maternity_days_entitled?: number;
+  maternity_days_remaining?: number;
+  sick_days_remaining?: number | null;
 }
 
 interface RawLeaveRequest {
@@ -25,8 +28,8 @@ interface Paginated<T> { results?: T[]; }
 
 const LEAVE_TYPE_LIMITS: Record<string, { total: number; label: string }> = {
   COMPASSIONATE: { total: 3, label: 'Compassionate Leave' },
+  MATERNITY: { total: 0, label: 'Maternity Leave' },
   SICK: { total: 0, label: 'Sick Leave' },
-  MATERNITY: { total: 90, label: 'Maternity Leave' },
 };
 
 @Injectable({ providedIn: 'root' })
@@ -39,7 +42,7 @@ export class TeacherLeaveService {
   readonly createSuccess = signal(false);
   readonly error = signal<string | null>(null);
 
-  fetchBalances(): void {
+  fetchBalances(staffName?: string): void {
     this.isLoading.set(true);
     this.http.get<Paginated<RawLeaveBalance> | RawLeaveBalance[]>(getApiUrl('/staff/leave-balances/'))
       .pipe(finalize(() => this.isLoading.set(false)))
@@ -47,25 +50,37 @@ export class TeacherLeaveService {
         next: (res) => {
           const rows = Array.isArray(res) ? res : (res.results ?? []);
           const cards: LeaveBalance[] = [];
-          for (const leaveType of Object.keys(LEAVE_TYPE_LIMITS)) {
-            const limit = LEAVE_TYPE_LIMITS[leaveType];
-            let used = 0;
-            if (leaveType === 'COMPASSIONATE') {
-              const row = rows.find(r => r.points_remaining >= 0);
-              if (row) {
-                const remaining = row.points_remaining ?? 0;
-                used = Math.max(0, limit.total - remaining);
-                cards.push({
-                  type: limit.label,
-                  total: limit.total,
-                  used,
-                  remaining,
-                });
-              } else {
-                cards.push({ type: limit.label, total: limit.total, used: 0, remaining: limit.total });
-              }
+          let currentRow: RawLeaveBalance | undefined;
+
+          if (staffName) {
+            const normalised = staffName.toLowerCase().trim();
+            currentRow = rows.find(
+              r => r.staff_name && normalised.includes(r.staff_name.toLowerCase().trim())
+            );
+          }
+          currentRow ??= rows.find(r => r.points_remaining >= 0);
+
+          if (currentRow) {
+            // Compassionate
+            const compTotal = 3;
+            const compRemaining = currentRow.points_remaining ?? 0;
+            cards.push({ type: 'Compassionate Leave', total: compTotal, used: Math.max(0, compTotal - compRemaining), remaining: compRemaining });
+
+            // Maternity
+            const matTotal = currentRow.maternity_days_entitled ?? 0;
+            const matRemaining = currentRow.maternity_days_remaining ?? 0;
+            cards.push({ type: 'Maternity Leave', total: matTotal, used: Math.max(0, matTotal - matRemaining), remaining: matRemaining });
+
+            // Sick
+            const sickRemaining = currentRow.sick_days_remaining;
+            if (sickRemaining === null || sickRemaining === undefined) {
+              cards.push({ type: 'Sick Leave', total: 0, used: 0, remaining: 0 });
             } else {
-              cards.push({ type: limit.label, total: limit.total, used: 0, remaining: limit.total });
+              cards.push({ type: 'Sick Leave', total: sickRemaining, used: 0, remaining: sickRemaining });
+            }
+          } else {
+            for (const lt of Object.keys(LEAVE_TYPE_LIMITS)) {
+              cards.push({ type: LEAVE_TYPE_LIMITS[lt].label, total: LEAVE_TYPE_LIMITS[lt].total, used: 0, remaining: LEAVE_TYPE_LIMITS[lt].total });
             }
           }
           this.leaveBalances.set(cards);

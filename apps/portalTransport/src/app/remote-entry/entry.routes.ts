@@ -1,9 +1,9 @@
 import { Route } from '@angular/router';
-import { LoginComponent } from '../features/login/login.component';
+import { DeviceLoginComponent } from '../features/login/device-login.component';
 import { TripOperatorComponent } from '../features/trip-operator/trip-operator.component';
 
 export const remoteRoutes: Route[] = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: LoginComponent },
+  { path: 'login', component: DeviceLoginComponent },
   { path: 'operator', component: TripOperatorComponent },
 ];

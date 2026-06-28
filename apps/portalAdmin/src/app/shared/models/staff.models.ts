@@ -21,6 +21,9 @@ export interface StaffSalary {
 
 export interface StaffLeaveBalance {
   points_remaining: number;
+  maternity_days_entitled?: number;
+  maternity_days_remaining?: number;
+  sick_days_remaining?: number | null;
 }
 
 export interface Faculty {
@@ -103,6 +106,7 @@ export interface StaffFormData {
   department?: string;
   surname?: string;
   other_names?: string;
+  gender?: string;
   qualification_level?: QualificationLevel;
   specialization_area?: string;
   tsc_number?: string;
@@ -143,6 +147,9 @@ export interface LeaveBalance {
   staff: number;
   staff_name?: string;
   points_remaining: number;
+  maternity_days_entitled?: number;
+  maternity_days_remaining?: number;
+  sick_days_remaining?: number | null;
 }
 
 export interface LeadershipRoles {

@@ -225,18 +225,18 @@ export class EntryFormDialogComponent implements OnInit {
     this.api.getTeachers().subscribe({
       next: (list) => this.teachers.set(list.map((t) => ({ id: t.id, label: t.name }))),
     });
-    (this.api as any).getSubjectCodes?.()?.subscribe?.({
-      next: (list: any[]) => this.subjects.set(
+    this.api.getSubjectCodes().subscribe({
+      next: (list) => this.subjects.set(
         list.map((s) => ({ id: s.id, label: `${s.code} – ${s.full_name}` }))
       ),
     });
-    (this.api as any).getYearGroups?.()?.subscribe?.({
-      next: (list: any[]) => this.yearGroups.set(
+    this.api.getYearGroups().subscribe({
+      next: (list) => this.yearGroups.set(
         list.map((yg) => ({ id: yg.id, label: yg.name }))
       ),
     });
-    (this.api as any).getRooms?.()?.subscribe?.({
-      next: (list: any[]) => this.rooms.set(
+    this.api.getRooms().subscribe({
+      next: (list) => this.rooms.set(
         list.map((r) => ({ id: r.id, label: r.name }))
       ),
     });

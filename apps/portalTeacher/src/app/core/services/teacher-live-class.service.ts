@@ -1,7 +1,8 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, DestroyRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { getApiUrl } from '@sms/core/config';
 import { Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export interface TeacherRoom {
   id: number;
@@ -30,13 +31,16 @@ export interface ZoomStartConfig {
 @Injectable({ providedIn: 'root' })
 export class TeacherLiveClassService {
   private http = inject(HttpClient);
+  private destroyRef = inject(DestroyRef);
 
   readonly rooms = signal<TeacherRoom[]>([]);
   readonly isLoading = signal(false);
 
   fetchRooms(): void {
     this.isLoading.set(true);
-    this.http.get<TeacherRoom[]>(getApiUrl('/lms/teacher/live-classes/')).subscribe({
+    this.http.get<TeacherRoom[]>(getApiUrl('/lms/teacher/live-classes/')).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
       next: (data) => { this.rooms.set(data); this.isLoading.set(false); },
       error: () => this.isLoading.set(false),
     });

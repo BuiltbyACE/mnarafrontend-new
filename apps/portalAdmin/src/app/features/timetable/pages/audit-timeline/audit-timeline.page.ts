@@ -18,21 +18,26 @@ import { debounceTime } from 'rxjs/operators';
 import {
   TimetableApiService,
   TimetableStateService,
-  TimetableVersion,
-  AuditLogEntry,
   AuditAction,
   AuditEntityType,
   AuditLogFilter,
 } from '@sms/domain/timetable';
 
 const ACTION_ICONS: Record<AuditAction, { icon: string; color: string; label: string }> = {
-  CREATE:   { icon: 'add_circle_outline',    color: 'text-emerald-600 bg-emerald-50', label: 'Created' },
-  UPDATE:   { icon: 'edit',                  color: 'text-blue-600 bg-blue-50',       label: 'Updated' },
-  DELETE:   { icon: 'delete_outline',        color: 'text-red-600 bg-red-50',         label: 'Deleted' },
-  PUBLISH:  { icon: 'publish',               color: 'text-emerald-700 bg-emerald-100',label: 'Published' },
-  ARCHIVE:  { icon: 'archive',               color: 'text-slate-500 bg-slate-100',    label: 'Archived' },
-  ROLLBACK: { icon: 'restore',               color: 'text-amber-700 bg-amber-50',     label: 'Rolled Back' },
-  CLONE:    { icon: 'content_copy',          color: 'text-violet-600 bg-violet-50',   label: 'Cloned' },
+  CREATE:   { icon: 'add_circle_outline',    color: 'text-emerald-600 bg-emerald-50',  label: 'Created' },
+  UPDATE:   { icon: 'edit',                  color: 'text-blue-600 bg-blue-50',        label: 'Updated' },
+  DELETE:   { icon: 'delete_outline',        color: 'text-red-600 bg-red-50',          label: 'Deleted' },
+  PUBLISH:  { icon: 'publish',               color: 'text-emerald-700 bg-emerald-100', label: 'Published' },
+  ARCHIVE:  { icon: 'archive',               color: 'text-slate-500 bg-slate-100',     label: 'Archived' },
+  ROLLBACK: { icon: 'restore',               color: 'text-amber-700 bg-amber-50',      label: 'Rolled Back' },
+  CLONE:    { icon: 'content_copy',          color: 'text-violet-600 bg-violet-50',    label: 'Cloned' },
+};
+
+const ENTITY_BADGE: Record<string, { bg: string; text: string; icon: string }> = {
+  TimetableVersion: { bg: 'bg-indigo-50', text: 'text-indigo-600', icon: 'layers' },
+  TimetableEntry:   { bg: 'bg-blue-50',   text: 'text-blue-600',   icon: 'table_rows' },
+  BellSchedule:     { bg: 'bg-amber-50',  text: 'text-amber-600',  icon: 'schedule' },
+  TieredPeriod:     { bg: 'bg-violet-50', text: 'text-violet-600', icon: 'format_list_numbered' },
 };
 
 const PAGE_SIZE = 20;
@@ -149,59 +154,67 @@ const PAGE_SIZE = 20;
       @if (!loading() && auditLog().length > 0) {
         <div class="relative">
           <!-- Vertical line -->
-          <div class="absolute left-[17px] top-0 bottom-0 w-px bg-slate-200"></div>
+          <div class="absolute left-[21px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-slate-200 via-slate-200 to-transparent"></div>
 
-          <ol class="space-y-4 pl-0">
+          <ol class="space-y-5">
             @for (entry of auditLog(); track entry.id) {
+              @let meta = actionMeta(entry.action);
+              @let ent = entityBadge(entry.entity_type);
               <li class="flex gap-4">
-                <!-- Icon -->
-                <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 z-10
-                            {{ actionMeta(entry.action).color }}">
-                  <mat-icon fontSet="material-icons-outlined" class="text-base">
-                    {{ actionMeta(entry.action).icon }}
+                <!-- Action icon circle -->
+                <div class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 z-10 ring-4 ring-[#f8fafc] shadow-sm"
+                     [class]="meta.color">
+                  <mat-icon fontSet="material-icons-outlined" class="text-lg">
+                    {{ meta.icon }}
                   </mat-icon>
                 </div>
 
-                <!-- Content -->
-                <div class="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm p-4 min-w-0">
-                  <div class="flex items-start justify-between gap-2 flex-wrap">
-                    <div>
-                      <span class="text-sm font-semibold text-slate-800">
-                        {{ actionMeta(entry.action).label }}
+                <!-- Content card -->
+                <div class="flex-1 group">
+                  <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 transition-all duration-150 group-hover:shadow-md min-w-0">
+                    <div class="flex items-start justify-between gap-2 flex-wrap">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-sm font-bold text-slate-800">{{ meta.label }}</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                              [class]="ent.bg + ' ' + ent.text">
+                          <mat-icon class="text-[11px]">{{ ent.icon }}</mat-icon>
+                          {{ entry.entity_type.replace('Timetable', '') }}
+                        </span>
+                        @if (entry.entity_id) {
+                          <span class="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">#{{ entry.entity_id }}</span>
+                        }
+                      </div>
+                      <time class="text-xs text-slate-400 whitespace-nowrap shrink-0">
+                        {{ entry.timestamp | date:'d MMM y, HH:mm' }}
+                      </time>
+                    </div>
+
+                    <div class="flex items-center gap-3 mt-2 text-xs text-slate-400 flex-wrap">
+                      <span class="inline-flex items-center gap-1.5">
+                        <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[9px] font-bold uppercase">
+                          {{ userInitials(entry.user_name) }}
+                        </span>
+                        {{ entry.user_name }}
                       </span>
-                      <span class="text-sm text-slate-500 ml-1.5">{{ entry.entity_type }}</span>
-                      @if (entry.entity_id) {
-                        <span class="text-xs text-slate-400 ml-1">#{{ entry.entity_id }}</span>
+                      @if (entry.version_name) {
+                        <span class="inline-flex items-center gap-1">
+                          <mat-icon fontSet="material-icons-outlined" class="text-[13px] text-indigo-400">layers</mat-icon>
+                          <span class="text-indigo-500 font-medium">{{ entry.version_name }}</span>
+                        </span>
                       }
                     </div>
-                    <time class="text-xs text-slate-400 whitespace-nowrap">
-                      {{ entry.timestamp | date:'d MMM y, HH:mm' }}
-                    </time>
-                  </div>
 
-                  <div class="flex items-center gap-3 mt-1.5 text-xs text-slate-400 flex-wrap">
-                    <span class="flex items-center gap-1">
-                      <mat-icon fontSet="material-icons-outlined" class="text-[13px]">person_outline</mat-icon>
-                      {{ entry.user_name }}
-                    </span>
-                    @if (entry.version_name) {
-                      <span class="flex items-center gap-1">
-                        <mat-icon fontSet="material-icons-outlined" class="text-[13px]">layers</mat-icon>
-                        {{ entry.version_name }}
-                      </span>
+                    @if (entry.detail && objectKeys(entry.detail).length > 0) {
+                      <div class="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-600 font-mono overflow-x-auto">
+                        @for (k of objectKeys(entry.detail); track k) {
+                          <div class="flex gap-2 py-0.5">
+                            <span class="text-slate-400 shrink-0 font-medium">{{ k }}:</span>
+                            <span class="text-slate-700">{{ entry.detail![k] }}</span>
+                          </div>
+                        }
+                      </div>
                     }
                   </div>
-
-                  @if (entry.detail && objectKeys(entry.detail).length > 0) {
-                    <div class="mt-2 p-2.5 bg-slate-50 rounded-lg text-xs text-slate-600 font-mono overflow-x-auto">
-                      @for (k of objectKeys(entry.detail); track k) {
-                        <div class="flex gap-2">
-                          <span class="text-slate-400 shrink-0">{{ k }}:</span>
-                          <span>{{ entry.detail![k] }}</span>
-                        </div>
-                      }
-                    </div>
-                  }
                 </div>
               </li>
             }
@@ -209,17 +222,19 @@ const PAGE_SIZE = 20;
         </div>
 
         <!-- Pagination -->
-        <div class="flex items-center justify-between mt-6">
+        <div class="flex items-center justify-between mt-8 pt-4 border-t border-slate-100">
           <span class="text-sm text-slate-400">
-            Showing {{ pageStart() }}–{{ pageEnd() }} of {{ totalCount() }}
+            Showing <span class="font-semibold text-slate-600">{{ pageStart() }}</span>–<span class="font-semibold text-slate-600">{{ pageEnd() }}</span> of <span class="font-semibold text-slate-600">{{ totalCount() }}</span>
           </span>
           <div class="flex items-center gap-2">
-            <button mat-stroked-button [disabled]="currentPage() === 1" (click)="prevPage()">
-              <mat-icon>chevron_left</mat-icon>
+            <button mat-stroked-button [disabled]="currentPage() === 1" (click)="prevPage()"
+                    class="!h-8 !min-w-0 !px-2">
+              <mat-icon class="text-sm">chevron_left</mat-icon>
             </button>
-            <span class="text-sm font-medium text-slate-700 px-2">Page {{ currentPage() }}</span>
-            <button mat-stroked-button [disabled]="!hasNextPage()" (click)="nextPage()">
-              <mat-icon>chevron_right</mat-icon>
+            <span class="text-xs font-medium text-slate-500 px-1">Page {{ currentPage() }}</span>
+            <button mat-stroked-button [disabled]="!hasNextPage()" (click)="nextPage()"
+                    class="!h-8 !min-w-0 !px-2">
+              <mat-icon class="text-sm">chevron_right</mat-icon>
             </button>
           </div>
         </div>
@@ -340,6 +355,14 @@ export class AuditTimelinePage implements OnInit {
 
   protected actionMeta(action: AuditAction) {
     return ACTION_ICONS[action] ?? { icon: 'info', color: 'text-slate-500 bg-slate-100', label: action };
+  }
+
+  protected entityBadge(type: string) {
+    return ENTITY_BADGE[type] ?? { bg: 'bg-slate-100', text: 'text-slate-600', icon: 'help_outline' };
+  }
+
+  protected userInitials(name: string): string {
+    return name.split(' ').map((n) => n[0]).filter(Boolean).join('').substring(0, 2).toUpperCase() || '?';
   }
 
   protected objectKeys(obj: Record<string, unknown>): string[] {

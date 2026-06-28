@@ -63,3 +63,27 @@ export interface WeekViewResponse {
   thursday: TimetableEntry[];
   friday: TimetableEntry[];
 }
+
+export interface YearGroup {
+  id: number;
+  name: string;
+  year_level: number;
+  year_level_name: string;
+  class_teacher: number | null;
+  class_teacher_name: string;
+  room_number: string;
+  capacity: number;
+}
+
+export interface YearLevel {
+  id: number;
+  name: string;
+  order: number;
+}
+
+export interface AcademicTerm {
+  id: number;
+  name: string;
+  start_date?: string;
+  end_date?: string;
+}

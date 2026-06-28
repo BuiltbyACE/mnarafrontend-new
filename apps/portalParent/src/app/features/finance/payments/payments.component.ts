@@ -5,6 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { getApiUrl } from '@sms/core/config';
 import { ParentApiService } from '../../../services/parent-api.service';
 import { PaymentHistoryItem, PaymentHistoryResponse, PAYMENT_METHOD_LABEL } from '../../../models/parent.models';
 
@@ -129,7 +130,7 @@ export class PaymentsComponent implements OnInit {
     this.loading.set(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    const paginatedUrl = `${this.api['baseUrl']}/finance/parent/payments/?page=${event.pageIndex + 1}`;
+    const paginatedUrl = `${getApiUrl('/finance/parent/payments/')}?page=${event.pageIndex + 1}`;
     this.fetchPage(paginatedUrl);
   }
 

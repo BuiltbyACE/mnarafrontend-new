@@ -44,10 +44,7 @@ import { CalendarGridComponent } from './calendar-grid.component';
           }
 
           <app-calendar-grid
-            [days]="[]"
-            [events]="service.events()"
-            [currentYear]="service.currentYear()"
-            [currentMonth]="service.currentMonth()"
+            [calendarDays]="service.calendarDays()"
             [weekDays]="weekDays"
           />
 

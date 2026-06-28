@@ -152,8 +152,25 @@ export class StatementComponent implements OnInit {
           duration: 5000,
           panelClass: ['success-snackbar']
         });
-        // We could optionally reload the statement here after a delay
+        setTimeout(() => this.reload(), 3000);
       }
+    });
+  }
+
+  reload(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.api.getFeeStatement().subscribe({
+      next: (data) => {
+        this.children.set(data.children);
+        this.schoolInfo.set(data.school_info);
+        this.generatedAt.set(data.generated_at);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.error.set('Failed to reload fee statement.');
+      },
     });
   }
 

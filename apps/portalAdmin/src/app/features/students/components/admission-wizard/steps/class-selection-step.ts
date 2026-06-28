@@ -10,13 +10,13 @@ import { YearLevel } from '../../../../../shared/models/academics.models';
   imports: [CommonModule, FormsModule, MatSelectModule],
   template: `
     <div class="step-container">
-      <h2>Class Selection</h2>
-      <p class="step-description">Select the year level and admission date</p>
+      <h2>Class & Options</h2>
+      <p class="step-description">Select the year level, admission date, and enrollment options</p>
 
       <div class="form-row">
         <div class="field-group">
           <label>Year Level *</label>
-          <select [ngModel]="data().year_level_id" (ngModelChange)="update('year_level_id', $event)" required>
+          <select [ngModel]="current.year_level_id" (ngModelChange)="update('year_level_id', $event)" required>
             <option [value]="">Select year level</option>
             @for (yl of yearLevels(); track yl.id) {
               <option [value]="yl.id">{{ yl.name }}</option>
@@ -25,7 +25,45 @@ import { YearLevel } from '../../../../../shared/models/academics.models';
         </div>
         <div class="field-group">
           <label>Date of Admission *</label>
-          <input type="date" [ngModel]="data().date_of_admission" (ngModelChange)="update('date_of_admission', $event)" required>
+          <input type="date" [ngModel]="current.date_of_admission" (ngModelChange)="update('date_of_admission', $event)" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
+          <label>Transport Options</label>
+          <select [ngModel]="current.transport_options" (ngModelChange)="update('transport_options', $event)">
+            <option value="NONE">None</option>
+            @for (t of transportChoices(); track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
+            <option value="SCHOOL_BUS">School Bus</option>
+            <option value="PRIVATE">Private Transport</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Lunch Option</label>
+          <select [ngModel]="current.lunch_option" (ngModelChange)="update('lunch_option', $event === 'true')">
+            <option [value]="false">No Lunch</option>
+            <option [value]="true">School Lunch Program</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
+          <label>Embrace Islamic Studies</label>
+          <select [ngModel]="current.embrace_islamic" (ngModelChange)="update('embrace_islamic', $event)">
+            @for (e of embraceChoices(); track e.value) {
+              <option [value]="e.value">{{ e.label }}</option>
+            }
+            @if (embraceChoices().length === 0) {
+              <option value="YES">Yes</option>
+              <option value="NO">No</option>
+            }
+          </select>
+        </div>
+        <div class="field-group">
         </div>
       </div>
     </div>
@@ -42,12 +80,14 @@ import { YearLevel } from '../../../../../shared/models/academics.models';
   `]
 })
 export class ClassSelectionStep {
-  data = input.required<{ year_level_id: number | null; date_of_admission: string }>();
+  data = input.required<{ year_level_id: number | null; date_of_admission: string; transport_options: string; lunch_option: boolean; embrace_islamic: string }>();
   yearLevels = input.required<YearLevel[]>();
+  transportChoices = input<{ value: string; label: string }[]>([]);
+  embraceChoices = input<{ value: string; label: string }[]>([]);
   dataChange = output<any>();
   validityChange = output<boolean>();
 
-  private current = { year_level_id: null as number | null, date_of_admission: '' };
+  current = { year_level_id: null as number | null, date_of_admission: '', transport_options: 'NONE', lunch_option: false, embrace_islamic: 'NO' };
 
   constructor() {
     effect(() => {

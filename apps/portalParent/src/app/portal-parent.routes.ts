@@ -1,7 +1,6 @@
 import { Route } from '@angular/router';
 import { ParentLayoutComponent } from './core/layout/parent-layout.component';
 import { ParentDashboardComponent } from './features/dashboard/components/parent-dashboard.component';
-import { AcademicHubComponent } from './features/academics/components/academic-hub.component';
 import { FinanceHubComponent } from './features/finance/components/finance-hub.component';
 
 export const remoteRoutes: Route[] = [

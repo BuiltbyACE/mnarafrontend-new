@@ -158,7 +158,21 @@ export class ResourceViewerComponent implements OnInit {
 
   ngOnInit() {
     if (this.data.url) {
-      this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.data.url);
+      this.safeUrl = this.sanitizeUrl(this.data.url);
+    }
+  }
+
+  private sanitizeUrl(url: string): SafeResourceUrl | null {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        console.error('Rejected URL with unsafe protocol:', parsed.protocol);
+        return null;
+      }
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    } catch {
+      console.error('Invalid URL — resource will not be loaded');
+      return null;
     }
   }
 

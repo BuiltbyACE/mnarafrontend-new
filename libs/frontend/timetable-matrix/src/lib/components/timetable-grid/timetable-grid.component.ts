@@ -1,7 +1,8 @@
-import { Component, input, output, computed, OnInit, inject } from '@angular/core';
+import { Component, input, output, computed, effect, OnInit, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
-import { TimetableStateService, TimetableApiService, TimetableEntry, TieredPeriod, DAY_LABELS, DAY_SHORT_LABELS } from '@sms/domain/timetable';
+import { TimetableStateService, TimetableApiService, TimetableEntry, TieredPeriod, BellSchedule, DAY_LABELS, DAY_SHORT_LABELS } from '@sms/domain/timetable';
 import { PeriodCellComponent } from '../period-cell/period-cell.component';
 
 @Component({
@@ -11,14 +12,14 @@ import { PeriodCellComponent } from '../period-cell/period-cell.component';
   template: `
     <div class="flex flex-col h-full bg-white rounded-xl overflow-hidden border border-[var(--tt-border)] shadow-sm">
       <!-- Header Row -->
-      <div class="grid grid-cols-[160px_repeat(5,1fr)] border-b border-[var(--tt-border)] bg-[var(--tt-surface-alt)]">
-        <div class="p-3 text-xs font-semibold text-[var(--tt-text-subtle)] uppercase tracking-widest border-r border-[var(--tt-border)]">
+      <div class="grid grid-cols-[120px_repeat(5,1fr)] border-b border-[var(--tt-border)] bg-gradient-to-r from-[var(--tt-surface-alt)] to-white">
+        <div class="p-3 text-center text-xs font-semibold text-[var(--tt-text-subtle)] uppercase tracking-widest">
           Time
         </div>
         @for (day of dayColumns; track day.value) {
-          <div class="p-3 text-center"
-               [class.bg-[var(--tt-primary-bg)]]="day.isToday"
-               [class.text-[var(--tt-primary)]]="day.isToday"
+          <div class="p-3 text-center border-l border-[var(--tt-border)]"
+               [class.bg-emerald-50]="day.isToday"
+               [class.text-emerald-700]="day.isToday"
                [class.text-[var(--tt-text-muted)]]="!day.isToday">
             <div class="text-xs font-bold uppercase tracking-wide">{{ day.shortLabel }}</div>
             <div class="text-[10px] text-[var(--tt-text-subtle)] mt-0.5">{{ day.fullLabel }}</div>
@@ -65,31 +66,17 @@ import { PeriodCellComponent } from '../period-cell/period-cell.component';
 
       <!-- Table Rows -->
       @if (activePeriods().length > 0) {
-        <cdk-virtual-scroll-viewport itemSize="80" class="flex-1">
+        <cdk-virtual-scroll-viewport itemSize="96" class="flex-1">
           <div class="min-h-full">
             @for (period of activePeriods(); track period.id) {
-              <div class="grid grid-cols-[160px_repeat(5,1fr)] border-b border-[var(--tt-border)] transition-colors duration-150"
-                   [class.bg-[var(--tt-primary-bg)]]="period.period_type === 'INSTITUTIONAL'"
-                   [class.bg-amber-50]="period.period_type === 'BREAK'"
-                   [class.bg-slate-50]="period.period_type === 'TRANSITION'"
-                   [class.hover:bg-[var(--tt-surface-alt)]]="period.is_assignable">
+              <div class="grid grid-cols-[120px_repeat(5,1fr)] border-b border-[var(--tt-border)] py-0.5
+                          transition-colors duration-150">
 
                 <!-- Time Axis Cell -->
-                <div class="p-3 border-r border-[var(--tt-border)] flex flex-col justify-center min-h-[80px]">
-                  <span class="text-xs font-medium text-[var(--tt-text)]">{{ formatTime(period.start_time) }}</span>
-                  <span class="text-[10px] text-[var(--tt-text-faint)] mt-0.5">{{ formatTime(period.end_time) }}</span>
-                  <span class="text-[9px] text-[var(--tt-text-subtle)] mt-1">{{ period.duration_minutes }}m</span>
-                  @if (period.period_type !== 'ACADEMIC') {
-                    <span class="mt-1 text-[9px] px-1.5 py-0.5 rounded-full text-center font-semibold"
-                          [class.bg-amber-100]="period.period_type === 'BREAK'"
-                          [class.text-amber-700]="period.period_type === 'BREAK'"
-                          [class.bg-[var(--tt-primary-bg)]]="period.period_type === 'INSTITUTIONAL'"
-                          [class.text-[var(--tt-primary)]]="period.period_type === 'INSTITUTIONAL'"
-                          [class.bg-slate-200]="period.period_type === 'TRANSITION'"
-                          [class.text-slate-500]="period.period_type === 'TRANSITION'">
-                      {{ period.name }}
-                    </span>
-                  }
+                <div class="p-2 flex flex-col justify-center items-center text-center min-h-[96px]">
+                  <span class="text-xs font-bold text-[var(--tt-text)]">{{ formatTime(period.start_time) }}</span>
+                  <span class="text-[10px] text-[var(--tt-text-faint)]">{{ formatTime(period.end_time) }}</span>
+                  <span class="text-[8px] text-[var(--tt-text-subtle)] mt-0.5 font-semibold">{{ period.duration_minutes }}m</span>
                 </div>
 
                 <!-- Entry Cells -->
@@ -110,18 +97,32 @@ import { PeriodCellComponent } from '../period-cell/period-cell.component';
     </div>
   `,
   styles: [`
-    :host { display: block; height: 100%; }
+    :host {
+      display: block; height: 100%;
+      --tt-border: #e9eef4;
+      --tt-surface-alt: #f8faff;
+      --tt-text-subtle: #8a9bb5;
+      --tt-text-muted: #5e6f8d;
+      --tt-text-faint: #64748b;
+      --tt-primary: #1a2a6c;
+      --tt-primary-bg: #e8edfb;
+      --tt-text: #0b1a2e;
+      --tt-danger-text: #dc2626;
+      --tt-danger-bg: #fee2e2;
+      --tt-border-strong: #cbd5e1;
+    }
     cdk-virtual-scroll-viewport { height: 100%; }
   `],
 })
 export class TimetableGridComponent implements OnInit {
-  readonly yearGroupId = input<number>();
-  readonly teacherId = input<number>();
-  readonly termId = input<number>();
+  readonly yearGroupId = input<number | null>();
+  readonly teacherId = input<number | null>();
+  readonly termId = input<number | null>();
   readonly entryClicked = output<TimetableEntry>();
 
   private state = inject(TimetableStateService);
   private api = inject(TimetableApiService);
+  private destroyRef = inject(DestroyRef);
 
   protected activePeriods = this.state.activePeriods;
   protected selectedDay = this.state.selectedDay;
@@ -137,8 +138,17 @@ export class TimetableGridComponent implements OnInit {
     isToday: d === this.todayIndex,
   }));
 
+  constructor() {
+    effect(() => {
+      this.termId();
+      this.yearGroupId();
+      this.teacherId();
+      this.loadTimetable();
+    });
+  }
+
   ngOnInit(): void {
-    this.loadTimetable();
+    // Initial load is handled by the effect
   }
 
   protected formatTime(time: string): string {
@@ -147,7 +157,8 @@ export class TimetableGridComponent implements OnInit {
 
   protected getEntry(periodId: number, dayIndex: number): TimetableEntry | null {
     const dayMap = this.state.gridMap().get(periodId);
-    return dayMap?.get(dayIndex) ?? null;
+    const entries = dayMap?.get(dayIndex);
+    return entries && entries.length > 0 ? entries[0] : null;
   }
 
   protected onCellClick(entry: TimetableEntry | null): void {
@@ -164,11 +175,13 @@ export class TimetableGridComponent implements OnInit {
     const teacherId = this.teacherId();
     const termId = this.termId();
 
-    this.api.getWeekView({
-      term: termId,
-      ...(teacherId ? { teacher: teacherId } : {}),
-      ...(yearGroupId ? { year_group: yearGroupId } : {}),
-    }).subscribe({
+    const params: { term?: number; teacher?: number; year_group?: number } = {};
+    if (termId != null) params.term = termId;
+    if (teacherId != null) params.teacher = teacherId;
+    if (yearGroupId != null) params.year_group = yearGroupId;
+    this.api.getWeekView(params).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
       next: (response) => {
         const allEntries = [
           ...response.monday,
@@ -194,16 +207,17 @@ export class TimetableGridComponent implements OnInit {
   }
 
   private _resolveBellSchedule(entries: TimetableEntry[]): void {
-    const usedPeriodIds = new Set(entries.map((e) => e.tiered_period));
+    const usedPeriodIds = new Set(entries.map((e) => Number(e.tiered_period)));
 
-    this.api.getTieredPeriods().subscribe({
+    this.api.getTieredPeriods().pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
       next: (allPeriods) => {
-        const matchedSchedules = new Set<number>();
+        if (!allPeriods || allPeriods.length === 0) { this._fallbackBellSchedule(usedPeriodIds); return; }
 
+        const matchedSchedules = new Set<number>();
         for (const p of allPeriods) {
-          if (usedPeriodIds.has(p.id)) {
-            matchedSchedules.add(p.schedule);
-          }
+          if (usedPeriodIds.has(p.id)) { matchedSchedules.add(p.schedule); }
         }
 
         if (matchedSchedules.size > 0) {
@@ -213,19 +227,41 @@ export class TimetableGridComponent implements OnInit {
             return a.sequence - b.sequence;
           });
           this.state.setBellSchedule(merged);
+        } else {
+          this._fallbackBellSchedule(usedPeriodIds);
         }
       },
-      error: () => {
-        this.api.getBellSchedules().subscribe({
-          next: (schedules) => {
-            if (schedules.length > 0) {
-              this.api.getTieredPeriods(schedules[0].id).subscribe({
-                next: (periods) => this.state.setBellSchedule(periods),
-              });
-            }
-          },
-        });
+      error: () => { this._fallbackBellSchedule(usedPeriodIds); },
+    });
+  }
+
+  private _fallbackBellSchedule(usedPeriodIds?: Set<number>): void {
+    this.api.getBellSchedules().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (schedules) => {
+        if (schedules.length > 0) {
+          this._trySchedule(schedules, 0, usedPeriodIds);
+        }
       },
+      error: () => {},
+    });
+  }
+
+  private _trySchedule(schedules: BellSchedule[], index: number, usedPeriodIds?: Set<number>): void {
+    if (index >= schedules.length) { return; }
+    this.api.getTieredPeriods(schedules[index].id).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: (periods) => {
+        if (periods.length > 0) {
+          const matched = usedPeriodIds && usedPeriodIds.size > 0
+            ? periods.filter((p) => usedPeriodIds!.has(p.id))
+            : periods;
+          this.state.setBellSchedule(matched.length > 0 ? matched : periods);
+        } else {
+          this._trySchedule(schedules, index + 1, usedPeriodIds);
+        }
+      },
+      error: () => { this._trySchedule(schedules, index + 1, usedPeriodIds); },
     });
   }
 }

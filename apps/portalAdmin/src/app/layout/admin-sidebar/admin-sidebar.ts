@@ -9,6 +9,7 @@ interface NavChild {
   label: string;
   route: string;
   icon?: string;
+  children?: NavChild[];
 }
 
 interface NavItem {
@@ -90,15 +91,31 @@ interface NavSection {
                 @if (expandedItem() === item.name && !collapsed) {
                   <div class="children-list">
                     @for (child of item.children; track child.route) {
-                      <a
-                        class="child-item"
-                        [routerLink]="link(child.route)"
-                        routerLinkActive="active"
-                        [routerLinkActiveOptions]="{ exact: child.route === 'students' }"
-                      >
-                        <span class="child-dot"></span>
-                        <span>{{ child.label }}</span>
-                      </a>
+                      @if (child.children) {
+                        <div class="child-header">{{ child.label }}</div>
+                        <div class="nested-children">
+                          @for (sub of child.children; track sub.route) {
+                            <a
+                              class="child-item"
+                              [routerLink]="link(sub.route)"
+                              routerLinkActive="active"
+                            >
+                              <span class="child-dot"></span>
+                              <span>{{ sub.label }}</span>
+                            </a>
+                          }
+                        </div>
+                      } @else {
+                        <a
+                          class="child-item"
+                          [routerLink]="link(child.route)"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: child.route === 'students' }"
+                        >
+                          <span class="child-dot"></span>
+                          <span>{{ child.label }}</span>
+                        </a>
+                      }
                     }
                   </div>
                 }
@@ -355,6 +372,21 @@ interface NavSection {
       flex-shrink: 0;
     }
 
+    .child-header {
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+      padding: 8px 12px 4px;
+      pointer-events: none;
+    }
+    .nested-children {
+      padding-left: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
     .dropdown-arrow { transition: transform 0.2s ease; }
     .nav-item.expanded .dropdown-arrow { transform: rotate(90deg); }
 
@@ -399,10 +431,15 @@ export class AdminSidebarComponent {
   isParentActive(item: NavItem): boolean {
     if (!item.children) return false;
     const base = this.adminBase();
-    return item.children.some((c) => {
-      const full = c.route ? `${base}/${c.route}` : base;
-      return this.location.path().startsWith(full);
-    });
+    const checkChild = (c: NavChild): boolean => {
+      if (c.route) {
+        const full = `${base}/${c.route}`;
+        if (this.location.path().startsWith(full)) return true;
+      }
+      if (c.children) return c.children.some(checkChild);
+      return false;
+    };
+    return item.children.some(checkChild);
   }
 
   readonly navSections: NavSection[] = [
@@ -445,7 +482,21 @@ export class AdminSidebarComponent {
             { label: 'Student Houses', route: 'students/houses' },
           ],
         },
-        { name: 'timetable', label: 'Timetable', icon: 'calendar_month', route: 'timetable' },
+        {
+          name: 'timetable', label: 'Timetable', icon: 'calendar_month', route: 'timetable',
+          children: [
+            { label: 'Dashboard',    route: 'timetable/dashboard' },
+            { label: 'Editor',       route: 'timetable/editor' },
+            { label: 'Conflicts',    route: 'timetable/conflicts' },
+            { label: 'Versions',     route: 'timetable/versions' },
+            { label: 'Audit Log',    route: 'timetable/audit' },
+            { label: 'Setup', route: 'timetable/setup', children: [
+              { label: 'Rooms',         route: 'timetable/setup/rooms' },
+              { label: 'Subject Codes', route: 'timetable/setup/subject-codes' },
+              { label: 'Bell Schedules',route: 'timetable/setup/bell-schedules' },
+            ]},
+          ],
+        },
         { name: 'calendar', label: 'School Calendar', icon: 'event_note', route: 'calendar' },
       ],
     },

@@ -6,14 +6,14 @@ import { TimetableConflict } from '../models/timetable-conflict.model';
 import { TimetableEvent } from '../models/timetable-event.model';
 import { TimetableVersion, VersionCompareResult, AuditLogEntry } from '../models/timetable-version.model';
 
-type GridMap = Map<number, Map<number, TimetableEntry>>;
+type GridMap = Map<number, Map<number, TimetableEntry[]>>;
 
 @Injectable({ providedIn: 'root' })
 export class TimetableStateService {
   readonly entries = signal<TimetableEntry[]>([]);
   readonly events = signal<TimetableEvent[]>([]);
   readonly activePeriods = signal<TieredPeriod[]>([]);
-  readonly selectedDay = signal<number>(new Date().getDay() - 1);
+  readonly selectedDay = signal<number>(Math.max(0, new Date().getDay() - 1));
   readonly activeFilter = signal<TimetableFilter>({});
   readonly conflicts = signal<TimetableConflict[]>([]);
   readonly isLoading = signal(false);
@@ -32,7 +32,11 @@ export class TimetableStateService {
       if (!map.has(periodId)) {
         map.set(periodId, new Map());
       }
-      map.get(periodId)!.set(day, entry);
+      const dayMap = map.get(periodId)!;
+      if (!dayMap.has(day)) {
+        dayMap.set(day, []);
+      }
+      dayMap.get(day)!.push(entry);
     }
     return map;
   });

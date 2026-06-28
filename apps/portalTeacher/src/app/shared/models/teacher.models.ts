@@ -263,7 +263,12 @@ export interface TeacherProfile {
   tscNumber?: string;
   highestDegree?: string;
   teachingSubjects?: string[];
-  leaveBalance?: { pointsRemaining: number };
+  leaveBalance?: {
+    pointsRemaining: number;
+    maternityDaysEntitled: number;
+    maternityDaysRemaining: number;
+    sickDaysRemaining: number | null;
+  };
 }
 
 export interface LeaveBalance {

@@ -22,7 +22,12 @@ export interface StaffProfileData {
   tsc_number?: string;
   highest_degree?: string;
   teaching_subjects?: string[];
-  leave_balance?: { points_remaining: number } | null;
+  leave_balance?: {
+    points_remaining: number;
+    maternity_days_entitled: number;
+    maternity_days_remaining: number;
+    sick_days_remaining: number | null;
+  } | null;
 }
 
 export interface ChangePasswordPayload {
@@ -76,7 +81,12 @@ export class TeacherSettingsService {
             tscNumber: data.tsc_number,
             highestDegree: data.highest_degree,
             teachingSubjects: data.teaching_subjects,
-            leaveBalance: data.leave_balance ? { pointsRemaining: data.leave_balance.points_remaining } : undefined,
+            leaveBalance: data.leave_balance ? {
+              pointsRemaining: data.leave_balance.points_remaining,
+              maternityDaysEntitled: data.leave_balance.maternity_days_entitled,
+              maternityDaysRemaining: data.leave_balance.maternity_days_remaining,
+              sickDaysRemaining: data.leave_balance.sick_days_remaining ?? null,
+            } : undefined,
           });
         },
         error: () => this.error.set('Failed to load profile'),

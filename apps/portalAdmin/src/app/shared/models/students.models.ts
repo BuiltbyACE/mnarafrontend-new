@@ -1,4 +1,21 @@
 export type PathwayType = 'REGULAR_SCHOOL' | 'REGULAR_SCHOOL_INTERRUPTED' | 'HOMESCHOOL' | 'NONE';
+
+export type PreviousSchoolNature = 'REGULAR' | 'REGULAR_INTERRUPT' | 'HOMESCHOOL' | 'NONE';
+
+export const PATHWAY_TO_NATURE: Record<PathwayType, PreviousSchoolNature> = {
+  REGULAR_SCHOOL: 'REGULAR',
+  REGULAR_SCHOOL_INTERRUPTED: 'REGULAR_INTERRUPT',
+  HOMESCHOOL: 'HOMESCHOOL',
+  NONE: 'NONE',
+};
+
+export const NATURE_TO_PATHWAY: Record<PreviousSchoolNature, PathwayType> = {
+  REGULAR: 'REGULAR_SCHOOL',
+  REGULAR_INTERRUPT: 'REGULAR_SCHOOL_INTERRUPTED',
+  HOMESCHOOL: 'HOMESCHOOL',
+  NONE: 'NONE',
+};
+
 export type Gender = 'M' | 'F' | 'O';
 export type CarerLevel = 'PRIMARY' | 'SECONDARY';
 export type CommitmentStatus = 'PENDING' | 'SUBMITTED' | 'ACKNOWLEDGED';
@@ -6,10 +23,12 @@ export type CommitmentStatus = 'PENDING' | 'SUBMITTED' | 'ACKNOWLEDGED';
 export interface RegularSchoolDetails {
   school_name: string;
   curriculum: string;
-  transfer_reason: string;
-  previous_reports: boolean;
-  last_attended_class: string;
-  last_attended_year: string;
+  transfer_reason?: string;
+  previous_reports?: boolean;
+  last_attended_class?: string;
+  last_attended_year?: string;
+  start_year?: number;
+  end_year?: number;
 }
 
 export interface RegularSchoolInterruptDetails extends RegularSchoolDetails {
@@ -170,26 +189,53 @@ export interface AdmissionRecord {
   updated_at: string;
 }
 
+export interface AdmissionChoices {
+  gender?: { value: string; label: string }[];
+  embrace_islamic?: { value: string; label: string }[];
+  transport_options?: { value: string; label: string }[];
+  previous_school_nature?: { value: string; label: string }[];
+  medical_conditions?: { value: string; label: string }[];
+}
+
 export interface AdmissionCreatePayload {
+  student: number;
+  class_sought: number;
+  gender: string;
+  previous_school_nature: PreviousSchoolNature;
+  regular_details?: RegularSchoolDetails | RegularSchoolInterruptDetails;
+  interrupt_details?: RegularSchoolInterruptDetails;
+  homeschool_details?: HomeschoolDetails;
+  none_details?: NoneEducationDetails;
+  medical_record?: MedicalRecord;
+  subject_exclusion_data?: SubjectExclusionData;
+  arabic_quran_data?: ArabicQuranData;
+  carers?: CarerData[];
+  family_background?: FamilyBackground;
+  siblings?: SiblingFormEntry[];
+
+  resident?: string;
+  home_address?: string;
+  emergency_contact_email?: string;
+  emergency_contact_phone?: string;
+  middle_name?: string;
+  other_names?: string;
+  nationality?: string;
+  religion?: string;
+  mother_tongue?: string;
+  transport_options?: string;
+  lunch_option?: boolean;
+  embrace_islamic?: string;
+  date_of_admission?: string;
+  photo_url?: string;
+}
+
+export interface CreateStudentProfilePayload {
   first_name: string;
   last_name: string;
   date_of_birth: string;
-  gender: Gender;
-  religion: string;
-  nationality: string;
-  residence: string;
-  year_level_id: number;
-  date_of_admission: string;
-  pathway: PathwayType;
-  regular_details?: RegularSchoolDetails | RegularSchoolInterruptDetails;
-  homeschool_details?: HomeschoolDetails;
-  none_education_details?: NoneEducationDetails;
-  arabic_quran_data?: ArabicQuranData;
-  subject_exclusions?: SubjectExclusionData;
-  medical_record: MedicalRecord;
-  carers: CarerData[];
-  family_background?: FamilyBackground;
-  siblings: SiblingFormEntry[];
+  gender: string;
+  religion?: string;
+  nationality?: string;
 }
 
 export interface BehaviourCommitment {

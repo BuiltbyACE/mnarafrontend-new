@@ -74,10 +74,10 @@ export class StudentDashboardComponent implements OnInit {
   readonly quickLinks = [
     { label: 'View Timetable', icon: 'calendar_month', route: '/student/timetable' },
     { label: 'My Classes', icon: 'school', route: '/student/classes' },
-    { label: 'Assignments', icon: 'assignment', route: '/student/assignments' },
     { label: 'Exam Results', icon: 'quiz', route: '/student/exams' },
-    { label: 'E-Learning', icon: 'computer', route: '/student/elearning' },
-    { label: 'Resources', icon: 'folder', route: '/student/resources' },
+    { label: 'Attendance', icon: 'fact_check', route: '/student/attendance' },
+    { label: 'Announcements', icon: 'campaign', route: '/student/announcements' },
+    { label: 'Fee Balance', icon: 'account_balance_wallet', route: '/student/finance' },
   ];
 
   ngOnInit(): void {

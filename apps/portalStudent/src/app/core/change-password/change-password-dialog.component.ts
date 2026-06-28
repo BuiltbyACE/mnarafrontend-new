@@ -1,4 +1,6 @@
 import { Component, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { getApiUrl } from '@sms/core/config';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -117,6 +119,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 export class ChangePasswordDialogComponent {
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private http = inject(HttpClient);
   readonly dialogRef = inject(MatDialogRef<ChangePasswordDialogComponent>);
 
   hideCurrent = true;
@@ -142,11 +145,24 @@ export class ChangePasswordDialogComponent {
   submit(): void {
     if (this.form.invalid) return;
     this.isSubmitting = true;
-    // TODO: wire to actual backend endpoint
-    setTimeout(() => {
-      this.isSubmitting = false;
-      this.snackBar.open('Password changed successfully', 'Close', { duration: 3000 });
-      this.dialogRef.close(true);
-    }, 1000);
+
+    const { currentPassword, newPassword, confirmPassword } = this.form.value;
+
+    this.http.post(getApiUrl('/accounts/auth/change-password/'), {
+      current_password: currentPassword,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    }).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.snackBar.open('Password changed successfully', 'Close', { duration: 3000 });
+        this.dialogRef.close(true);
+      },
+      error: (err) => {
+        this.isSubmitting = false;
+        const msg = err.error?.message || err.error?.detail || 'Failed to change password';
+        this.snackBar.open(msg, 'Close', { duration: 5000 });
+      },
+    });
   }
 }

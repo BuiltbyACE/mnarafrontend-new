@@ -4,6 +4,74 @@ import { Observable, map, tap } from 'rxjs';
 import { CalendarEvent, CalendarDay } from '@sms/shared/models';
 import { environment } from '@sms/core/config';
 
+export function buildCalendarDays(year: number, month: number, events: CalendarEvent[]): CalendarDay[] {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const today = new Date();
+  const todayDate = today.getDate();
+  const todayMonth = today.getMonth();
+  const todayYear = today.getFullYear();
+
+  const eventsMap = new Map<string, CalendarEvent[]>();
+  for (const evt of events) {
+    const dates = expandEventDates(evt);
+    for (const dateKey of dates) {
+      if (!dateKey) continue;
+      const existing = eventsMap.get(dateKey) ?? [];
+      existing.push(evt);
+      eventsMap.set(dateKey, existing);
+    }
+  }
+
+  const formatDateStr = (y: number, m: number, d: number) =>
+    `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  const result: CalendarDay[] = [];
+
+  for (let i = 0; i < startOffset; i++) {
+    result.push({ day: null, dateStr: null, events: [], isToday: false, isCurrentMonth: false });
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = formatDateStr(year, month, d);
+    const dayEvents = eventsMap.get(dateStr) ?? [];
+    result.push({
+      day: d,
+      dateStr,
+      events: dayEvents,
+      isToday: d === todayDate && month === todayMonth && year === todayYear,
+      isCurrentMonth: true,
+    });
+  }
+
+  while (result.length < 42) {
+    result.push({ day: null, dateStr: null, events: [], isToday: false, isCurrentMonth: false });
+  }
+
+  return result;
+}
+
+function expandEventDates(evt: CalendarEvent): string[] {
+  if (evt.date) return [evt.date];
+  if (evt.start_date && evt.end_date) {
+    const dates: string[] = [];
+    const start = new Date(evt.start_date.split('T')[0]);
+    const end = new Date(evt.end_date.split('T')[0]);
+    const cur = new Date(start);
+    while (cur <= end) {
+      dates.push(
+        `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`
+      );
+      cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+  }
+  if (evt.start_date) return [evt.start_date.split('T')[0]];
+  return [];
+}
+
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -28,41 +96,7 @@ export class SharedCalendarService {
   });
 
   readonly calendarDays = computed<CalendarDay[]>(() => {
-    const year = this.currentYear();
-    const month = this.currentMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startOffset = firstDay.getDay();
-    const daysInMonth = lastDay.getDate();
-    const today = new Date();
-    const todayDate = today.getDate();
-    const todayMonth = today.getMonth();
-    const todayYear = today.getFullYear();
-    const eventsMap = this.buildEventsMap();
-
-    const result: CalendarDay[] = [];
-
-    for (let i = 0; i < startOffset; i++) {
-      result.push({ day: null, dateStr: null, events: [], isToday: false, isCurrentMonth: false });
-    }
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = this.formatDateStr(year, month, d);
-      const dayEvents = eventsMap.get(dateStr) ?? [];
-      result.push({
-        day: d,
-        dateStr,
-        events: dayEvents,
-        isToday: d === todayDate && month === todayMonth && year === todayYear,
-        isCurrentMonth: true,
-      });
-    }
-
-    while (result.length < 42) {
-      result.push({ day: null, dateStr: null, events: [], isToday: false, isCurrentMonth: false });
-    }
-
-    return result;
+    return buildCalendarDays(this.currentYear(), this.currentMonth(), this.events());
   });
 
   private mapEvent(raw: any): CalendarEvent {
@@ -81,19 +115,6 @@ export class SharedCalendarService {
     };
   }
 
-  private expandDateRange(startDate: string, endDate: string): string[] {
-    const dates: string[] = [];
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const cur = new Date(start);
-    while (cur <= end) {
-      dates.push(
-        `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`
-      );
-      cur.setDate(cur.getDate() + 1);
-    }
-    return dates;
-  }
 
   fetchEvents(month: number, year: number): Observable<CalendarEvent[]> {
     this.isLoading.set(true);
@@ -162,7 +183,7 @@ export class SharedCalendarService {
   mapToGrid(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
     const map = new Map<string, CalendarEvent[]>();
     for (const evt of events) {
-      const dates = this.expandEventDates(evt);
+      const dates = expandEventDates(evt);
       for (const dateKey of dates) {
         if (!dateKey) continue;
         const existing = map.get(dateKey) ?? [];
@@ -183,35 +204,5 @@ export class SharedCalendarService {
 
   getOverflowCount(dayEvents: CalendarEvent[]): number {
     return Math.max(0, dayEvents.filter((e) => !e.isFullDayHighlight).length - 3);
-  }
-
-  private expandEventDates(evt: CalendarEvent): string[] {
-    if (evt.date) return [evt.date];
-    if (evt.start_date && evt.end_date) {
-      return this.expandDateRange(
-        evt.start_date.split('T')[0],
-        evt.end_date.split('T')[0]
-      );
-    }
-    if (evt.start_date) return [evt.start_date.split('T')[0]];
-    return [];
-  }
-
-  private buildEventsMap(): Map<string, CalendarEvent[]> {
-    const map = new Map<string, CalendarEvent[]>();
-    for (const evt of this.events()) {
-      const dates = this.expandEventDates(evt);
-      for (const dateKey of dates) {
-        if (!dateKey) continue;
-        const existing = map.get(dateKey) ?? [];
-        existing.push(evt);
-        map.set(dateKey, existing);
-      }
-    }
-    return map;
-  }
-
-  private formatDateStr(year: number, month: number, day: number): string {
-    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
 }

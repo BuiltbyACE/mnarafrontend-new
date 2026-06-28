@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
-  computed,
   OnInit,
   OnDestroy,
 } from '@angular/core';
@@ -40,12 +39,12 @@ import { VersionActionDialogComponent } from '../../components/version-action-di
     <div class="p-6 max-w-[1400px] mx-auto">
 
       <!-- Breadcrumb -->
-      <nav class="flex items-center gap-2 text-sm text-slate-400 mb-4">
-        <a routerLink="/admin/timetable/versions" class="hover:text-slate-700 transition-colors">
-          Timetable Versions
+      <nav class="flex items-center gap-1.5 text-sm text-slate-400 mb-5">
+        <a routerLink="/admin/timetable/versions" class="hover:text-slate-700 transition-colors font-medium">
+          Versions
         </a>
         <mat-icon class="text-base">chevron_right</mat-icon>
-        <span class="text-slate-700 font-medium truncate max-w-xs">
+        <span class="text-slate-700 font-semibold truncate max-w-xs">
           {{ version()?.name ?? 'Loading...' }}
         </span>
       </nav>
@@ -53,7 +52,7 @@ import { VersionActionDialogComponent } from '../../components/version-action-di
       <!-- Loading skeleton -->
       @if (loading()) {
         <div class="space-y-4">
-          <div class="h-20 rounded-2xl bg-slate-100 animate-pulse"></div>
+          <div class="h-24 rounded-2xl bg-slate-100 animate-pulse"></div>
           <div class="h-[600px] rounded-2xl bg-slate-100 animate-pulse"></div>
         </div>
       }
@@ -68,7 +67,7 @@ import { VersionActionDialogComponent } from '../../components/version-action-di
 
       @if (!loading() && version(); as v) {
         <!-- Status banner -->
-        <div class="rounded-2xl border p-5 mb-5 flex items-center gap-4 flex-wrap"
+        <div class="rounded-2xl border p-6 mb-6 transition-all duration-150 hover:shadow-md"
              [class.bg-emerald-50]="v.status === 'PUBLISHED'"
              [class.border-emerald-200]="v.status === 'PUBLISHED'"
              [class.bg-amber-50]="v.status === 'UNDER_REVIEW'"
@@ -76,84 +75,113 @@ import { VersionActionDialogComponent } from '../../components/version-action-di
              [class.bg-white]="v.status === 'DRAFT' || v.status === 'ARCHIVED'"
              [class.border-slate-200]="v.status === 'DRAFT' || v.status === 'ARCHIVED'">
 
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-3 flex-wrap">
-              <h1 class="text-xl font-bold text-slate-900">{{ v.name }}</h1>
-              <app-version-status-badge [status]="v.status" />
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl"
+                 [class.bg-emerald-100]="v.status === 'PUBLISHED'"
+                 [class.text-emerald-600]="v.status === 'PUBLISHED'"
+                 [class.bg-amber-100]="v.status === 'UNDER_REVIEW'"
+                 [class.text-amber-600]="v.status === 'UNDER_REVIEW'"
+                 [class.bg-slate-100]="v.status === 'DRAFT' || v.status === 'ARCHIVED'"
+                 [class.text-slate-500]="v.status === 'DRAFT' || v.status === 'ARCHIVED'">
+              <mat-icon>
+                {{ v.status === 'PUBLISHED' ? 'check_circle' : v.status === 'UNDER_REVIEW' ? 'rate_review' : v.status === 'ARCHIVED' ? 'archive' : 'edit_note' }}
+              </mat-icon>
             </div>
-            <div class="flex items-center gap-4 mt-1.5 text-xs text-slate-400 flex-wrap">
-              <span>{{ v.academic_term_name }}</span>
-              <span>{{ v.entry_count }} entries</span>
-              <span>Created by {{ v.created_by_name }} on {{ v.created_at | date:'d MMM y' }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="text-xl font-bold text-slate-900">{{ v.name }}</h1>
+                <app-version-status-badge [status]="v.status" />
+              </div>
+              <div class="flex items-center gap-4 mt-2 text-xs text-slate-400 flex-wrap">
+                <span class="inline-flex items-center gap-1">
+                  <mat-icon fontSet="material-icons-outlined" class="text-[13px]">calendar_today</mat-icon>
+                  {{ v.academic_term_name }}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <mat-icon fontSet="material-icons-outlined" class="text-[13px]">table_rows</mat-icon>
+                  {{ v.entry_count }} entries
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <mat-icon fontSet="material-icons-outlined" class="text-[13px]">person_outline</mat-icon>
+                  {{ v.created_by_name }}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <mat-icon fontSet="material-icons-outlined" class="text-[13px]">schedule</mat-icon>
+                  {{ v.created_at | date:'d MMM y' }}
+                </span>
+              </div>
             </div>
           </div>
 
-          <!-- Action buttons (context-sensitive) -->
-          <div class="flex items-center gap-2 flex-wrap">
+          <!-- Action buttons -->
+          <div class="flex items-center gap-2 flex-wrap mt-4 pt-4 border-t border-slate-200/60">
             <button mat-stroked-button
                     [routerLink]="['/admin/timetable/versions', v.id, 'compare']"
-                    class="flex items-center gap-1.5 text-sm">
-              <mat-icon fontSet="material-icons-outlined" class="text-base">compare</mat-icon>
+                    class="!text-xs !h-8">
+              <mat-icon fontSet="material-icons-outlined" class="text-sm">compare</mat-icon>
               Compare
             </button>
 
             @if (v.status === 'DRAFT') {
               <button mat-flat-button color="primary"
                       (click)="openAction(v, 'publish')"
-                      class="flex items-center gap-1.5">
-                <mat-icon class="text-base">publish</mat-icon>
+                      class="!text-xs !h-8 !bg-emerald-600 hover:!bg-emerald-700">
+                <mat-icon class="text-sm">publish</mat-icon>
                 Publish
               </button>
               <button mat-stroked-button
                       (click)="openAction(v, 'archive')"
-                      class="flex items-center gap-1.5">
-                <mat-icon fontSet="material-icons-outlined" class="text-base">archive</mat-icon>
+                      class="!text-xs !h-8">
+                <mat-icon fontSet="material-icons-outlined" class="text-sm">archive</mat-icon>
                 Archive
               </button>
             }
             @if (v.status === 'PUBLISHED') {
               <button mat-stroked-button
                       (click)="openAction(v, 'archive')"
-                      class="flex items-center gap-1.5">
-                <mat-icon fontSet="material-icons-outlined" class="text-base">archive</mat-icon>
+                      class="!text-xs !h-8">
+                <mat-icon fontSet="material-icons-outlined" class="text-sm">archive</mat-icon>
                 Archive
               </button>
             }
             @if (v.status === 'ARCHIVED') {
               <button mat-flat-button color="accent"
                       (click)="openAction(v, 'rollback')"
-                      class="flex items-center gap-1.5">
-                <mat-icon fontSet="material-icons-outlined" class="text-base">restore</mat-icon>
+                      class="!text-xs !h-8 !bg-amber-500 hover:!bg-amber-600">
+                <mat-icon fontSet="material-icons-outlined" class="text-sm">restore</mat-icon>
                 Rollback
               </button>
             }
 
-            <!-- Conflict badge button -->
-            <button mat-stroked-button
-                    (click)="runConflictCheck()"
-                    [disabled]="conflictLoading()"
-                    class="flex items-center gap-1.5 text-sm"
-                    [class.text-red-600]="(conflictCount() ?? 0) > 0"
-                    [class.border-red-300]="(conflictCount() ?? 0) > 0">
-              <mat-icon fontSet="material-icons-outlined" class="text-base">
-                {{ (conflictCount() ?? 0) > 0 ? 'warning_amber' : 'check_circle_outline' }}
-              </mat-icon>
-              @if (conflictLoading()) {
-                Checking...
-              } @else if (conflictCount() === null) {
-                Check Conflicts
-              } @else if (conflictCount() === 0) {
-                No Conflicts
-              } @else {
-                {{ conflictCount() }} Conflict{{ conflictCount()! > 1 ? 's' : '' }}
-              }
-            </button>
+            <div class="ml-auto">
+              <button mat-stroked-button
+                      (click)="runConflictCheck()"
+                      [disabled]="conflictLoading()"
+                      class="!text-xs !h-8"
+                      [class.!text-red-600]="(conflictCount() ?? 0) > 0"
+                      [class.!border-red-300]="(conflictCount() ?? 0) > 0">
+                <mat-icon fontSet="material-icons-outlined" class="text-sm">
+                  {{ (conflictCount() ?? 0) > 0 ? 'warning_amber' : 'check_circle_outline' }}
+                </mat-icon>
+                @if (conflictLoading()) {
+                  Checking...
+                } @else if (conflictCount() === null) {
+                  Check Conflicts
+                } @else if (conflictCount() === 0) {
+                  No Conflicts
+                } @else {
+                  {{ conflictCount() }} Conflict{{ conflictCount()! > 1 ? 's' : '' }}
+                }
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- Timetable grid -->
-        <div class="h-[calc(100vh-340px)] min-h-[400px]">
-          <app-timetable-grid [termId]="v.academic_term" />
+        <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          <div class="h-[calc(100vh-400px)] min-h-[450px] p-2">
+            <app-timetable-grid [termId]="v.academic_term" />
+          </div>
         </div>
       }
     </div>

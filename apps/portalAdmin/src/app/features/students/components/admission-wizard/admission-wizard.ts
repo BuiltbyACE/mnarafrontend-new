@@ -10,12 +10,13 @@ import { FormsModule } from '@angular/forms';
 import { StudentsService } from '../../services/students.service';
 import { AcademicsService } from '../../../academics/services/academics.service';
 import {
-  AdmissionCreatePayload, PathwayType, Gender,
+  AdmissionCreatePayload, AdmissionChoices, PathwayType, PreviousSchoolNature,
+  Gender, PATHWAY_TO_NATURE,
   RegularSchoolDetails, RegularSchoolInterruptDetails,
   HomeschoolDetails, NoneEducationDetails,
   ArabicQuranData, SubjectExclusionData,
   MedicalRecord, CarerData, FamilyBackground,
-  SiblingFormEntry, MedicalConditionKey,
+  SiblingFormEntry, MedicalConditionKey, CreateStudentProfilePayload,
 } from '../../../../shared/models/students.models';
 
 import { StudentInfoStep } from './steps/student-info-step';
@@ -31,12 +32,49 @@ import { MedicalStep } from './steps/medical-step';
 import { CarersFamilyStep } from './steps/carers-family-step';
 import { ReviewSubmitStep } from './steps/review-submit-step';
 
-function emptyPayload(): AdmissionCreatePayload {
+/** Local state shape used by the wizard (frontend-friendly) */
+interface WizardState {
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  gender: string;
+  religion: string;
+  nationality: string;
+  residence: string;
+  year_level_id: number;
+  date_of_admission: string;
+  pathway: PathwayType;
+  middle_name: string;
+  other_names: string;
+  mother_tongue: string;
+  resident: string;
+  home_address: string;
+  emergency_contact_email: string;
+  emergency_contact_phone: string;
+  transport_options: string;
+  lunch_option: boolean;
+  embrace_islamic: string;
+  regular_details?: RegularSchoolDetails | RegularSchoolInterruptDetails;
+  homeschool_details?: HomeschoolDetails;
+  none_education_details?: NoneEducationDetails;
+  arabic_quran_data?: ArabicQuranData;
+  subject_exclusions?: SubjectExclusionData;
+  medical_record: MedicalRecord;
+  carers: CarerData[];
+  family_background?: FamilyBackground;
+  siblings: SiblingFormEntry[];
+}
+
+function emptyState(): WizardState {
   return {
     first_name: '', last_name: '', date_of_birth: '', gender: 'M',
     religion: '', nationality: '', residence: '',
     year_level_id: 0, date_of_admission: '',
     pathway: 'REGULAR_SCHOOL',
+    middle_name: '', other_names: '', mother_tongue: '',
+    resident: '', home_address: '',
+    emergency_contact_email: '', emergency_contact_phone: '',
+    transport_options: 'NONE', lunch_option: false, embrace_islamic: 'NO',
     medical_record: {
       blood_group: '', allergies: [], chronic_conditions: [],
       emergency_contact: '', doctor_name: '', doctor_contact: '',
@@ -82,7 +120,8 @@ function emptyPayload(): AdmissionCreatePayload {
         <mat-step [completed]="step1Valid()" [editable]="true">
           <ng-template matStepLabel>Student Info</ng-template>
           <app-student-info-step
-            [data]="{ first_name: payload().first_name, last_name: payload().last_name, date_of_birth: payload().date_of_birth, gender: payload().gender, religion: payload().religion, nationality: payload().nationality, residence: payload().residence }"
+            [data]="studentInfoData()"
+            [genderChoices]="choices().gender || []"
             (dataChange)="updatePayload($event)"
             (validityChange)="step1Valid.set($event)" />
           <div class="step-actions">
@@ -94,8 +133,10 @@ function emptyPayload(): AdmissionCreatePayload {
         <mat-step [completed]="step2Valid()" [editable]="true">
           <ng-template matStepLabel>Class</ng-template>
           <app-class-selection-step
-            [data]="{ year_level_id: payload().year_level_id, date_of_admission: payload().date_of_admission }"
+            [data]="{ year_level_id: payload().year_level_id, date_of_admission: payload().date_of_admission, transport_options: payload().transport_options, lunch_option: payload().lunch_option, embrace_islamic: payload().embrace_islamic }"
             [yearLevels]="yearLevels()"
+            [transportChoices]="choices().transport_options || []"
+            [embraceChoices]="choices().embrace_islamic || []"
             (dataChange)="updatePayload($event)"
             (validityChange)="step2Valid.set($event)" />
           <div class="step-actions">
@@ -211,7 +252,7 @@ function emptyPayload(): AdmissionCreatePayload {
         <mat-step>
           <ng-template matStepLabel>Review</ng-template>
           <app-review-submit-step
-            [data]="payload()"
+            [data]="reviewData()"
             [submitting]="isSubmitting()"
             [error]="submitError()"
             (submit)="onSubmit()" />
@@ -256,19 +297,42 @@ export class AdmissionWizardComponent {
   submitError = signal<string | null>(null);
 
   yearLevels = signal<any[]>([]);
+  choices = signal<AdmissionChoices>({});
+  createdStudent = signal<{ id: number; name: string } | null>(null);
 
-  private state = signal<AdmissionCreatePayload>(emptyPayload());
-  payload = computed(() => this.state());
+  private _state = signal<WizardState>(emptyState());
+  /** Public alias for template binding */
+  readonly payload = this._state.asReadonly();
 
   constructor() {
     this.academicsService.getYearLevels().subscribe({
       next: (levels) => this.yearLevels.set(levels),
       error: () => this.snackBar.open('Failed to load year levels', 'Close'),
     });
+    this.studentsService.getAdmissionChoices().subscribe({
+      next: (c) => this.choices.set(c),
+      error: () => {},
+    });
   }
 
+  // ── Computed helpers for template binding ──
+
+  studentInfoData = computed(() => {
+    const s = this._state();
+    return {
+      first_name: s.first_name, last_name: s.last_name,
+      date_of_birth: s.date_of_birth, gender: s.gender,
+      religion: s.religion, nationality: s.nationality, residence: s.residence,
+      middle_name: s.middle_name, other_names: s.other_names,
+      mother_tongue: s.mother_tongue, resident: s.resident,
+      home_address: s.home_address,
+      emergency_contact_email: s.emergency_contact_email,
+      emergency_contact_phone: s.emergency_contact_phone,
+    };
+  });
+
   isUnder4 = computed(() => {
-    const dob = this.state().date_of_birth;
+    const dob = this._state().date_of_birth;
     if (!dob) return false;
     const birth = new Date(dob);
     const now = new Date();
@@ -277,7 +341,7 @@ export class AdmissionWizardComponent {
   });
 
   showArabicStep = computed(() => {
-    return !(this.isUnder4() && this.state().pathway === 'NONE');
+    return !(this.isUnder4() && this._state().pathway === 'NONE');
   });
 
   step4Label = computed(() => {
@@ -287,90 +351,116 @@ export class AdmissionWizardComponent {
       HOMESCHOOL: 'Homeschool',
       NONE: 'No Education',
     };
-    return labels[this.state().pathway] || 'Details';
+    return labels[this._state().pathway] || 'Details';
   });
 
   regularDetails = computed<RegularSchoolDetails>(() => {
-    const d = (this.state().regular_details || {}) as RegularSchoolDetails;
+    const d = (this._state().regular_details || {}) as RegularSchoolDetails;
     return { school_name: d.school_name || '', curriculum: d.curriculum || '', transfer_reason: d.transfer_reason || '', previous_reports: d.previous_reports || false, last_attended_class: d.last_attended_class || '', last_attended_year: d.last_attended_year || '' };
   });
 
   interruptDetails = computed<RegularSchoolInterruptDetails>(() => {
-    const d = (this.state().regular_details || {}) as RegularSchoolInterruptDetails;
+    const d = (this._state().regular_details || {}) as RegularSchoolInterruptDetails;
     return { school_name: d.school_name || '', curriculum: d.curriculum || '', transfer_reason: d.transfer_reason || '', previous_reports: d.previous_reports || false, last_attended_class: d.last_attended_class || '', last_attended_year: d.last_attended_year || '', interruption_start: d.interruption_start || '', interruption_end: d.interruption_end || '', interruption_reason: d.interruption_reason || '' };
   });
 
   homeschoolDetails = computed<HomeschoolDetails>(() => {
-    return this.state().homeschool_details || { supervisor_name: '', supervisor_qualification: '', supervisor_contact: '', content_covered: '', subjects: [] };
+    return this._state().homeschool_details || { supervisor_name: '', supervisor_qualification: '', supervisor_contact: '', content_covered: '', subjects: [] };
   });
 
   noneDetails = computed<NoneEducationDetails>(() => {
-    return this.state().none_education_details || { reason: '', alternative_arrangement: '' };
+    return this._state().none_education_details || { reason: '', alternative_arrangement: '' };
   });
 
   arabicData = computed<ArabicQuranData>(() => {
-    return this.state().arabic_quran_data || { arabic_proficiency: 'NONE', quran_memorization: '', quran_reading_level: 'NONE', tajweed_level: 'NONE', comments: '' };
+    return this._state().arabic_quran_data || { arabic_proficiency: 'NONE', quran_memorization: '', quran_reading_level: 'NONE', tajweed_level: 'NONE', comments: '' };
   });
 
   subjectExclusions = computed<SubjectExclusionData>(() => {
-    return this.state().subject_exclusions || { excluded_subjects: [] };
+    return this._state().subject_exclusions || { excluded_subjects: [] };
   });
 
+  /** Build the object passed to the Review & Submit step for display */
+  reviewData = computed(() => {
+    const s = this._state();
+    return {
+      ...s,
+      createdStudent: this.createdStudent(),
+      transportChoices: this.choices().transport_options,
+      embraceChoices: this.choices().embrace_islamic,
+    };
+  });
+
+  // ── State updaters ──
+
   updatePayload(partial: any): void {
-    this.state.update(s => ({ ...s, ...partial }));
+    this._state.update(s => ({ ...s, ...partial }));
   }
 
   updateRegularDetails(details: RegularSchoolDetails): void {
-    this.state.update(s => ({ ...s, regular_details: details }));
+    this._state.update(s => ({ ...s, regular_details: details }));
   }
 
   updateInterruptDetails(details: RegularSchoolInterruptDetails): void {
-    this.state.update(s => ({ ...s, regular_details: details }));
+    this._state.update(s => ({ ...s, regular_details: details }));
   }
 
   updateHomeschoolDetails(details: HomeschoolDetails): void {
-    this.state.update(s => ({ ...s, homeschool_details: details }));
+    this._state.update(s => ({ ...s, homeschool_details: details }));
   }
 
   updateNoneDetails(details: NoneEducationDetails): void {
-    this.state.update(s => ({ ...s, none_education_details: details }));
+    this._state.update(s => ({ ...s, none_education_details: details }));
   }
 
   updateArabicData(data: ArabicQuranData): void {
-    this.state.update(s => ({ ...s, arabic_quran_data: data }));
+    this._state.update(s => ({ ...s, arabic_quran_data: data }));
   }
 
   updateSubjectExclusions(data: SubjectExclusionData): void {
-    this.state.update(s => ({ ...s, subject_exclusions: data }));
+    this._state.update(s => ({ ...s, subject_exclusions: data }));
   }
 
   updateMedical(data: MedicalRecord): void {
-    this.state.update(s => ({ ...s, medical_record: data }));
+    this._state.update(s => ({ ...s, medical_record: data }));
   }
 
   updateCarersFamily(data: { carers: CarerData[]; family_background: FamilyBackground | null; siblings: SiblingFormEntry[] }): void {
-    this.state.update(s => ({ ...s, carers: data.carers, family_background: data.family_background || undefined, siblings: data.siblings }));
+    this._state.update(s => ({ ...s, carers: data.carers, family_background: data.family_background || undefined, siblings: data.siblings }));
   }
 
   onStepChange(event: any): void {
     this.submitError.set(null);
   }
 
-  buildPayload(): AdmissionCreatePayload {
-    const s = this.state();
+  /** Map internal WizardState to backend AdmissionCreatePayload */
+  buildBackendPayload(studentId: number): AdmissionCreatePayload {
+    const s = this._state();
     const payload: AdmissionCreatePayload = {
-      first_name: s.first_name, last_name: s.last_name,
-      date_of_birth: s.date_of_birth, gender: s.gender,
-      religion: s.religion, nationality: s.nationality, residence: s.residence,
-      year_level_id: s.year_level_id, date_of_admission: s.date_of_admission,
-      pathway: s.pathway,
+      student: studentId,
+      class_sought: s.year_level_id,
+      gender: s.gender,
+      previous_school_nature: PATHWAY_TO_NATURE[s.pathway],
       medical_record: s.medical_record,
       carers: s.carers,
       siblings: s.siblings || [],
+      resident: s.resident || undefined,
+      home_address: s.home_address || undefined,
+      emergency_contact_email: s.emergency_contact_email || undefined,
+      emergency_contact_phone: s.emergency_contact_phone || undefined,
+      middle_name: s.middle_name || undefined,
+      other_names: s.other_names || undefined,
+      nationality: s.nationality || undefined,
+      religion: s.religion || undefined,
+      mother_tongue: s.mother_tongue || undefined,
+      transport_options: s.transport_options || undefined,
+      lunch_option: s.lunch_option,
+      embrace_islamic: s.embrace_islamic || undefined,
+      date_of_admission: s.date_of_admission || undefined,
     };
     if (s.family_background) payload.family_background = s.family_background;
     if (s.arabic_quran_data) payload.arabic_quran_data = s.arabic_quran_data;
-    if (s.subject_exclusions) payload.subject_exclusions = s.subject_exclusions;
+    if (s.subject_exclusions) payload.subject_exclusion_data = s.subject_exclusions;
 
     switch (s.pathway) {
       case 'REGULAR_SCHOOL':
@@ -383,7 +473,7 @@ export class AdmissionWizardComponent {
         payload.homeschool_details = s.homeschool_details;
         break;
       case 'NONE':
-        payload.none_education_details = s.none_education_details;
+        payload.none_details = s.none_education_details;
         break;
     }
     return payload;
@@ -392,21 +482,45 @@ export class AdmissionWizardComponent {
   onSubmit(): void {
     this.isSubmitting.set(true);
     this.submitError.set(null);
-    const payload = this.buildPayload();
 
-    this.studentsService.createAdmission(payload).subscribe({
-      next: (result) => {
-        this.isSubmitting.set(false);
-        this.snackBar.open(`Admission created: ${result.admission_number}`, 'Close', { duration: 5000 });
-        if (this.inDialog()) {
-          this.wizardClosed.emit(true);
-        } else {
-          this.router.navigate(['/portalAdmin/students/admissions']);
-        }
+    const s = this._state();
+
+    // Step 1: Create student profile first
+    const studentPayload: CreateStudentProfilePayload = {
+      first_name: s.first_name,
+      last_name: s.last_name,
+      date_of_birth: s.date_of_birth,
+      gender: s.gender,
+      religion: s.religion || undefined,
+      nationality: s.nationality || undefined,
+    };
+
+    this.studentsService.createStudentProfile(studentPayload).subscribe({
+      next: (profile) => {
+        this.createdStudent.set({ id: profile.id, name: `${profile.first_name} ${profile.last_name}` });
+
+        // Step 2: Create admission with student ID
+        const admissionPayload = this.buildBackendPayload(profile.id);
+        this.studentsService.createAdmission(admissionPayload).subscribe({
+          next: (result) => {
+            this.isSubmitting.set(false);
+            this.snackBar.open(`Admission created: ${result.admission_number}`, 'Close', { duration: 5000 });
+            if (this.inDialog()) {
+              this.wizardClosed.emit(true);
+            } else {
+              this.router.navigate(['/portalAdmin/students/admissions']);
+            }
+          },
+          error: (err) => {
+            this.isSubmitting.set(false);
+            const msg = err.error?.message || err.error?.detail || 'Failed to create admission. Please check all fields.';
+            this.submitError.set(msg);
+          },
+        });
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        const msg = err.error?.message || err.error?.detail || 'Failed to create admission. Please check all fields.';
+        const msg = err.error?.message || err.error?.detail || 'Failed to create student profile.';
         this.submitError.set(msg);
       },
     });

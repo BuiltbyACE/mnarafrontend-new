@@ -150,7 +150,7 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
               <mat-icon class="text-base">add_circle_outline</mat-icon>
               Added ({{ result.added.length }})
             </h2>
-            <div class="rounded-xl border border-emerald-200 overflow-hidden">
+            <div class="rounded-xl border border-emerald-200 overflow-x-auto">
               <table class="w-full text-sm">
                 <thead class="bg-emerald-50 text-emerald-700 text-xs uppercase tracking-wide">
                   <tr>
@@ -189,7 +189,7 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
               <mat-icon class="text-base">remove_circle_outline</mat-icon>
               Removed ({{ result.removed.length }})
             </h2>
-            <div class="rounded-xl border border-red-200 overflow-hidden">
+            <div class="rounded-xl border border-red-200 overflow-x-auto">
               <table class="w-full text-sm">
                 <thead class="bg-red-50 text-red-700 text-xs uppercase tracking-wide">
                   <tr>

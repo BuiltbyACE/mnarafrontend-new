@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
-  computed,
   OnInit,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
@@ -63,7 +62,7 @@ import { CreateVersionDialogComponent } from '../../components/create-version-di
       @if (loading()) {
         <div class="grid grid-cols-1 gap-3">
           @for (i of [1,2,3]; track i) {
-            <div class="h-24 rounded-2xl bg-slate-100 animate-pulse"></div>
+            <div class="h-28 rounded-2xl bg-slate-100 animate-pulse"></div>
           }
         </div>
       }
@@ -80,47 +79,73 @@ import { CreateVersionDialogComponent } from '../../components/create-version-di
       @if (!loading() && versions().length > 0) {
         <div class="space-y-3">
           @for (v of versions(); track v.id) {
-            <div class="bg-white rounded-2xl border transition-all duration-150 hover:shadow-md"
+            <div class="bg-white rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
                  [class.border-emerald-300]="v.status === 'PUBLISHED'"
                  [class.ring-1]="v.status === 'PUBLISHED'"
-                 [class.ring-emerald-200]="v.status === 'PUBLISHED'"
-                 [class.border-slate-100]="v.status !== 'PUBLISHED'">
+                 [class.ring-emerald-200/50]="v.status === 'PUBLISHED'"
+                 [class.border-slate-100]="v.status !== 'PUBLISHED'"
+                 [class.opacity-60]="v.status === 'ARCHIVED'">
               <div class="p-5 flex items-center gap-4">
                 <!-- Status indicator stripe -->
                 <div class="w-1 self-stretch rounded-full shrink-0"
                      [class.bg-emerald-500]="v.status === 'PUBLISHED'"
                      [class.bg-amber-400]="v.status === 'UNDER_REVIEW'"
-                     [class.bg-slate-300]="v.status === 'DRAFT'"
+                     [class.bg-slate-400]="v.status === 'DRAFT'"
                      [class.bg-slate-200]="v.status === 'ARCHIVED'">
+                </div>
+
+                <!-- Version icon -->
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl"
+                     [class.bg-emerald-50]="v.status === 'PUBLISHED'"
+                     [class.text-emerald-600]="v.status === 'PUBLISHED'"
+                     [class.bg-amber-50]="v.status === 'UNDER_REVIEW'"
+                     [class.text-amber-600]="v.status === 'UNDER_REVIEW'"
+                     [class.bg-slate-100]="v.status === 'DRAFT' || v.status === 'ARCHIVED'"
+                     [class.text-slate-500]="v.status === 'DRAFT' || v.status === 'ARCHIVED'">
+                  <mat-icon>
+                    {{ v.status === 'PUBLISHED' ? 'check_circle' : v.status === 'UNDER_REVIEW' ? 'rate_review' : v.status === 'ARCHIVED' ? 'archive' : 'edit_note' }}
+                  </mat-icon>
                 </div>
 
                 <!-- Main info -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-3 flex-wrap">
-                    <span class="text-base font-semibold text-slate-900 truncate">{{ v.name }}</span>
+                  <div class="flex items-center gap-2.5 flex-wrap">
+                    <a [routerLink]="['/admin/timetable/versions', v.id]"
+                       class="text-base font-semibold text-slate-900 hover:text-blue-600 transition-colors truncate">
+                      {{ v.name }}
+                    </a>
                     <app-version-status-badge [status]="v.status" />
                     @if (v.status === 'PUBLISHED') {
-                      <span class="inline-flex items-center gap-1 text-[11px] font-semibold
+                      <span class="inline-flex items-center gap-1 text-[10px] font-bold
                                    text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        <mat-icon class="text-[11px]">check_circle</mat-icon>
-                        Live
+                        <mat-icon class="text-[10px]">check_circle</mat-icon>
+                        LIVE
                       </span>
                     }
                   </div>
-                  <div class="flex items-center gap-4 mt-1.5 text-xs text-slate-400 flex-wrap">
-                    <span class="flex items-center gap-1">
+                  <div class="flex items-center gap-4 mt-2 text-xs text-slate-400 flex-wrap">
+                    <span class="inline-flex items-center gap-1">
                       <mat-icon fontSet="material-icons-outlined" class="text-[13px]">calendar_today</mat-icon>
                       {{ v.academic_term_name }}
                     </span>
-                    <span class="flex items-center gap-1">
+                    <span class="inline-flex items-center gap-1">
                       <mat-icon fontSet="material-icons-outlined" class="text-[13px]">table_rows</mat-icon>
-                      {{ v.entry_count }} entries
+                      {{ v.entry_count }} entry{{ v.entry_count !== 1 ? 'ies' : 'y' }}
                     </span>
-                    <span class="flex items-center gap-1">
+                    <span class="inline-flex items-center gap-1">
                       <mat-icon fontSet="material-icons-outlined" class="text-[13px]">person_outline</mat-icon>
                       {{ v.created_by_name }}
                     </span>
-                    <span>{{ v.created_at | date:'d MMM y, HH:mm' }}</span>
+                    <span class="inline-flex items-center gap-1">
+                      <mat-icon fontSet="material-icons-outlined" class="text-[13px]">schedule</mat-icon>
+                      {{ v.created_at | date:'d MMM y, HH:mm' }}
+                    </span>
+                    @if (v.published_at) {
+                      <span class="inline-flex items-center gap-1 text-emerald-600">
+                        <mat-icon fontSet="material-icons-outlined" class="text-[13px]">publish</mat-icon>
+                        Published {{ v.published_at | date:'d MMM y' }}
+                      </span>
+                    }
                   </div>
                 </div>
 
@@ -139,10 +164,12 @@ import { CreateVersionDialogComponent } from '../../components/create-version-di
                     </button>
                   }
                   @if (v.status === 'DRAFT') {
-                    <button mat-icon-button
+                    <button mat-flat-button color="primary"
                             (click)="openAction(v, 'publish')"
-                            matTooltip="Publish">
-                      <mat-icon fontSet="material-icons-outlined" class="text-emerald-600">publish</mat-icon>
+                            matTooltip="Publish this version"
+                            class="!min-w-0 !px-3 !h-8 !text-xs font-semibold !rounded-lg !bg-emerald-600 hover:!bg-emerald-700">
+                      <mat-icon fontSet="material-icons-outlined" class="text-sm !mr-1">publish</mat-icon>
+                      Publish
                     </button>
                     <button mat-icon-button
                             (click)="openAction(v, 'archive')"
@@ -158,10 +185,12 @@ import { CreateVersionDialogComponent } from '../../components/create-version-di
                     </button>
                   }
                   @if (v.status === 'ARCHIVED') {
-                    <button mat-icon-button
+                    <button mat-flat-button
                             (click)="openAction(v, 'rollback')"
-                            matTooltip="Rollback to this version">
-                      <mat-icon fontSet="material-icons-outlined" class="text-amber-600">restore</mat-icon>
+                            matTooltip="Rollback to this version"
+                            class="!min-w-0 !px-3 !h-8 !text-xs font-semibold !rounded-lg !bg-amber-500 hover:!bg-amber-600 !text-white">
+                      <mat-icon fontSet="material-icons-outlined" class="text-sm !mr-1">restore</mat-icon>
+                      Rollback
                     </button>
                   }
                 </div>

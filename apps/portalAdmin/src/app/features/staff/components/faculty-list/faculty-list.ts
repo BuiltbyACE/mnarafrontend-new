@@ -657,6 +657,17 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
               </div>
             </div>
 
+            <div class="form-row two-col">
+              <div class="form-field">
+                <label class="input-label">Gender</label>
+                <select formControlName="gender">
+                  <option value="">— Prefer not to say —</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                </select>
+              </div>
+            </div>
+
             <div class="form-row one-col">
               <div class="form-field">
                 <label class="input-label">Qualification Level</label>
@@ -898,6 +909,12 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                     <div class="review-row">
                       <span class="review-label">Department</span>
                       <span class="review-value">{{ identityForm.value.department }}</span>
+                    </div>
+                  }
+                  @if (identityForm.value.gender) {
+                    <div class="review-row">
+                      <span class="review-label">Gender</span>
+                      <span class="review-value">{{ identityForm.value.gender }}</span>
                     </div>
                   }
                   <div class="review-row">
@@ -1417,21 +1434,22 @@ export class AddStaffWizardComponent {
   submitError  = signal<string | null>(null);
 
   // ── Step 1: Identity & Role ───────────────────────────
-  identityForm: FormGroup = this.fb.group({
-    first_name:          ['', [Validators.required, Validators.minLength(2)]],
-    last_name:           ['', [Validators.required, Validators.minLength(2)]],
-    surname:             [''],
-    other_names:         [''],
-    national_id:         ['', [Validators.required, Validators.pattern(/^\d{7,8}$/)]],
-    kra_pin:             ['', [Validators.required, Validators.pattern(/^[A-Z]\d{9}[A-Z]$/)]],
-    staff_role:          ['TEACHER', Validators.required],
-    department:          [''],
-    qualification_level: ['DEGREE'],
-    email:               [''],
-    phone:               [''],
-    nssf_number:         [''],
-    nhif_number:         [''],
-  });
+    identityForm: FormGroup = this.fb.group({
+      first_name:          ['', [Validators.required, Validators.minLength(2)]],
+      last_name:           ['', [Validators.required, Validators.minLength(2)]],
+      surname:             [''],
+      other_names:         [''],
+      national_id:         ['', [Validators.required, Validators.pattern(/^\d{7,8}$/)]],
+      kra_pin:             ['', [Validators.required, Validators.pattern(/^[A-Z]\d{9}[A-Z]$/)]],
+      staff_role:          ['TEACHER', Validators.required],
+      department:          [''],
+      qualification_level: ['DEGREE'],
+      email:               [''],
+      phone:               [''],
+      nssf_number:         [''],
+      nhif_number:         [''],
+      gender:              [''],
+    });
 
   // ── Step 2: Pedagogical Data ──────────────────────────
   pedagogyForm: FormGroup = this.fb.group({
@@ -1523,8 +1541,9 @@ export class AddStaffWizardComponent {
 
     if (this.identityForm.value.surname)             payload.surname             = this.identityForm.value.surname;
     if (this.identityForm.value.other_names)         payload.other_names         = this.identityForm.value.other_names;
-    if (this.identityForm.value.email)               payload.email               = this.identityForm.value.email;
-    if (this.identityForm.value.phone)               payload.phone               = this.identityForm.value.phone;
+  if (this.identityForm.value.email)               payload.email               = this.identityForm.value.email;
+  if (this.identityForm.value.phone)               payload.phone               = this.identityForm.value.phone;
+  if (this.identityForm.value.gender)              payload.gender              = this.identityForm.value.gender;
     if (this.identityForm.value.nssf_number)         payload.nssf_number         = this.identityForm.value.nssf_number;
     if (this.identityForm.value.nhif_number)         payload.nhif_number         = this.identityForm.value.nhif_number;
     if (this.identityForm.value.department)           payload.department          = this.identityForm.value.department;

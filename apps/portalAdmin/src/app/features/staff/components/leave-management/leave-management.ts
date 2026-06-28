@@ -150,10 +150,24 @@ import { StatusBadgeComponent, BadgeType } from '../../../../shared/components/s
                 <td mat-cell *matCellDef="let bal">{{ bal.staff_name || bal.staff }}</td>
               </ng-container>
 
-              <ng-container matColumnDef="points_remaining">
-                <th mat-header-cell *matHeaderCellDef>Compassionate Points Remaining</th>
+              <ng-container matColumnDef="compassionate">
+                <th mat-header-cell *matHeaderCellDef>Compassionate</th>
                 <td mat-cell *matCellDef="let bal">
-                  <span class="points-badge">{{ bal.points_remaining }}</span>
+                  <span class="balance-cell">{{ bal.points_remaining }} / 3</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="maternity">
+                <th mat-header-cell *matHeaderCellDef>Maternity</th>
+                <td mat-cell *matCellDef="let bal">
+                  <span class="balance-cell">{{ bal.maternity_days_remaining ?? '—' }} / {{ bal.maternity_days_entitled ?? '—' }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="sick">
+                <th mat-header-cell *matHeaderCellDef>Sick Leave</th>
+                <td mat-cell *matCellDef="let bal">
+                  <span class="balance-cell">{{ bal.sick_days_remaining === null || bal.sick_days_remaining === undefined ? '\u221E' : bal.sick_days_remaining + ' remaining' }}</span>
                 </td>
               </ng-container>
 
@@ -265,17 +279,10 @@ import { StatusBadgeComponent, BadgeType } from '../../../../shared/components/s
     }
     .no-data-message mat-icon { font-size: 48px; width: 48px; height: 48px; }
 
-    .points-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 28px;
-      padding: 2px 10px;
-      border-radius: 12px;
-      background: #fff7ed;
-      color: #ea580c;
+    .balance-cell {
       font-weight: 600;
       font-size: 0.85rem;
+      color: #374151;
     }
   `],
 })
@@ -284,7 +291,7 @@ export class LeaveManagementComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly displayedColumns = ['staff_name', 'leave_type', 'dates', 'status', 'actions'];
-  readonly balanceColumns = ['staff_name', 'points_remaining'];
+  readonly balanceColumns = ['staff_name', 'compassionate', 'maternity', 'sick'];
 
   ngOnInit(): void {
     this.loadData();
