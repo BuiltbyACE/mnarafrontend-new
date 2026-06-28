@@ -32,6 +32,16 @@ import { MatSelectModule } from '@angular/material/select';
 
       <div class="form-row">
         <div class="field-group">
+          <label>Email *</label>
+          <input [ngModel]="current.email" (ngModelChange)="update('email', $event)"
+                 type="email" placeholder="e.g. student@example.com" required>
+        </div>
+        <div class="field-group">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
           <label>Middle Name</label>
           <input [ngModel]="current.middle_name" (ngModelChange)="update('middle_name', $event)"
                  placeholder="Enter middle name">
@@ -57,8 +67,8 @@ import { MatSelectModule } from '@angular/material/select';
               <option [value]="g.value">{{ g.label }}</option>
             }
             @if (genderChoices().length === 0) {
-              <option value="M">Male</option>
-              <option value="F">Female</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
             }
           </select>
         </div>
@@ -126,7 +136,8 @@ import { MatSelectModule } from '@angular/material/select';
 })
 export class StudentInfoStep {
   data = input.required<{
-    first_name: string; last_name: string; date_of_birth: string; gender: string;
+    first_name: string; last_name: string; date_of_birth: string; email: string;
+    gender: string;
     religion: string; nationality: string; residence: string;
     middle_name: string; other_names: string; mother_tongue: string;
     resident: string; home_address: string;
@@ -137,7 +148,8 @@ export class StudentInfoStep {
   validityChange = output<boolean>();
 
   current = {
-    first_name: '', last_name: '', date_of_birth: '', gender: '',
+    first_name: '', last_name: '', date_of_birth: '', email: '',
+    gender: '',
     religion: '', nationality: '', residence: '',
     middle_name: '', other_names: '', mother_tongue: '',
     resident: '', home_address: '',
@@ -159,7 +171,7 @@ export class StudentInfoStep {
   }
 
   private validate(): void {
-    const valid = !!this.current.first_name && !!this.current.last_name && !!this.current.date_of_birth && !!this.current.gender && !!this.current.nationality;
+    const valid = !!this.current.first_name && !!this.current.last_name && !!this.current.date_of_birth && !!this.current.email && !!this.current.gender;
     this.validityChange.emit(valid);
   }
 }

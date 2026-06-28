@@ -16,7 +16,7 @@ export const NATURE_TO_PATHWAY: Record<PreviousSchoolNature, PathwayType> = {
   NONE: 'NONE',
 };
 
-export type Gender = 'M' | 'F' | 'O';
+export type Gender = 'MALE' | 'FEMALE';
 export type CarerLevel = 'PRIMARY' | 'SECONDARY';
 export type CommitmentStatus = 'PENDING' | 'SUBMITTED' | 'ACKNOWLEDGED';
 
@@ -209,7 +209,7 @@ export interface AdmissionCreatePayload {
   medical_record?: MedicalRecord;
   subject_exclusion_data?: SubjectExclusionData;
   arabic_quran_data?: ArabicQuranData;
-  carers?: CarerData[];
+  carers_data?: CarerData[];
   family_background?: FamilyBackground;
   siblings?: SiblingFormEntry[];
 
@@ -233,9 +233,13 @@ export interface CreateStudentProfilePayload {
   first_name: string;
   last_name: string;
   date_of_birth: string;
-  gender: string;
-  religion?: string;
-  nationality?: string;
+  email?: string;
+}
+
+export interface EnrollmentPayload {
+  student: number;
+  classroom: number;
+  academic_year: number;
 }
 
 export interface BehaviourCommitment {
@@ -394,6 +398,7 @@ export interface StudentProfile {
   house_id?: string | null;
   house_name?: string;
   assigned_course_id?: number | string;
+  registered_subjects?: { id: number; name: string; code?: string }[];
 }
 
 export interface StudentCategory {

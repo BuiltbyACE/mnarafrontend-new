@@ -16,6 +16,7 @@ import {
   StudentCategory, 
   StudentHouse,
   StudentEnrollment,
+  EnrollmentPayload,
 } from '../../../shared/models/students.models';
 
 import { YearLevel } from '../../../shared/models/academics.models'; // <-- ENSURE THIS IS HERE
@@ -181,15 +182,11 @@ export class StudentsService {
 
   /** Create a student profile first (returns ID used in admission) */
   createStudentProfile(data: CreateStudentProfilePayload): Observable<StudentProfile> {
-    return this.http.post<StudentProfile>(`${this.baseUrl}profiles/`, data).pipe(
-      catchError(err => this.handleError('Failed to create student profile', err))
-    );
+    return this.http.post<StudentProfile>(`${this.baseUrl}profiles/`, data);
   }
 
   createAdmission(data: AdmissionCreatePayload): Observable<AdmissionRecord> {
-    return this.http.post<AdmissionRecord>(`${this.baseUrl}admissions/`, data).pipe(
-      catchError(err => this.handleError('Failed to create admission', err))
-    );
+    return this.http.post<AdmissionRecord>(`${this.baseUrl}admissions/`, data);
   }
 
   getAdmissionDetail(id: number): Observable<AdmissionRecord> {
@@ -214,6 +211,12 @@ export class StudentsService {
     return this.http.patch<BehaviourCommitment>(`${this.baseUrl}commitments/${id}/`, data).pipe(
       catchError(err => this.handleError('Failed to update behaviour commitment', err))
     );
+  }
+
+  // --- ENROLLMENT ---
+
+  createEnrollment(data: EnrollmentPayload): Observable<StudentEnrollment> {
+    return this.http.post<StudentEnrollment>(`${this.baseUrl}enrollments/`, data);
   }
 
   // --- TRANSFER ---

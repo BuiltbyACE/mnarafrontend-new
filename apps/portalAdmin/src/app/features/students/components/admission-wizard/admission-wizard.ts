@@ -1,7 +1,7 @@
-import { Component, inject, signal, computed, input, output } from '@angular/core';
+import { Component, inject, signal, computed, input, output, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { MatStepperModule } from '@angular/material/stepper';
+import { MatStepperModule, MatStepper } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -31,12 +31,14 @@ import { SubjectExclusionsStep } from './steps/subject-exclusions-step';
 import { MedicalStep } from './steps/medical-step';
 import { CarersFamilyStep } from './steps/carers-family-step';
 import { ReviewSubmitStep } from './steps/review-submit-step';
+import { EnrollmentStep } from './steps/enrollment-step';
 
 /** Local state shape used by the wizard (frontend-friendly) */
 interface WizardState {
   first_name: string;
   last_name: string;
   date_of_birth: string;
+  email: string;
   gender: string;
   religion: string;
   nationality: string;
@@ -67,7 +69,8 @@ interface WizardState {
 
 function emptyState(): WizardState {
   return {
-    first_name: '', last_name: '', date_of_birth: '', gender: 'M',
+    first_name: '', last_name: '', date_of_birth: '', email: '',
+    gender: 'MALE',
     religion: '', nationality: '', residence: '',
     year_level_id: 0, date_of_admission: '',
     pathway: 'REGULAR_SCHOOL',
@@ -90,6 +93,21 @@ function emptyState(): WizardState {
   };
 }
 
+function extractErrors(err: any): string[] {
+  const messages: string[] = [];
+  function walk(obj: any, path: string) {
+    if (!obj || typeof obj === 'string') { if (obj) messages.push(obj); return; }
+    if (Array.isArray(obj)) { obj.forEach(v => walk(v, path)); return; }
+    if (typeof obj === 'object') {
+      const entries = Object.entries(obj);
+      if (entries.length === 0) messages.push(path || 'Unknown error');
+      else entries.forEach(([k, v]) => walk(v, path ? `${path}.${k}` : k));
+    }
+  }
+  walk(err.error || err, '');
+  return messages;
+}
+
 @Component({
   selector: 'app-admission-wizard',
   standalone: true,
@@ -100,7 +118,7 @@ function emptyState(): WizardState {
     StudentInfoStep, ClassSelectionStep, PathwaySelectionStep,
     RegularSchoolStep, RegularInterruptStep, HomeschoolStep, NoneEducationStep,
     ArabicQuranStep, SubjectExclusionsStep, MedicalStep,
-    CarersFamilyStep, ReviewSubmitStep,
+    CarersFamilyStep, ReviewSubmitStep, EnrollmentStep,
   ],
   template: `
     <div class="wizard-page" [class.in-dialog]="inDialog()">
@@ -249,7 +267,7 @@ function emptyState(): WizardState {
         </mat-step>
 
         <!-- Step 9: Review & Submit -->
-        <mat-step>
+        <mat-step [completed]="step9Completed()" [editable]="true">
           <ng-template matStepLabel>Review</ng-template>
           <app-review-submit-step
             [data]="reviewData()"
@@ -260,6 +278,24 @@ function emptyState(): WizardState {
             <button mat-button matStepperPrevious>Back</button>
           </div>
         </mat-step>
+
+        <!-- Step 10: Enrollment -->
+        @if (createdStudent()) {
+          <mat-step [completed]="step10Valid()" [editable]="true">
+            <ng-template matStepLabel>Enroll</ng-template>
+            <app-enrollment-step
+              [studentId]="createdStudent()!.id"
+              [yearLevelId]="payload().year_level_id"
+              [submitting]="isEnrolling()"
+              [error]="enrollError()"
+              [enrollmentResult]="enrollmentResult()"
+              (enroll)="onEnroll($event)"
+              (finish)="onEnrollmentFinish()" />
+            <div class="step-actions">
+              <button mat-button matStepperPrevious>Back</button>
+            </div>
+          </mat-step>
+        }
 
       </mat-stepper>
     </div>
@@ -293,8 +329,17 @@ export class AdmissionWizardComponent {
   step7Valid = signal(true);
   step8Valid = signal(false);
 
+  step9Completed = signal(false);
+  step10Valid = signal(false);
+
   isSubmitting = signal(false);
   submitError = signal<string | null>(null);
+
+  isEnrolling = signal(false);
+  enrollError = signal<string | null>(null);
+  enrollmentResult = signal<{ classroom_name: string; academic_year_name: string; registered_subjects: { id: number; name: string }[] } | null>(null);
+
+  @ViewChild('stepper') stepper!: MatStepper;
 
   yearLevels = signal<any[]>([]);
   choices = signal<AdmissionChoices>({});
@@ -321,7 +366,8 @@ export class AdmissionWizardComponent {
     const s = this._state();
     return {
       first_name: s.first_name, last_name: s.last_name,
-      date_of_birth: s.date_of_birth, gender: s.gender,
+      date_of_birth: s.date_of_birth, email: s.email,
+      gender: s.gender,
       religion: s.religion, nationality: s.nationality, residence: s.residence,
       middle_name: s.middle_name, other_names: s.other_names,
       mother_tongue: s.mother_tongue, resident: s.resident,
@@ -431,6 +477,7 @@ export class AdmissionWizardComponent {
 
   onStepChange(event: any): void {
     this.submitError.set(null);
+    this.enrollError.set(null);
   }
 
   /** Map internal WizardState to backend AdmissionCreatePayload */
@@ -442,7 +489,7 @@ export class AdmissionWizardComponent {
       gender: s.gender,
       previous_school_nature: PATHWAY_TO_NATURE[s.pathway],
       medical_record: s.medical_record,
-      carers: s.carers,
+      carers_data: s.carers,
       siblings: s.siblings || [],
       resident: s.resident || undefined,
       home_address: s.home_address || undefined,
@@ -490,9 +537,7 @@ export class AdmissionWizardComponent {
       first_name: s.first_name,
       last_name: s.last_name,
       date_of_birth: s.date_of_birth,
-      gender: s.gender,
-      religion: s.religion || undefined,
-      nationality: s.nationality || undefined,
+      email: s.email || undefined,
     };
 
     this.studentsService.createStudentProfile(studentPayload).subscribe({
@@ -504,26 +549,82 @@ export class AdmissionWizardComponent {
         this.studentsService.createAdmission(admissionPayload).subscribe({
           next: (result) => {
             this.isSubmitting.set(false);
+            this.step9Completed.set(true);
             this.snackBar.open(`Admission created: ${result.admission_number}`, 'Close', { duration: 5000 });
-            if (this.inDialog()) {
-              this.wizardClosed.emit(true);
-            } else {
-              this.router.navigate(['/portalAdmin/students/admissions']);
-            }
+            // Move to enrollment step
+            setTimeout(() => this.stepper.next());
           },
           error: (err) => {
             this.isSubmitting.set(false);
-            const msg = err.error?.message || err.error?.detail || 'Failed to create admission. Please check all fields.';
+            const msg = extractErrors(err).join('; ') || 'Failed to create admission. Please check all fields.';
             this.submitError.set(msg);
           },
         });
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        const msg = err.error?.message || err.error?.detail || 'Failed to create student profile.';
+        const msg = extractErrors(err).join('; ') || 'Failed to create student profile.';
         this.submitError.set(msg);
       },
     });
+  }
+
+  onEnroll(data: { classroom: number; academic_year: number }): void {
+    this.isEnrolling.set(true);
+    this.enrollError.set(null);
+
+    const studentId = this.createdStudent()?.id;
+    if (!studentId) {
+      this.enrollError.set('No student profile found. Please go back and submit the admission first.');
+      this.isEnrolling.set(false);
+      return;
+    }
+
+    this.studentsService.createEnrollment({
+      student: studentId,
+      classroom: data.classroom,
+      academic_year: data.academic_year,
+    }).subscribe({
+      next: (result) => {
+        this.isEnrolling.set(false);
+        this.step10Valid.set(true);
+        // Fetch student profile to get registered_subjects
+        this.studentsService.getStudentDetail(studentId).subscribe({
+          next: (profile) => {
+            this.enrollmentResult.set({
+              classroom_name: result.classroom_name,
+              academic_year_name: result.academic_year_name,
+              registered_subjects: profile.registered_subjects || [],
+            });
+          },
+          error: () => {
+            this.enrollmentResult.set({
+              classroom_name: result.classroom_name,
+              academic_year_name: result.academic_year_name,
+              registered_subjects: [],
+            });
+          },
+        });
+      },
+      error: (err) => {
+        this.isEnrolling.set(false);
+        const msg = extractErrors(err).join('; ') || 'Failed to create enrollment.';
+        this.enrollError.set(msg);
+      },
+    });
+  }
+
+  onEnrollmentFinish(): void {
+    if (this.inDialog()) {
+      this.wizardClosed.emit(true);
+    } else {
+      const studentId = this.createdStudent()?.id;
+      if (studentId) {
+        this.router.navigate([`/portalAdmin/students/${studentId}`]);
+      } else {
+        this.router.navigate(['/portalAdmin/students/admissions']);
+      }
+    }
   }
 
   goBack(): void {

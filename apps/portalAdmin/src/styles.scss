@@ -315,3 +315,16 @@ a {
     background-position: -100% 0;
   }
 }
+
+// ─── Native Select Option Fix ──────────────────────────────────────────
+// Angular's view encapsulation (Emulated) uses _ngcontent-* attributes
+// to scope CSS, but native <option> elements inside <select> dropdowns
+// are rendered by the OS-level widget and DON'T reliably carry those
+// scoped attributes. Without this global rule, option text is invisible
+// (white-on-white) on many Windows/Chromium configurations.
+// NOTE: Individual components can still override via select.field-select
+// if they need different option styling (e.g. placeholder color).
+select option {
+  color: #111827;
+  background: #fff;
+}

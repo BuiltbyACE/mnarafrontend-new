@@ -296,7 +296,7 @@ import { AcademicsService, Qualification, TeacherSelect } from '../../services/a
       transition: border-color 0.15s ease;
       &:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
     }
-    .field-select option {
+    ::ng-deep .field-select option {
       color: #111827 !important;
       background: #fff !important;
     }
@@ -465,18 +465,22 @@ export class QualificationsPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading.set(true);
-    this.academicsService.getSubjects().subscribe({ complete: () => this.checkLoaded() });
+    this.academicsService.getSubjects().subscribe({
+      complete: () => this.checkLoaded(),
+      error: () => this.checkLoaded(),
+    });
     this.academicsService.getTeachers().subscribe({
       next: (t) => { this.teachers.set(t); this.checkLoaded(); },
-      error: () => { this.teachers.set([]); this.checkLoaded(); },
+      error: (err) => { this.error.set(err?.message || 'Failed to load teachers'); this.checkLoaded(); },
     });
-    this.academicsService.getQualifications().subscribe({ complete: () => this.checkLoaded() });
+    this.academicsService.getQualifications().subscribe({
+      complete: () => this.checkLoaded(),
+      error: () => this.checkLoaded(),
+    });
   }
 
   private checkLoaded(): void {
-    if (this.teachers().length || this.subjects().length || this.qualifications().length) {
-      this.loading.set(false);
-    }
+    this.loading.set(false);
   }
 
   get canAdd(): () => boolean {

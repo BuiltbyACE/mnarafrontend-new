@@ -340,9 +340,25 @@ export class AcademicsService {
   qualifications = signal<Qualification[]>([]);
   teachers = signal<TeacherSelect[]>([]);
 
+  /** Extract an array from any common API response shape. */
+  private extractArray<T>(data: unknown, label: string): T[] {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') {
+      // Try common wrapper keys
+      const candidates = ['results', 'data', 'teachers', 'items', 'records', 'values', 'users'];
+      for (const key of candidates) {
+        const val = (data as Record<string, unknown>)[key];
+        if (Array.isArray(val)) return val;
+      }
+    }
+    console.warn(`[AcademicsService.${label}] Unexpected API response format:`, data);
+    return [];
+  }
+
   getQualifications(): Observable<Qualification[]> {
     const url = getApiUrl('/staff/qualifications/');
-    return this.http.get<Qualification[]>(url).pipe(
+    return this.http.get(url).pipe(
+      map(data => this.extractArray<Qualification>(data, 'getQualifications')),
       tap(data => {
         this.qualifications.set(data);
         this.error.set(null);
@@ -369,7 +385,8 @@ export class AcademicsService {
 
   getTeachers(): Observable<TeacherSelect[]> {
     const url = getApiUrl('/lms/teachers/');
-    return this.http.get<TeacherSelect[]>(url).pipe(
+    return this.http.get(url).pipe(
+      map(data => this.extractArray<TeacherSelect>(data, 'getTeachers')),
       tap(data => this.teachers.set(data)),
       catchError(err => this.handleError('Failed to load teachers', err))
     );
@@ -377,12 +394,20 @@ export class AcademicsService {
 
   getQualifiedTeachers(subjectId: number): Observable<TeacherSelect[]> {
     const url = getApiUrl(`/academics/subjects/${subjectId}/qualified_teachers/`);
-    return this.http.get<TeacherSelect[]>(url);
+    return this.http.get(url).pipe(
+      map(data => this.extractArray<TeacherSelect>(data, 'getQualifiedTeachers'))
+    );
   }
 
   // Legacy methods required by other components
   getAcademicYears(): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}academic-years/`);
+    return this.http.get<any>(getApiUrl('/lms/years/'));
+  }
+
+  getClassroomsByYearLevel(yearLevelId: number): Observable<Classroom[]> {
+    return this.http.get<{ results: Classroom[] }>(`${this.baseUrl}classrooms/?year_level=${yearLevelId}`).pipe(
+      map(data => data.results || [])
+    );
   }
 
   getClassesByYear(yearId: any): Observable<any> {
