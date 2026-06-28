@@ -23,6 +23,12 @@ import { JournalEntry, LedgerEntryLine } from '../../models/finance.models';
         </div>
       </div>
 
+      @if (message(); as msg) {
+        <div class="toast" [class.toast-success]="msg.type === 'success'" [class.toast-error]="msg.type === 'error'">
+          {{ msg.text }}
+        </div>
+      }
+
       <div class="ledger-summary">
         <div class="summary-item">
           <span class="summary-label">Total Debits</span>
@@ -62,6 +68,14 @@ import { JournalEntry, LedgerEntryLine } from '../../models/finance.models';
                     <span class="je-status status-posted">POSTED</span>
                   } @else {
                     <span class="je-status status-draft">{{ entry.status }}</span>
+                    @if (publishingId() === entry.id) {
+                      <span class="je-status status-posting">POSTING...</span>
+                    } @else if (countdownEntry()?.id === entry.id) {
+                      <span class="countdown-badge">{{ countdownValue() }}s</span>
+                      <button class="cancel-btn" (click)="cancelPublish(entry)">Cancel</button>
+                    } @else {
+                      <button class="publish-btn" (click)="publishEntry(entry)" title="Approve and post this entry">Publish</button>
+                    }
                   }
                 </div>
                 <div class="je-header-right">
@@ -158,6 +172,7 @@ import { JournalEntry, LedgerEntryLine } from '../../models/finance.models';
     .je-status { font-size: 0.6875rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; letter-spacing: 0.05em; }
     .status-posted { background: #dcfce7; color: #166534; }
     .status-draft { background: #fef9c3; color: #854d0e; }
+    .status-posting { background: #dbeafe; color: #1d4ed8; font-size: 0.6875rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; letter-spacing: 0.05em; }
     
     .je-header-right { display: flex; gap: 20px; }
     .je-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
@@ -191,6 +206,15 @@ import { JournalEntry, LedgerEntryLine } from '../../models/finance.models';
     .footer-icon { width: 16px; height: 16px; color: #94a3b8; flex-shrink: 0; }
     .ledger-footer-note strong { color: #334155; }
     
+    .toast { padding: 10px 18px; border-radius: 8px; font-size: 0.8125rem; font-weight: 500; margin-bottom: 16px; animation: fadeIn 0.2s ease; }
+    .toast-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .toast-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .publish-btn { font-size: 0.6875rem; font-weight: 700; padding: 4px 12px; border-radius: 12px; border: none; cursor: pointer; background: #3b82f6; color: white; letter-spacing: 0.03em; transition: background 0.15s; }
+    .publish-btn:hover { background: #2563eb; }
+    .countdown-badge { font-size: 0.6875rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; background: #dbeafe; color: #1d4ed8; letter-spacing: 0.05em; min-width: 28px; text-align: center; }
+    .cancel-btn { font-size: 0.6875rem; font-weight: 600; padding: 4px 10px; border-radius: 12px; border: 1px solid #e2e8f0; cursor: pointer; background: white; color: #64748b; transition: all 0.15s; }
+    .cancel-btn:hover { background: #f1f5f9; color: #e11d48; border-color: #fecaca; }
     .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; color: #64748b; }
     .spinner { width: 24px; height: 24px; border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
     .empty-state { text-align: center; padding: 40px; color: #94a3b8; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; }
@@ -202,7 +226,12 @@ export class ImmutableLedgerComponent implements OnInit {
 
   journalEntries = signal<JournalEntry[]>([]);
   isLoading = signal(true);
+  message = signal<{ text: string; type: 'success' | 'error' } | null>(null);
+  countdownEntry = signal<JournalEntry | null>(null);
+  countdownValue = signal(5);
+  publishingId = signal<number | null>(null);
   parseFloat = parseFloat;
+  private countdownTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit() {
     this.loadData();
@@ -217,6 +246,54 @@ export class ImmutableLedgerComponent implements OnInit {
       error: () => {
         this.journalEntries.set([]);
         this.isLoading.set(false);
+      },
+    });
+  }
+
+  publishEntry(entry: JournalEntry): void {
+    if (this.countdownEntry()?.id === entry.id || this.publishingId() === entry.id) {
+      return;
+    }
+    this.countdownEntry.set(entry);
+    this.countdownValue.set(5);
+    this.countdownTimer = setInterval(() => {
+      this.countdownValue.update(v => v - 1);
+      if (this.countdownValue() <= 0) {
+        if (this.countdownTimer) clearInterval(this.countdownTimer);
+        this.countdownEntry.set(null);
+        this.executePublish(entry);
+      }
+    }, 1000);
+  }
+
+  cancelPublish(entry: JournalEntry): void {
+    if (this.countdownEntry()?.id === entry.id) {
+      if (this.countdownTimer) clearInterval(this.countdownTimer);
+      this.countdownEntry.set(null);
+      this.countdownValue.set(5);
+    }
+  }
+
+  private executePublish(entry: JournalEntry): void {
+    this.publishingId.set(entry.id);
+    this.financeService.publishJournal(entry.id).subscribe({
+      next: (updated) => {
+        this.publishingId.set(null);
+        this.journalEntries.update(entries =>
+          entries.map(e => e.id === updated.id ? updated : e)
+        );
+        this.message.set({ text: `${entry.reference} published successfully.`, type: 'success' });
+        setTimeout(() => this.message.set(null), 5000);
+      },
+      error: (err) => {
+        this.publishingId.set(null);
+        this.countdownValue.set(5);
+        const body = err.error;
+        const errorMsg = typeof body === 'string' ? body
+          : body?.error ? (Array.isArray(body.error) ? body.error[0] : body.error)
+          : err.message || 'Failed to publish entry.';
+        this.message.set({ text: errorMsg, type: 'error' });
+        setTimeout(() => this.message.set(null), 5000);
       },
     });
   }

@@ -66,6 +66,10 @@ export class FinanceService {
     return this.http.get<PaginatedResponse<JournalEntry>>(getApiUrl('/finance/journal-entries/'), { params });
   }
 
+  publishJournal(id: number): Observable<JournalEntry> {
+    return this.http.post<JournalEntry>(getApiUrl(`/finance/journal-entries/${id}/publish/`), {});
+  }
+
   // ─── Fee Balances (read-only) ──────────────────────────────
   getFeeBalances(page = 1, pageSize = 25): Observable<PaginatedResponse<StudentInvoice>> {
     const params = new HttpParams().set('page', page.toString()).set('page_size', pageSize.toString());

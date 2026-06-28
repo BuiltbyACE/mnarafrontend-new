@@ -4,13 +4,14 @@
  */
 
 export interface FeeBalance {
-  student_id: string;
+  id: number;
   student_name: string;
-  year_level: string;
-  total_invoiced: number;
-  total_paid: number;
-  current_balance: number;
-  status: 'PAID' | 'ARREARS' | 'OVERPAID';
+  admission_number: string;
+  year_level_name: string | null;
+  balance_kes: number;
+  has_arrears: boolean;
+  last_payment_date: string | null;
+  status: string;
 }
 
 export interface ManualPaymentRequest {

@@ -182,17 +182,20 @@ import type { TDocumentDefinitions, TableCell } from 'pdfmake/interfaces';
 
               <div class="form-group">
                 <label>Payment Method</label>
-                <select [(ngModel)]="paymentMethod" class="form-control">
+                <select [(ngModel)]="paymentMethod" (ngModelChange)="onPaymentMethodChange()" class="form-control">
+                  <option value="MPESA">M-Pesa</option>
                   <option value="BANK">Bank Transfer</option>
                   <option value="CHEQUE">Cheque</option>
                   <option value="CASH">Cash</option>
                 </select>
               </div>
 
-              <div class="form-group">
-                <label>Reference Code</label>
-                <input type="text" [(ngModel)]="paymentReference" class="form-control" placeholder="e.g. Bank Slip Number or Cheque No">
-              </div>
+              @if (paymentMethod !== 'CASH') {
+                <div class="form-group">
+                  <label>Reference Code</label>
+                  <input type="text" [(ngModel)]="paymentReference" class="form-control" placeholder="e.g. Bank Slip Number or Cheque No">
+                </div>
+              }
               
               <p class="ledger-note">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -201,7 +204,7 @@ import type { TDocumentDefinitions, TableCell } from 'pdfmake/interfaces';
             </div>
             <div class="modal-footer">
               <button class="btn-ghost" (click)="showPaymentModal.set(false)" [disabled]="isProcessing()">Cancel</button>
-              <button class="btn-primary" (click)="recordPayment()" [disabled]="isProcessing() || !paymentAmount || !paymentReference">
+              <button class="btn-primary" (click)="recordPayment()" [disabled]="isProcessing() || !paymentAmount || (paymentMethod !== 'CASH' && !paymentReference)">
                 {{ isProcessing() ? 'Processing...' : 'Post to Ledger' }}
               </button>
             </div>
@@ -427,14 +430,21 @@ export class ReceivablesHubComponent implements OnInit {
     });
   }
 
+  onPaymentMethodChange() {
+    if (this.paymentMethod === 'CASH') {
+      this.paymentReference = '';
+    }
+  }
+
   openManualPaymentModal() {
     this.paymentAmount = null;
     this.paymentReference = '';
+    this.paymentMethod = 'BANK';
     this.showPaymentModal.set(true);
   }
 
   recordPayment() {
-    if (!this.paymentAmount || !this.paymentReference) return;
+    if (!this.paymentAmount || (this.paymentMethod !== 'CASH' && !this.paymentReference)) return;
     
     // For simplicity, we apply the payment to the first selected invoice
     // A robust system might split the payment across multiple selected invoices
@@ -445,7 +455,7 @@ export class ReceivablesHubComponent implements OnInit {
       invoice: targetInvoiceId,
       amount: this.paymentAmount,
       payment_method: this.paymentMethod,
-      reference_code: this.paymentReference
+      reference_code: this.paymentMethod === 'CASH' ? '' : this.paymentReference
     }).subscribe({
       next: () => {
         this.isProcessing.set(false);
