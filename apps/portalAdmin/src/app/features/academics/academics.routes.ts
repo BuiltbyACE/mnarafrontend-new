@@ -36,4 +36,9 @@ export const academicsRoutes: Route[] = [
     loadComponent: () =>
       import('./components/subject-offerings/subject-offerings-list.component').then((m) => m.SubjectOfferingsListComponent),
   },
+  {
+    path: 'qualifications',
+    loadComponent: () =>
+      import('./components/qualifications/qualifications-page.component').then((m) => m.QualificationsPageComponent),
+  },
 ];

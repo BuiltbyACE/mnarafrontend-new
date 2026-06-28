@@ -62,6 +62,20 @@ export interface ClassroomWritePayload {
   class_teacher?: number | null;
 }
 
+export interface Qualification {
+  id: number;
+  staff: number;
+  staff_name: string;
+  subject: number;
+  subject_name: string;
+  created_at: string;
+}
+
+export interface TeacherSelect {
+  id: number;
+  full_name: string;
+}
+
 export interface SubjectOffering {
   id: number;
   subject: number;
@@ -320,6 +334,50 @@ export class AcademicsService {
       tap(() => this.subjectOfferings.update(items => items.filter(item => item.id !== id))),
       catchError(err => this.handleError('Failed to delete subject offering', err))
     );
+  }
+
+  // ── Teacher Qualification CRUD ───────────────────────────
+  qualifications = signal<Qualification[]>([]);
+  teachers = signal<TeacherSelect[]>([]);
+
+  getQualifications(): Observable<Qualification[]> {
+    const url = getApiUrl('/staff/qualifications/');
+    return this.http.get<Qualification[]>(url).pipe(
+      tap(data => {
+        this.qualifications.set(data);
+        this.error.set(null);
+      }),
+      catchError(err => this.handleError('Failed to load qualifications', err))
+    );
+  }
+
+  createQualification(staff: number, subject: number): Observable<Qualification> {
+    const url = getApiUrl('/staff/qualifications/');
+    return this.http.post<Qualification>(url, { staff, subject }).pipe(
+      tap(newItem => this.qualifications.update(items => [...items, newItem])),
+      catchError(err => this.handleError('Failed to create qualification', err))
+    );
+  }
+
+  deleteQualification(id: number): Observable<void> {
+    const url = getApiUrl(`/staff/qualifications/${id}/`);
+    return this.http.delete<void>(url).pipe(
+      tap(() => this.qualifications.update(items => items.filter(item => item.id !== id))),
+      catchError(err => this.handleError('Failed to delete qualification', err))
+    );
+  }
+
+  getTeachers(): Observable<TeacherSelect[]> {
+    const url = getApiUrl('/lms/teachers/');
+    return this.http.get<TeacherSelect[]>(url).pipe(
+      tap(data => this.teachers.set(data)),
+      catchError(err => this.handleError('Failed to load teachers', err))
+    );
+  }
+
+  getQualifiedTeachers(subjectId: number): Observable<TeacherSelect[]> {
+    const url = getApiUrl(`/academics/subjects/${subjectId}/qualified_teachers/`);
+    return this.http.get<TeacherSelect[]>(url);
   }
 
   // Legacy methods required by other components

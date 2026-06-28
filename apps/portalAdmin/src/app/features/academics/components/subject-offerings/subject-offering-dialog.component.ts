@@ -1,13 +1,10 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { getApiUrl } from '@sms/core/config';
+import { RouterLink } from '@angular/router';
 import { AcademicsService, SubjectOffering } from '../../services/academics.service';
-
-interface StaffProfileSelect { id: number; full_name: string; }
 
 export interface SubjectOfferingDialogData {
   isEdit: boolean;
@@ -17,7 +14,7 @@ export interface SubjectOfferingDialogData {
 @Component({
   selector: 'app-subject-offering-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatProgressSpinnerModule],
+  imports: [CommonModule, ReactiveFormsModule, MatProgressSpinnerModule, RouterLink],
   host: { class: 'so-dialog-host' },
   template: `
     <div class="so-dlg">
@@ -179,6 +176,14 @@ export interface SubjectOfferingDialogData {
               <div class="teacher-loading">
                 <mat-spinner diameter="16"></mat-spinner>
                 <span>Loading staff list…</span>
+              </div>
+            } @else if (staffProfiles().length === 0 && form.get('subject')?.value) {
+              <div class="no-qualified-banner">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3.5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V5.25A.75.75 0 018 4.5zm0 6.5a.75.75 0 100-1.5.75.75 0 000 1.5z"/></svg>
+                <span>
+                  No qualified teachers.
+                  <a routerLink="/admin/academics/qualifications" class="banner-link">Add qualifications first</a>
+                </span>
               </div>
             } @else {
               <div class="select-wrap">
@@ -477,6 +482,26 @@ export interface SubjectOfferingDialogData {
       font-style: italic;
     }
 
+    .no-qualified-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 13px;
+      border: 1.5px solid #fde68a;
+      border-radius: 10px;
+      background: #fffbeb;
+      font-size: 13px;
+      color: #92400e;
+      svg { width: 16px; height: 16px; fill: #f59e0b; flex-shrink: 0; }
+    }
+    .banner-link {
+      color: #7c3aed;
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+      &:hover { color: #6d28d9; }
+    }
+
     /* ── Type Toggle ─────────────────────────────────────────────────────── */
     .type-toggle-row { display: flex; gap: 10px; }
 
@@ -608,11 +633,10 @@ export interface SubjectOfferingDialogData {
 export class SubjectOfferingDialogComponent implements OnInit {
   private fb           = inject(FormBuilder);
   private dialogRef    = inject(MatDialogRef<SubjectOfferingDialogComponent>);
-  private http         = inject(HttpClient);
   readonly academicsService = inject(AcademicsService);
   data                 = inject<SubjectOfferingDialogData>(MAT_DIALOG_DATA);
 
-  staffProfiles  = signal<StaffProfileSelect[]>([]);
+  staffProfiles  = signal<{ id: number; full_name: string }[]>([]);
   loadingProfiles = signal(false);
   profilesError   = signal('');
   submitting       = signal(false);
@@ -660,15 +684,25 @@ export class SubjectOfferingDialogComponent implements OnInit {
   private loadStaff(subjectId?: number): void {
     this.loadingProfiles.set(true);
     this.profilesError.set('');
-    const url = getApiUrl('/staff/profiles/select/') + (subjectId ? `?subject_id=${subjectId}` : '');
-    this.http.get<StaffProfileSelect[]>(url).subscribe({
-      next: (p) => { this.staffProfiles.set(p); this.loadingProfiles.set(false); },
-      error: (err) => {
-        this.staffProfiles.set([]);
-        this.profilesError.set(err.status === 404 ? 'Staff endpoint unavailable' : 'Could not load staff list');
-        this.loadingProfiles.set(false);
-      },
-    });
+    if (subjectId) {
+      this.academicsService.getQualifiedTeachers(subjectId).subscribe({
+        next: (p) => { this.staffProfiles.set(p); this.loadingProfiles.set(false); },
+        error: () => {
+          this.staffProfiles.set([]);
+          this.profilesError.set('Could not load qualified teachers');
+          this.loadingProfiles.set(false);
+        },
+      });
+    } else {
+      this.academicsService.getTeachers().subscribe({
+        next: (p) => { this.staffProfiles.set(p); this.loadingProfiles.set(false); },
+        error: () => {
+          this.staffProfiles.set([]);
+          this.profilesError.set('Could not load teacher list');
+          this.loadingProfiles.set(false);
+        },
+      });
+    }
   }
 
   isInvalid(field: string): boolean {

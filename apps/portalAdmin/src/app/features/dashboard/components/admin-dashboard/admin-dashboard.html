@@ -158,6 +158,37 @@
           </mat-card-content>
         </mat-card>
 
+        <!-- System Alerts -->
+        @if (systemAlerts().length > 0) {
+          <mat-card class="alerts-card">
+            <div class="card-header-bar">
+              <div class="card-title-group">
+                <div class="section-icon-wrap alert-icon-wrap"><mat-icon>notifications_active</mat-icon></div>
+                <div>
+                  <div class="card-title">SYSTEM ALERTS</div>
+                  <div class="card-sub">Actionable items requiring attention</div>
+                </div>
+              </div>
+            </div>
+            <mat-card-content>
+              <div class="alerts-list">
+                @for (alert of systemAlerts(); track alert.title) {
+                  <div class="alert-item" [style.--alert-color]="getAlertColor(alert.type)">
+                    <mat-icon class="alert-type-icon">{{ getAlertIcon(alert.type) }}</mat-icon>
+                    <div class="alert-info">
+                      <span class="alert-title">{{ alert.title }}</span>
+                      <span class="alert-desc">{{ alert.desc }}</span>
+                    </div>
+                    @if (alert.count !== undefined) {
+                      <span class="alert-count" [style.background]="getAlertColor(alert.type)">{{ alert.count }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+
         <!-- Action Queue -->
         <mat-card class="approvals-card">
           <div class="card-header-bar">
@@ -276,6 +307,34 @@
             </div>
           </mat-card>
         </div>
+
+        <!-- Recent Activities Feed -->
+        @if (recentActivities().length > 0) {
+          <mat-card class="activities-card">
+            <div class="card-header-bar">
+              <div class="card-title-group">
+                <div class="section-icon-wrap activity-icon-wrap"><mat-icon>history</mat-icon></div>
+                <div>
+                  <div class="card-title">RECENT ACTIVITIES</div>
+                  <div class="card-sub">Latest payments, submissions & requisitions</div>
+                </div>
+              </div>
+            </div>
+            <mat-card-content>
+              <div class="activities-list">
+                @for (act of recentActivities(); track act.timestamp) {
+                  <div class="activity-item">
+                    <div class="activity-dot"></div>
+                    <div class="activity-info">
+                      <span class="activity-msg">{{ act.message }}</span>
+                      <span class="activity-time">{{ formatTime(act.timestamp) }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
 
         <!-- Quick Actions + School Calendar -->
         <div class="actions-calendar-row">

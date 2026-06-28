@@ -836,71 +836,23 @@ export class YearLevelsListComponent implements OnInit {
   searchQuery = signal('');
   filterKs    = signal('');
 
-  // ── Mock dataset — 6 year levels with rich display fields ────────────
-  private readonly MOCK: YearLevelDisplay[] = [
-    {
-      id: 1, name: 'Year 7',  shortLabel: 'Y7',
-      keyStage: 'Key Stage 3', keyStageCode: 'KS3', order: 1,
-      totalStudents: 127, streams: 4, classrooms: 4,
-      color: '#2563eb',
-      gradient: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
-      shadowColor: 'rgba(37,99,235,0.22)',
-      raw: null,
-    },
-    {
-      id: 2, name: 'Year 8',  shortLabel: 'Y8',
-      keyStage: 'Key Stage 3', keyStageCode: 'KS3', order: 2,
-      totalStudents: 118, streams: 4, classrooms: 4,
-      color: '#7c3aed',
-      gradient: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)',
-      shadowColor: 'rgba(124,58,237,0.22)',
-      raw: null,
-    },
-    {
-      id: 3, name: 'Year 9',  shortLabel: 'Y9',
-      keyStage: 'Key Stage 3', keyStageCode: 'KS3', order: 3,
-      totalStudents: 135, streams: 5, classrooms: 5,
-      color: '#0891b2',
-      gradient: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-      shadowColor: 'rgba(8,145,178,0.22)',
-      raw: null,
-    },
-    {
-      id: 4, name: 'Year 10', shortLabel: 'Y10',
-      keyStage: 'Key Stage 4', keyStageCode: 'KS4', order: 4,
-      totalStudents: 142, streams: 5, classrooms: 5,
-      color: '#059669',
-      gradient: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-      shadowColor: 'rgba(5,150,105,0.22)',
-      raw: null,
-    },
-    {
-      id: 5, name: 'Year 11', shortLabel: 'Y11',
-      keyStage: 'Key Stage 4', keyStageCode: 'KS4', order: 5,
-      totalStudents: 138, streams: 5, classrooms: 5,
-      color: '#d97706',
-      gradient: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
-      shadowColor: 'rgba(217,119,6,0.22)',
-      raw: null,
-    },
-    {
-      id: 6, name: 'Year 12', shortLabel: 'Y12',
-      keyStage: 'Key Stage 5', keyStageCode: 'KS5', order: 6,
-      totalStudents: 84, streams: 3, classrooms: 3,
-      color: '#e11d48',
-      gradient: 'linear-gradient(135deg, #e11d48 0%, #f43f5e 100%)',
-      shadowColor: 'rgba(225,29,72,0.22)',
-      raw: null,
-    },
+  // ── Color palette for year level cards ───────────────────────────────
+  private readonly CARD_COLORS = [
+    { color: '#2563eb', gradient: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)', shadowColor: 'rgba(37,99,235,0.22)' },
+    { color: '#7c3aed', gradient: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)', shadowColor: 'rgba(124,58,237,0.22)' },
+    { color: '#0891b2', gradient: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)', shadowColor: 'rgba(8,145,178,0.22)' },
+    { color: '#059669', gradient: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', shadowColor: 'rgba(5,150,105,0.22)' },
+    { color: '#d97706', gradient: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)', shadowColor: 'rgba(217,119,6,0.22)' },
+    { color: '#e11d48', gradient: 'linear-gradient(135deg, #e11d48 0%, #f43f5e 100%)', shadowColor: 'rgba(225,29,72,0.22)' },
   ];
 
-  // ── Merge real API data with mock display fields ──────────────────────
+  // ── Map real API data to display model ──────────────────────────────
   readonly displayLevels = computed<YearLevelDisplay[]>(() => {
     const real = this.service.yearLevels();
-    if (real.length === 0) return this.MOCK;
+    if (real.length === 0) return [];
 
     return real.map((yl, i) => {
-      const template = this.MOCK[i % this.MOCK.length];
+      const palette = this.CARD_COLORS[i % this.CARD_COLORS.length];
       const rawLabel = yl.name.replace(/[^0-9]/g, '');
       return {
         id:            yl.id,
@@ -909,12 +861,12 @@ export class YearLevelsListComponent implements OnInit {
         keyStage:      yl.key_stage?.name || yl.key_stage_name || '—',
         keyStageCode:  this.extractKsCode(yl),
         order:         yl.order,
-        totalStudents: template.totalStudents,
-        streams:       template.streams,
-        classrooms:    template.classrooms,
-        color:         template.color,
-        gradient:      template.gradient,
-        shadowColor:   template.shadowColor,
+        totalStudents: 0,
+        streams:       0,
+        classrooms:    0,
+        color:         palette.color,
+        gradient:      palette.gradient,
+        shadowColor:   palette.shadowColor,
         raw:           yl,
       };
     }).sort((a, b) => a.order - b.order);

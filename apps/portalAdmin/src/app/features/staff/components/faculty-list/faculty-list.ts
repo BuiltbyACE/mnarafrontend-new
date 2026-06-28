@@ -559,6 +559,9 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
         </button>
       </div>
 
+      <!-- Scrollable body (header stays sticky) -->
+      <div class="scroll-body">
+
       <!-- Stepper -->
       <mat-stepper
         linear
@@ -620,7 +623,7 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
                   <span class="error-text">National ID is required</span>
                 }
                 @if (identityForm.get('national_id')?.hasError('pattern') && identityForm.get('national_id')?.touched) {
-                  <span class="error-text">Must be 7–8 digits</span>
+                  <span class="error-text">Must be 7–9 digits</span>
                 }
               </div>
               <div class="form-field">
@@ -1014,6 +1017,8 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
         </mat-step>
 
       </mat-stepper>
+
+      </div>
     </div>
   `,
   styles: [`
@@ -1023,6 +1028,8 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
       flex-direction: column;
       width: 680px;
       max-width: 100%;
+      max-height: 80vh;
+      overflow: hidden;
       background: #ffffff;
       border-radius: 16px;
       overflow: hidden;
@@ -1083,6 +1090,14 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
       color: #ffffff !important;
     }
 
+    /* ── Scroll Body ── */
+    .scroll-body {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      background: #ffffff;
+    }
+
     /* ── Stepper Overrides ── */
     .wizard-stepper {
       background: transparent !important;
@@ -1092,11 +1107,15 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
       background: #f8fafc;
       border-bottom: 1px solid #e5e7eb;
       padding: 0 12px;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
 
     .wizard-stepper .mat-horizontal-content-container {
       background: #ffffff;
       padding: 0;
+      overflow: visible;
     }
 
     /* ── Step Form ── */
@@ -1439,7 +1458,7 @@ export class AddStaffWizardComponent {
       last_name:           ['', [Validators.required, Validators.minLength(2)]],
       surname:             [''],
       other_names:         [''],
-      national_id:         ['', [Validators.required, Validators.pattern(/^\d{7,8}$/)]],
+      national_id:         ['', [Validators.required, Validators.pattern(/^\d{7,9}$/)]],
       kra_pin:             ['', [Validators.required, Validators.pattern(/^[A-Z]\d{9}[A-Z]$/)]],
       staff_role:          ['TEACHER', Validators.required],
       department:          [''],
@@ -1489,11 +1508,11 @@ export class AddStaffWizardComponent {
   constructor() {
     this.loadingLookups.set(true);
     this.staffService.getDepartments().subscribe({
-      next: (deps) => this.departments.set(deps),
+      next: (deps) => this.departments.set(Array.isArray(deps) ? deps : []),
       error: () => this.departments.set([]),
     });
     this.staffService.getSubjects().subscribe({
-      next: (subs) => { this.subjects.set(subs); this.loadingLookups.set(false); },
+      next: (subs) => { this.subjects.set(Array.isArray(subs) ? subs : []); this.loadingLookups.set(false); },
       error: () => { this.subjects.set([]); this.loadingLookups.set(false); },
     });
 
@@ -1515,6 +1534,16 @@ export class AddStaffWizardComponent {
       tsc.updateValueAndValidity();
       spec.updateValueAndValidity();
       degree.updateValueAndValidity();
+    });
+
+    // Debug: log form errors to console on changes
+    this.identityForm.statusChanges.subscribe(() => {
+      const errors: Record<string, any> = {};
+      Object.keys(this.identityForm.controls).forEach(k => {
+        const err = this.identityForm.get(k)?.errors;
+        if (err) errors[k] = err;
+      });
+      console.debug('[StaffWizard] identityForm valid:', this.identityForm.valid, 'errors:', errors);
     });
   }
 

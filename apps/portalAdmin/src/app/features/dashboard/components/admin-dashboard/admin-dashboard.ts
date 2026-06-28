@@ -19,7 +19,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { AuthStore } from '@sms/core/auth';
-import { PrincipalDashboardService, PrincipalDashboardPayload } from '../../services/principal-dashboard.service';
+import { PrincipalDashboardService, PrincipalDashboardPayload, AdminDashboardPayload } from '../../services/principal-dashboard.service';
 import { CalendarService } from '../../../../core/services/calendar.service';
 import {
   ReviewApprovalDialogComponent,
@@ -65,6 +65,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   readonly dashboardData = signal<PrincipalDashboardPayload | null>(null);
+  readonly adminDashboardData = signal<AdminDashboardPayload | null>(null);
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly processingId = signal<number | null>(null);
@@ -298,6 +299,51 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return null;
   });
 
+  // ── Admin endpoint derived data ────────────────────────────────────────
+  readonly systemAlerts = computed(() => this.adminDashboardData()?.system_alerts ?? []);
+  readonly recentActivities = computed(() => this.adminDashboardData()?.recent_activities ?? []);
+  readonly staffAbsences = computed(() => this.adminDashboardData()?.staff_absences ?? []);
+
+  readonly adminMetrics = computed(() => {
+    const m = this.adminDashboardData()?.metrics;
+    if (!m) return null;
+    return [
+      { label: 'Students', total: m.students.total, change: m.students.change_pct, icon: 'groups', color: '#2563eb' },
+      { label: 'Staff', total: m.staff.total, change: m.staff.change_pct, icon: 'badge', color: '#7c3aed' },
+      { label: 'Classes', total: m.classes.total, change: m.classes.change_pct, icon: 'meeting_room', color: '#0891b2' },
+      { label: 'Subjects', total: m.subjects.total, change: m.subjects.change_pct, icon: 'menu_book', color: '#059669' },
+    ];
+  });
+
+  readonly financialDoughnut = computed(() => {
+    const d = this.adminDashboardData()?.financial_doughnut;
+    if (!d) return null;
+    return d;
+  });
+
+  readonly adminDoughnutConfig = computed<ChartConfiguration<'doughnut'> | null>(() => {
+    const d = this.financialDoughnut();
+    if (!d) return null;
+    return {
+      type: 'doughnut',
+      data: {
+        labels: ['Collected', 'Pending'],
+        datasets: [{
+          data: [d.total_collected, d.total_pending],
+          backgroundColor: ['#10b981', '#f59e0b'],
+          borderWidth: 0,
+          hoverOffset: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '74%',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${this.formatCurrency(ctx.raw as number)}` } } },
+      },
+    };
+  });
+
   readonly quickActions = [
     { label: 'Add Student', sub: 'New admission', icon: 'person_add', route: 'students/admissions/new', colorClass: 'qa-blue' },
     { label: 'Add Staff', sub: 'New employee', icon: 'badge', route: 'staff/directory', colorClass: 'qa-indigo' },
@@ -327,13 +373,25 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private loadDashboard(): void {
     this.isLoading.set(true);
     this.loadError.set(null);
+
     this.dashboardService.getPrincipalSummary().subscribe({
       next: (data) => {
         this.dashboardData.set(data);
+      },
+      error: () => {
+        this.dashboardData.set(null);
+      },
+    });
+
+    this.dashboardService.getAdminDashboard().subscribe({
+      next: (data) => {
+        this.adminDashboardData.set(data);
         this.isLoading.set(false);
       },
       error: () => {
-        this.loadError.set('Unable to reach the analytics service. Showing nothing rather than stale data.');
+        if (!this.dashboardData()) {
+          this.loadError.set('Unable to reach the analytics service. Showing nothing rather than stale data.');
+        }
         this.isLoading.set(false);
       },
     });
@@ -447,6 +505,16 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       purchase_requisition: 'shopping_cart',
     };
     return icons[type] || 'description';
+  }
+
+  getAlertIcon(type: string): string {
+    const icons: Record<string, string> = { warning: 'warning', danger: 'error', info: 'info' };
+    return icons[type] || 'info';
+  }
+
+  getAlertColor(type: string): string {
+    const colors: Record<string, string> = { warning: '#f59e0b', danger: '#ef4444', info: '#3b82f6' };
+    return colors[type] || '#64748b';
   }
 
   getOperationDotClass(type: string): string {

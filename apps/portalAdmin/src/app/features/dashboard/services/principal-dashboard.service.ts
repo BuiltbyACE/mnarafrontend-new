@@ -43,6 +43,60 @@ export interface PrincipalDashboardPayload {
   }[];
 }
 
+export interface SystemAlert {
+  type: 'warning' | 'danger' | 'info';
+  title: string;
+  desc: string;
+  count?: number;
+}
+
+export interface RecentActivity {
+  message: string;
+  timestamp: string;
+}
+
+export interface StaffAbsence {
+  id: number;
+  name: string;
+  department_name: string;
+  reason: string;
+}
+
+export interface AdminDashboardPayload {
+  metrics: {
+    students: { total: number; change_pct: number };
+    staff: { total: number; change_pct: number };
+    classes: { total: number; change_pct: number };
+    subjects: { total: number; change_pct: number };
+  };
+  financial_doughnut: {
+    total_expected: number;
+    total_collected: number;
+    total_pending: number;
+    collection_rate_pct: number;
+  };
+  attendance_trend: { labels: string[]; data: number[] };
+  upcoming_calendar_events: {
+    id: number;
+    title: string;
+    start_date: string;
+    end_date: string;
+    category: string | null;
+    color_hex: string;
+    term: string | null;
+    academic_year: string | null;
+  }[];
+  upcoming_events: {
+    id: number;
+    title: string;
+    date: string;
+    type: string;
+  }[];
+  staff_absences: StaffAbsence[];
+  recent_activities: RecentActivity[];
+  system_alerts: SystemAlert[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -53,6 +107,12 @@ export class PrincipalDashboardService {
   getPrincipalSummary(): Observable<PrincipalDashboardPayload> {
     return this.http.get<PrincipalDashboardPayload>(
       `${this.baseUrl}/analytics/dashboard/principal-summary/`
+    );
+  }
+
+  getAdminDashboard(): Observable<AdminDashboardPayload> {
+    return this.http.get<AdminDashboardPayload>(
+      `${this.baseUrl}/analytics/dashboard/admin/`
     );
   }
 

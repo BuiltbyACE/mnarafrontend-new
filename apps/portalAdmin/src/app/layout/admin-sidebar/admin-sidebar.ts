@@ -459,6 +459,7 @@ export class AdminSidebarComponent {
             { label: 'Departments', route: 'academics/departments' },
             { label: 'Key Stages', route: 'academics/key-stages' },
             { label: 'Subject Offerings', route: 'academics/subject-offerings' },
+            { label: 'Qualifications', route: 'academics/qualifications' },
             { label: 'Subjects', route: 'academics/subjects' },
             { label: 'Year levels', route: 'academics/year-levels' },
           ],
