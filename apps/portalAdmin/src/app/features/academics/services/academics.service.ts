@@ -313,6 +313,15 @@ export class AcademicsService {
     );
   }
 
+  getOfferingsByYearLevel(yearLevelId: number): Observable<SubjectOffering[]> {
+    return this.http.get<{ results: SubjectOffering[] }>(
+      `${this.baseUrl}subject-offerings/?year_level=${yearLevelId}`
+    ).pipe(
+      map(data => data.results || []),
+      catchError(err => this.handleError('Failed to load subject offerings for year level', err))
+    );
+  }
+
   createSubjectOffering(data: Omit<SubjectOffering, 'id'>): Observable<SubjectOffering> {
     return this.http.post<SubjectOffering>(`${this.baseUrl}subject-offerings/`, data).pipe(
       tap(newItem => this.subjectOfferings.update(items => [...items, newItem])),

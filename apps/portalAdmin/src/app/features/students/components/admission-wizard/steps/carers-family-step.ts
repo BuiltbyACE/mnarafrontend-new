@@ -1,13 +1,16 @@
-import { Component, input, output, effect } from '@angular/core';
+import { Component, input, output, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { StudentsService } from '../../../services/students.service';
 import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../shared/models/students.models';
 
 @Component({
   selector: 'app-carers-family-step',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatExpansionModule],
+  imports: [CommonModule, FormsModule, MatExpansionModule, MatSnackBarModule],
   template: `
     <div class="step-container">
       <h2>Carers & Family Background</h2>
@@ -29,15 +32,24 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
                   <label>Title</label>
                   <select [ngModel]="carer.title" (ngModelChange)="updateCarer(idx, 'title', $event)">
                     <option value="">Select</option>
-                    <option value="Mr">Mr</option>
-                    <option value="Mrs">Mrs</option>
-                    <option value="Ms">Ms</option>
-                    <option value="Dr">Dr</option>
+                    <option value="MR">Mr</option>
+                    <option value="MRS">Mrs</option>
+                    <option value="MS">Ms</option>
+                    <option value="DR">Dr</option>
+                    <option value="PROF">Prof</option>
+                    <option value="OTHER">Other</option>
                   </select>
                 </div>
                 <div class="field-group">
                   <label>Relationship *</label>
-                  <input [ngModel]="carer.relationship" (ngModelChange)="updateCarer(idx, 'relationship', $event)" placeholder="e.g. Mother, Father, Guardian">
+                  <select [ngModel]="carer.relationship" (ngModelChange)="updateCarer(idx, 'relationship', $event)">
+                    <option value="">Select</option>
+                    <option value="PARENT">Parent</option>
+                    <option value="SIBLING">Sibling</option>
+                    <option value="EXTENDED">Extended Family</option>
+                    <option value="GUARDIAN">Guardian</option>
+                    <option value="SPONSOR">Sponsor</option>
+                  </select>
                 </div>
               </div>
 
@@ -54,8 +66,15 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
 
               <div class="form-row">
                 <div class="field-group">
-                  <label>Email</label>
-                  <input type="email" [ngModel]="carer.email" (ngModelChange)="updateCarer(idx, 'email', $event)" placeholder="Email address">
+                  <label>Email @if (idx === 0) { <span class="lookup-hint">(Auto-fills on match)</span> }</label>
+                  <div class="email-input-wrap">
+                    <input type="email" [ngModel]="carer.email"
+                      (ngModelChange)="onEmailChange(idx, $event)"
+                      placeholder="Email address">
+                    @if (idx === 0 && isLookingUp()) {
+                      <span class="lookup-spinner">⟳</span>
+                    }
+                  </div>
                 </div>
                 <div class="field-group">
                   <label>Mobile 1 *</label>
@@ -74,22 +93,16 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
                 </div>
               </div>
 
-              @if (needsIdProof(carer.nationality)) {
-                <div class="form-row id-row">
-                  <div class="field-group">
-                    <label>ID Type</label>
-                    <select [ngModel]="carer.id_type" (ngModelChange)="updateCarer(idx, 'id_type', $event)">
-                      <option value="">Select</option>
-                      <option value="NATIONAL_ID">National ID</option>
-                      <option value="PASSPORT">Passport</option>
-                    </select>
-                  </div>
-                  <div class="field-group">
-                    <label>ID Number</label>
-                    <input [ngModel]="carer.id_number" (ngModelChange)="updateCarer(idx, 'id_number', $event)" placeholder="ID number">
-                  </div>
+              <div class="form-row id-row">
+                <div class="field-group">
+                  <label>National ID</label>
+                  <input [ngModel]="carer.national_id" (ngModelChange)="updateCarer(idx, 'national_id', $event)" placeholder="National ID number">
                 </div>
-              }
+                <div class="field-group">
+                  <label>Passport Number</label>
+                  <input [ngModel]="carer.passport_number" (ngModelChange)="updateCarer(idx, 'passport_number', $event)" placeholder="Passport number">
+                </div>
+              </div>
 
               <div class="form-row">
                 <div class="field-group">
@@ -112,7 +125,7 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
           }
 
           @if (carers.length < 2) {
-            <button class="add-carer-btn" (click)="addCarer()">+ Add Secondary Carer</button>
+            <button class="add-btn" (click)="addCarer()">+ Add Secondary Carer</button>
           }
         </mat-expansion-panel>
 
@@ -124,46 +137,55 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
 
           <div class="form-row">
             <div class="field-group">
-              <label>Marital Status</label>
-              <select [ngModel]="fb.marital_status" (ngModelChange)="updateFamily('marital_status', $event)">
+              <label>Family Type</label>
+              <select [ngModel]="fb.family_type" (ngModelChange)="updateFamily('family_type', $event)">
                 <option value="">Select</option>
-                <option value="MARRIED">Married</option>
-                <option value="DIVORCED">Divorced</option>
-                <option value="WIDOWED">Widowed</option>
-                <option value="SEPARATED">Separated</option>
-                <option value="SINGLE">Single Parent</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label>Economic Status</label>
-              <select [ngModel]="fb.economic_status" (ngModelChange)="updateFamily('economic_status', $event)">
-                <option value="">Select</option>
-                <option value="LOW">Low</option>
-                <option value="MIDDLE">Middle</option>
-                <option value="HIGH">High</option>
+                <option value="SINGLE_PARENT">Single Parent</option>
+                <option value="DIVORCE">Divorce</option>
+                <option value="LEGAL_CUSTODIAN">Legal Custodian</option>
+                <option value="CO_PARENTS">Co-Parents</option>
               </select>
             </div>
           </div>
 
           <div class="form-row">
             <div class="field-group">
-              <label>Number of Siblings</label>
-              <input type="number" [ngModel]="fb.number_of_siblings" (ngModelChange)="updateFamily('number_of_siblings', $event)" min="0" max="20">
-            </div>
-            <div class="field-group">
-              <label>Student Position</label>
-              <input type="number" [ngModel]="fb.student_position" (ngModelChange)="updateFamily('student_position', $event)" min="1" max="20">
+              <label>
+                <input type="checkbox" [ngModel]="fb.different_home_address" (ngModelChange)="updateFamily('different_home_address', $event)">
+                Different from Student's Address
+              </label>
             </div>
           </div>
 
+          @if (fb.different_home_address) {
+            <div class="address-section">
+              <div class="form-row">
+                <div class="field-group">
+                  <label>Estate</label>
+                  <input [ngModel]="fb.estate" (ngModelChange)="updateFamily('estate', $event)" placeholder="Estate name">
+                </div>
+                <div class="field-group">
+                  <label>Apartment / House No.</label>
+                  <input [ngModel]="fb.apartment" (ngModelChange)="updateFamily('apartment', $event)" placeholder="Apartment or house number">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field-group">
+                  <label>Road / Street</label>
+                  <input [ngModel]="fb.road" (ngModelChange)="updateFamily('road', $event)" placeholder="Road or street name">
+                </div>
+              </div>
+            </div>
+          }
+
           <div class="form-row">
             <div class="field-group">
-              <label>Living With</label>
-              <input [ngModel]="fb.living_with" (ngModelChange)="updateFamily('living_with', $event)" placeholder="e.g. Both parents, Mother only">
+              <label>Emergency Contact Phone</label>
+              <input [ngModel]="fb.emergency_contact_phone" (ngModelChange)="updateFamily('emergency_contact_phone', $event)" placeholder="Emergency phone number">
             </div>
             <div class="field-group">
-              <label>Languages Spoken at Home</label>
-              <input [ngModel]="languagesText" (ngModelChange)="updateLanguages($event)" placeholder="Comma-separated">
+              <label>Emergency Contact Relationship</label>
+              <input [ngModel]="fb.emergency_contact_relationship" (ngModelChange)="updateFamily('emergency_contact_relationship', $event)" placeholder="e.g. Mother, Father, Guardian">
             </div>
           </div>
         </mat-expansion-panel>
@@ -182,8 +204,8 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
                   <input [ngModel]="sibling.full_name" (ngModelChange)="updateSibling(sIdx, 'full_name', $event)" placeholder="Sibling name">
                 </div>
                 <div class="field-group">
-                  <label>Date of Birth</label>
-                  <input type="date" [ngModel]="sibling.date_of_birth" (ngModelChange)="updateSibling(sIdx, 'date_of_birth', $event)">
+                  <label>Year of Admission</label>
+                  <input type="number" [ngModel]="sibling.year_of_admission" (ngModelChange)="updateSibling(sIdx, 'year_of_admission', $event)" placeholder="e.g. 2025" min="1900" max="2100">
                 </div>
               </div>
               <div class="form-row">
@@ -192,14 +214,13 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
                   <input [ngModel]="sibling.class_name" (ngModelChange)="updateSibling(sIdx, 'class_name', $event)" placeholder="Class name">
                 </div>
                 <div class="field-group">
-                  <label>School</label>
-                  <input [ngModel]="sibling.school_name" (ngModelChange)="updateSibling(sIdx, 'school_name', $event)" placeholder="School name">
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="field-group full-width">
-                  <label>Notes</label>
-                  <input [ngModel]="sibling.notes" (ngModelChange)="updateSibling(sIdx, 'notes', $event)" placeholder="Any notes about this sibling">
+                  <label>Relationship</label>
+                  <select [ngModel]="sibling.relationship" (ngModelChange)="updateSibling(sIdx, 'relationship', $event)">
+                    <option value="">Select</option>
+                    <option value="BROTHER">Brother</option>
+                    <option value="SISTER">Sister</option>
+                    <option value="TWIN">Twin</option>
+                  </select>
                 </div>
               </div>
               @if (siblings.length > 1) {
@@ -208,7 +229,7 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
               @if (!$last) { <hr> }
             </div>
           }
-          <button class="add-sibling-btn" (click)="addSibling()">+ Add Sibling</button>
+          <button class="add-btn" (click)="addSibling()">+ Add Sibling</button>
         </mat-expansion-panel>
       </mat-accordion>
     </div>
@@ -221,12 +242,19 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
     .form-row { display: flex; gap: 16px; margin-bottom: 12px; }
     .field-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
     .field-group.full-width { flex: 0 0 100%; }
-    label { font-size: 13px; font-weight: 500; color: #374151; }
+    label { font-size: 13px; font-weight: 500; color: #374151; display: flex; align-items: center; gap: 8px; }
     input, select { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: white; width: 100%; box-sizing: border-box; }
     input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+    input[type="checkbox"] { width: auto; }
+    .lookup-hint { font-weight: 400; color: #3b82f6; font-size: 11px; }
+    .email-input-wrap { display: flex; align-items: center; gap: 6px; }
+    .email-input-wrap input { flex: 1; }
+    .lookup-spinner { color: #3b82f6; font-size: 18px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
     .carer-section { padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; background: #f8fafc; }
     .id-row { padding: 10px 14px; background: #eff6ff; border-radius: 8px; border: 1px solid #bfdbfe; }
-    .add-carer-btn, .add-sibling-btn { padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; margin-top: 8px; }
+    .address-section { padding: 12px; background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; margin-bottom: 12px; }
+    .add-btn { padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; margin-top: 8px; }
     .remove-btn { padding: 6px 14px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; margin-bottom: 8px; }
     hr { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
     mat-panel-title { font-weight: 600; font-size: 14px; }
@@ -238,14 +266,20 @@ export class CarersFamilyStep {
   dataChange = output<any>();
   validityChange = output<boolean>();
 
+  private studentsService = inject(StudentsService);
+  private snackBar = inject(MatSnackBar);
+
   carers: CarerData[] = [];
   siblings: SiblingFormEntry[] = [];
-  languagesText = '';
+  isLookingUp = signal(false);
+
+  private emailSubject = new Subject<string>();
 
   get fb(): FamilyBackground {
     return this.data().family_background || {
-      marital_status: 'MARRIED' as const, number_of_siblings: 0, student_position: 1,
-      languages_spoken_at_home: [], economic_status: 'MIDDLE' as const, living_with: '',
+      family_type: '' as any, different_home_address: false,
+      estate: '', apartment: '', road: '',
+      emergency_contact_phone: '', emergency_contact_relationship: '',
     };
   }
 
@@ -254,22 +288,73 @@ export class CarersFamilyStep {
       const d = this.data();
       this.carers = d.carers?.length ? [...d.carers] : [this.emptyCarer('PRIMARY')];
       this.siblings = d.siblings?.length ? [...d.siblings] : [];
-      const fb = d.family_background || this.emptyFamily();
-      this.languagesText = (fb.languages_spoken_at_home || []).join(', ');
       this.validate();
+    });
+
+    // Debounced email lookup with 400ms delay
+    this.emailSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      switchMap(email => {
+        if (!email || !email.includes('@')) return of(null);
+        this.isLookingUp.set(true);
+        return this.studentsService.lookupCarerByEmail(email);
+      }),
+    ).subscribe({
+      next: (res) => {
+        this.isLookingUp.set(false);
+        if (res?.found && res.carer) {
+          this.autoFillCarer(res.carer);
+          if (res.students?.length) {
+            this.autoFillSiblings(res.students);
+          }
+          this.snackBar.open('Carer found! Fields auto-filled.', 'Close', { duration: 3000 });
+        }
+      },
+      error: () => {
+        this.isLookingUp.set(false);
+      },
     });
   }
 
+  onEmailChange(idx: number, value: string): void {
+    this.updateCarer(idx, 'email', value);
+    if (idx === 0) {
+      this.emailSubject.next(value);
+    }
+  }
+
+  private autoFillCarer(found: CarerData): void {
+    if (!this.carers.length) return;
+    const primary = { ...this.carers[0] };
+    if (found.title) primary.title = found.title;
+    if (found.first_name) primary.first_name = found.first_name;
+    if (found.surname) primary.surname = found.surname;
+    if (found.nationality) primary.nationality = found.nationality;
+    if (found.national_id) primary.national_id = found.national_id;
+    if (found.passport_number) primary.passport_number = found.passport_number;
+    if (found.mobile_1) primary.mobile_1 = found.mobile_1;
+    this.carers[0] = primary;
+    this.emitData();
+  }
+
+  private autoFillSiblings(foundStudents: { id: number; school_id: string; first_name: string; last_name: string; year_level: string | null }[]): void {
+    this.siblings = foundStudents.map(s => ({
+      full_name: `${s.first_name} ${s.last_name}`,
+      year_of_admission: new Date().getFullYear(),
+      class_name: s.year_level || '',
+      relationship: '',
+    }));
+    this.emitData();
+  }
+
   private emptyCarer(level: 'PRIMARY' | 'SECONDARY'): CarerData {
-    return { carer_level: level, relationship: '', title: '', first_name: '', surname: '', email: '', mobile_1: '', nationality: '', occupation: '', employer: '', address: '' };
-  }
-
-  private emptyFamily(): FamilyBackground {
-    return { marital_status: 'MARRIED', number_of_siblings: 0, student_position: 1, languages_spoken_at_home: [], economic_status: 'MIDDLE', living_with: '' };
-  }
-
-  needsIdProof(nationality: string): boolean {
-    return ['Tanzanian', 'Kenyan', 'Ugandan'].includes(nationality);
+    return {
+      carer_level: level, relationship: '', title: '', first_name: '', surname: '',
+      email: '', mobile_1: '', nationality: 'Kenyan',
+      national_id: '', passport_number: '',
+      occupation: '', employer: '', address: '',
+    };
   }
 
   addCarer(): void {
@@ -285,17 +370,7 @@ export class CarersFamilyStep {
   }
 
   updateFamily(field: string, value: any): void {
-    const fb = { ...this.data().family_background || this.emptyFamily(), [field]: value };
-    this.dataChange.emit({
-      carers: this.carers,
-      family_background: fb,
-      siblings: this.siblings,
-    });
-  }
-
-  updateLanguages(value: string): void {
-    this.languagesText = value;
-    const fb = { ...this.data().family_background || this.emptyFamily(), languages_spoken_at_home: value.split(',').map(s => s.trim()).filter(s => s) };
+    const fb = { ...this.fb, [field]: value };
     this.dataChange.emit({
       carers: this.carers,
       family_background: fb,
@@ -304,7 +379,7 @@ export class CarersFamilyStep {
   }
 
   addSibling(): void {
-    this.siblings.push({ full_name: '', date_of_birth: '', class_name: '', school_name: '', notes: '' });
+    this.siblings.push({ full_name: '', year_of_admission: new Date().getFullYear(), class_name: '', relationship: '' });
     this.emitData();
   }
 
@@ -329,7 +404,7 @@ export class CarersFamilyStep {
 
   private validate(): void {
     const primary = this.carers.find(c => c.carer_level === 'PRIMARY');
-    const valid = !!primary?.first_name && !!primary?.surname && !!primary?.mobile_1 && !!primary?.relationship && !!primary?.nationality;
+    const valid = !!primary?.first_name && !!primary?.surname && !!primary?.mobile_1 && !!primary?.relationship;
     this.validityChange.emit(valid);
   }
 }

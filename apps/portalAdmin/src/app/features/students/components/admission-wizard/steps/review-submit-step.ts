@@ -63,8 +63,8 @@ import { CONDITION_LABELS, MedicalConditionKey } from '../../../../../shared/mod
           <div class="review-section">
             <h3>Arabic & Quran</h3>
             <div class="review-grid">
-              <div><span class="rlabel">Proficiency</span><span class="rvalue">{{ data().arabic_quran_data?.arabic_proficiency || '—' }}</span></div>
-              <div><span class="rlabel">Quran Reading</span><span class="rvalue">{{ data().arabic_quran_data?.quran_reading_level || '—' }}</span></div>
+              <div><span class="rlabel">Reading</span><span class="rvalue">{{ data().arabic_quran_data?.arabic_reading_fluency || '—' }}</span></div>
+              <div><span class="rlabel">Al-Quran</span><span class="rvalue">{{ data().arabic_quran_data?.reading_al_quran || '—' }}</span></div>
             </div>
           </div>
         }
@@ -72,8 +72,8 @@ import { CONDITION_LABELS, MedicalConditionKey } from '../../../../../shared/mod
         <div class="review-section">
           <h3>Medical</h3>
           <div class="review-grid">
-            <div><span class="rlabel">Blood Group</span><span class="rvalue">{{ data().medical_record?.blood_group || '—' }}</span></div>
-            <div><span class="rlabel">Immunizations</span><span class="rvalue">{{ data().medical_record?.immunization_uptodate ? 'Up to date' : 'Not specified' }}</span></div>
+            <div><span class="rlabel">Physician</span><span class="rvalue">{{ data().medical_record?.physician_name || '—' }}</span></div>
+            <div><span class="rlabel">Insurance</span><span class="rvalue">{{ data().medical_record?.has_insurance ? 'Yes' : 'No' }}</span></div>
           </div>
           @if (hasConditions()) {
             <div class="conditions-summary">

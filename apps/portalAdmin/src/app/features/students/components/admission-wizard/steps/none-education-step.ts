@@ -9,22 +9,23 @@ import { NoneEducationDetails } from '../../../../../shared/models/students.mode
   imports: [CommonModule, FormsModule],
   template: `
     <div class="step-container">
-      <h2>No Formal Education</h2>
-      <p class="step-description">Please explain the student's educational background</p>
+      <h2>Language Competency</h2>
+      <p class="step-description">Select the student's primary language competency</p>
 
       <div class="form-row">
-        <div class="field-group full-width">
-          <label>Reason *</label>
-          <textarea [ngModel]="data().reason" (ngModelChange)="update('reason', $event)"
-                    placeholder="Explain why the student has not attended formal education" rows="4"></textarea>
+        <div class="field-group">
+          <label>Language Competency *</label>
+          <select [ngModel]="data().language_competency" (ngModelChange)="update('language_competency', $event)">
+            <option value="ENGLISH">English</option>
+            <option value="KISWAHILI">Kiswahili</option>
+            <option value="ARABIC">Arabic</option>
+            <option value="OTHER">Other</option>
+          </select>
         </div>
-      </div>
-
-      <div class="form-row">
-        <div class="field-group full-width">
-          <label>Alternative Arrangement</label>
-          <textarea [ngModel]="data().alternative_arrangement" (ngModelChange)="update('alternative_arrangement', $event)"
-                    placeholder="Describe any alternative educational arrangements" rows="3"></textarea>
+        <div class="field-group">
+          <label>Other Language (if applicable)</label>
+          <input [ngModel]="data().other_language" (ngModelChange)="update('other_language', $event)"
+                 placeholder="Specify if 'Other' selected">
         </div>
       </div>
     </div>
@@ -35,10 +36,9 @@ import { NoneEducationDetails } from '../../../../../shared/models/students.mode
     .step-description { margin: 0 0 24px; color: #64748b; font-size: 14px; }
     .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
     .field-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-    .field-group.full-width { flex: 0 0 100%; }
     label { font-size: 13px; font-weight: 500; color: #374151; }
-    textarea { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: white; font-family: inherit; width: 100%; box-sizing: border-box; }
-    textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+    input, select { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: white; font-family: inherit; width: 100%; box-sizing: border-box; }
+    input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
   `]
 })
 export class NoneEducationStep {
@@ -46,22 +46,16 @@ export class NoneEducationStep {
   dataChange = output<any>();
   validityChange = output<boolean>();
 
-  private current: NoneEducationDetails = { reason: '', alternative_arrangement: '' };
-
   constructor() {
-    effect(() => {
-      this.current = { ...this.data() };
-      this.validate();
-    });
+    effect(() => { this.validate(); });
   }
 
   update(field: string, value: any): void {
-    (this.current as any)[field] = value;
-    this.dataChange.emit({ ...this.current });
+    this.dataChange.emit({ ...this.data(), [field]: value });
     this.validate();
   }
 
   private validate(): void {
-    this.validityChange.emit(!!this.current.reason);
+    this.validityChange.emit(true);
   }
 }

@@ -31,10 +31,21 @@ import { HomeschoolDetails, HomeschoolSubject } from '../../../../../shared/mode
       </div>
 
       <div class="form-row">
+        <div class="field-group">
+          <label>Start Year</label>
+          <input type="number" [ngModel]="data().start_year" (ngModelChange)="updateNumeric('start_year', $event)" placeholder="e.g. 2022" min="1900" max="2100">
+        </div>
+        <div class="field-group">
+          <label>End Year</label>
+          <input type="number" [ngModel]="data().end_year" (ngModelChange)="updateNumeric('end_year', $event)" placeholder="e.g. 2025" min="1900" max="2100">
+        </div>
+      </div>
+
+      <div class="form-row">
         <div class="field-group full-width">
-          <label>Content Covered</label>
-          <textarea [ngModel]="data().content_covered" (ngModelChange)="update('content_covered', $event)"
-                    placeholder="Describe the educational content covered during homeschooling" rows="3"></textarea>
+          <label>Content Covered (one item per line)</label>
+          <textarea [ngModel]="contentCoveredText" (ngModelChange)="onContentCoveredChange($event)"
+                    placeholder="Describe the educational content covered during homeschooling&#10;Each line becomes a separate entry" rows="5"></textarea>
         </div>
       </div>
 
@@ -91,25 +102,58 @@ export class HomeschoolStep {
   dataChange = output<any>();
   validityChange = output<boolean>();
 
+  contentCoveredText = '';
   subjects: HomeschoolSubject[] = [];
 
   constructor() {
     effect(() => {
       const d = this.data();
+      this.contentCoveredText = Array.isArray(d.content_covered)
+        ? d.content_covered.join('\n')
+        : typeof d.content_covered === 'string'
+          ? d.content_covered
+          : '';
       this.subjects = d.subjects?.length ? [...d.subjects] : [{ subject_name: '', level_achieved: '', years_studied: 0 }];
       this.validate();
     });
   }
 
+  private emit(): void {
+    const content_covered = this.contentCoveredText
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean);
+    this.dataChange.emit({
+      ...this.data(),
+      content_covered,
+      subjects: this.subjects,
+    });
+  }
+
+  onContentCoveredChange(value: string): void {
+    this.contentCoveredText = value;
+    this.emit();
+    this.validate();
+  }
+
   update(field: string, value: any): void {
     const payload = { ...this.data(), [field]: value, subjects: this.subjects };
+    const content_covered = this.contentCoveredText
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean);
+    payload.content_covered = content_covered;
     this.dataChange.emit(payload);
     this.validate();
   }
 
+  updateNumeric(field: string, value: any): void {
+    this.update(field, value ? Number(value) : null);
+  }
+
   updateSubject(idx: number, field: string, value: any): void {
     this.subjects[idx] = { ...this.subjects[idx], [field]: value };
-    this.dataChange.emit({ ...this.data(), subjects: [...this.subjects] });
+    this.emit();
   }
 
   addSubject(): void {
@@ -121,7 +165,7 @@ export class HomeschoolStep {
   removeSubject(idx: number): void {
     if (this.subjects.length > 1) {
       this.subjects.splice(idx, 1);
-      this.dataChange.emit({ ...this.data(), subjects: [...this.subjects] });
+      this.emit();
     }
   }
 
