@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { authGuard } from '@sms/core/auth';
+import { portalGuard } from '@sms/core/auth';
 import { TeacherLayoutComponent } from '../core/layout/teacher-layout.component';
 import { provideNativeDateAdapter } from '@angular/material/core';
 
@@ -7,7 +7,7 @@ export const remoteRoutes: Route[] = [
   {
     path: '',
     component: TeacherLayoutComponent,
-    canActivate: [authGuard],
+    canActivate: [portalGuard('STAFF')],
     providers: [provideNativeDateAdapter()],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },

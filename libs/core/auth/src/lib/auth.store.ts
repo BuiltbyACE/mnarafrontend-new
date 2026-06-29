@@ -160,8 +160,16 @@ export class AuthStore {
    * Restore tokens AND user context from sessionStorage on app startup.
    * Critical for microfrontend remotes which start with a blank AuthStore
    * instance and must re-hydrate from storage before any guard can run.
+   *
+   * Guards against overwriting a freshly-set auth state (e.g., after login)
+   * with stale sessionStorage data from a previous session in the same tab.
    */
   restoreFromStorage(): void {
+    const current = this.state();
+    if (current.tokens || current.user) {
+      return;
+    }
+
     const access = this.tokenStorage.getAccessToken();
     const refresh = this.tokenStorage.getRefreshToken();
     const userContext = this.tokenStorage.getUserContext();

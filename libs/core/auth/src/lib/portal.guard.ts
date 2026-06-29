@@ -6,10 +6,12 @@
 import { Injectable, inject } from '@angular/core';
 import {
   CanActivate,
+  CanActivateFn,
   Router,
   UrlTree,
 } from '@angular/router';
 import { Observable } from 'rxjs';
+import type { PortalType } from '@sms/shared/models';
 import { AuthStore } from './auth.store';
 
 @Injectable({
@@ -80,5 +82,35 @@ export function publicGuard() {
     }
 
     return true;
+  };
+}
+
+/**
+ * Portal Guard Factory
+ * Verifies the authenticated user's portalType matches the required portal.
+ * Use in portal MFE routes: canActivate: [portalGuard('FINANCE')]
+ * Redirects to the correct portal if type mismatches, or to /login if unauthenticated.
+ */
+export function portalGuard(requiredPortalType: PortalType): CanActivateFn {
+  return () => {
+    const authStore = inject(AuthStore);
+    const router = inject(Router);
+
+    authStore.restoreFromStorage();
+
+    const actualPortalType = authStore.portalType();
+
+    if (actualPortalType === requiredPortalType) {
+      return true;
+    }
+
+    if (authStore.isAuthenticated()) {
+      const correctRoute = actualPortalType
+        ? authStore.getPortalRoute()
+        : null;
+      return router.parseUrl(correctRoute ?? '/login');
+    }
+
+    return router.parseUrl('/login');
   };
 }

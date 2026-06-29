@@ -488,7 +488,12 @@ export class AdmissionWizardComponent {
       class_sought: s.year_level_id,
       gender: s.gender,
       previous_school_nature: PATHWAY_TO_NATURE[s.pathway],
-      medical_record: s.medical_record,
+      medical_record: {
+        ...s.medical_record,
+        allergies: Array.isArray(s.medical_record.allergies)
+          ? s.medical_record.allergies.join(', ')
+          : s.medical_record.allergies,
+      } as any,
       carers_data: s.carers,
       siblings: s.siblings || [],
       resident: s.resident || undefined,

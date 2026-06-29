@@ -1,12 +1,12 @@
 import { Route } from '@angular/router';
 import { StudentLayoutComponent } from '../core/layout/student-layout.component';
-import { authGuard } from '@sms/core/auth';
+import { portalGuard } from '@sms/core/auth';
 
 export const remoteRoutes: Route[] = [
   {
     path: '',
     component: StudentLayoutComponent,
-    canActivate: [authGuard],
+    canActivate: [portalGuard('STUDENT')],
     children: [
       {
         path: '',

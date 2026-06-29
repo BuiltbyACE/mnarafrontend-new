@@ -12,7 +12,7 @@ export { AuthStore } from './lib/auth.store';
 
 // Guards
 export { authGuard, permissionGuard } from './lib/auth.guard';
-export { PortalGuard, PublicGuard, publicGuard } from './lib/portal.guard';
+export { PortalGuard, PublicGuard, publicGuard, portalGuard } from './lib/portal.guard';
 
 // Interceptors
 export { authInterceptorFn } from './lib/auth.interceptor';

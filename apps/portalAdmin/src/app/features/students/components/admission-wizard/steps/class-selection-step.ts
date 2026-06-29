@@ -16,6 +16,9 @@ import { YearLevel } from '../../../../../shared/models/academics.models';
       <div class="form-row">
         <div class="field-group">
           <label>Year Level *</label>
+          @if (yearLevels().length === 0) {
+            <p class="no-levels-warning">No year levels available. Please create year levels in Academics first.</p>
+          }
           <select [ngModel]="current.year_level_id" (ngModelChange)="update('year_level_id', $event)" required>
             <option [value]="">Select year level</option>
             @for (yl of yearLevels(); track yl.id) {
@@ -77,6 +80,7 @@ import { YearLevel } from '../../../../../shared/models/academics.models';
     label { font-size: 13px; font-weight: 500; color: #374151; }
     select, input { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: white; }
     select:focus, input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+    .no-levels-warning { color: #d97706; background: #fffbeb; padding: 8px 12px; border-radius: 6px; font-size: 13px; margin: 0 0 8px; }
   `]
 })
 export class ClassSelectionStep {
