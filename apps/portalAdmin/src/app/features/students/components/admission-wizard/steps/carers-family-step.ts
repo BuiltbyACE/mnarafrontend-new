@@ -82,7 +82,6 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
                       <option value="">Select</option>
                       <option value="NATIONAL_ID">National ID</option>
                       <option value="PASSPORT">Passport</option>
-                      <option value="DRIVERS_LICENSE">Driver's License</option>
                     </select>
                   </div>
                   <div class="field-group">

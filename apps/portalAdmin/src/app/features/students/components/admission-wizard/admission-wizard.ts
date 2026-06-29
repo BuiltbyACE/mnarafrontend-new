@@ -494,7 +494,11 @@ export class AdmissionWizardComponent {
           ? s.medical_record.allergies.join(', ')
           : s.medical_record.allergies,
       } as any,
-      carers_data: s.carers,
+      carers_data: s.carers.map(c => ({
+        ...c,
+        national_id: c.id_type === 'NATIONAL_ID' ? (c.id_number || '') : '',
+        passport_number: c.id_type === 'PASSPORT' ? (c.id_number || '') : '',
+      })),
       siblings: s.siblings || [],
       resident: s.resident || undefined,
       home_address: s.home_address || undefined,
