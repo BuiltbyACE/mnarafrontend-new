@@ -62,6 +62,10 @@
         <mat-icon>people</mat-icon>
         Student Roster
       </button>
+      <button class="ws-tab" [class.active]="activeTab() === 'live-classes'" (click)="setActiveTab('live-classes')">
+        <mat-icon>videocam</mat-icon>
+        Live Classes
+      </button>
     </nav>
 
     <div class="ws-content">
@@ -76,7 +80,7 @@
             <mat-icon class="empty-icon">assignment_turned_in</mat-icon>
             <h3>No assignments yet</h3>
             <p>You have not created any assignments for this class.</p>
-            <button mat-flat-button color="primary" class="create-btn">
+            <button mat-flat-button color="primary" class="create-btn" (click)="createAssignment()">
               <mat-icon>add</mat-icon>
               Create Assignment
             </button>
@@ -472,6 +476,167 @@
           <h3>Attendance</h3>
           <p>Attendance tracking module will be implemented next.</p>
         </div>
+      }
+
+      @if (activeTab() === 'live-classes') {
+        @if (isTabLoading()) {
+          <div class="tab-loading">
+            <mat-icon class="spin">sync</mat-icon>
+            <p>Loading live class&hellip;</p>
+          </div>
+        } @else if (liveClass(); as lc) {
+          <div class="live-class-card">
+            @switch (lc.status) {
+              @case ('SCHEDULED') {
+                <div class="lc-status-header scheduled">
+                  <mat-icon>schedule</mat-icon>
+                  <span>Scheduled</span>
+                </div>
+                @if (conflicts().length > 0) {
+                  <div class="lc-conflict-banner">
+                    <mat-icon>warning_amber</mat-icon>
+                    <div class="lc-conflict-content">
+                      <strong>Schedule conflict detected</strong>
+                      <p>{{ conflicts().length }} other class{{ conflicts().length > 1 ? 'es' : '' }} overlap{{ conflicts().length === 1 ? 's' : '' }} with this time slot:</p>
+                      <ul>
+                        @for (c of conflicts(); track c.id) {
+                          <li>{{ c.subject }} — {{ c.teacher }} ({{ c.scheduled_at | date:'MMM d, HH:mm' }}, {{ c.duration_min }} min)</li>
+                        }
+                      </ul>
+                    </div>
+                  </div>
+                }
+                <h3 class="lc-title">{{ lc.title }}</h3>
+                <div class="lc-meta">
+                  <div class="lc-meta-item">
+                    <mat-icon>calendar_today</mat-icon>
+                    <span>{{ lc.scheduled_at | date:'EEEE, MMM d, y \'at\' HH:mm' }}</span>
+                  </div>
+                  <div class="lc-meta-item">
+                    <mat-icon>timer</mat-icon>
+                    <span>{{ lc.duration_min }} minutes</span>
+                  </div>
+                </div>
+                <div class="lc-scheduled-actions">
+                  <button mat-flat-button color="primary" class="lc-start-btn" (click)="startLiveClass()" [disabled]="isStartingClass()">
+                    <mat-icon>play_arrow</mat-icon>
+                    {{ isStartingClass() ? 'Starting...' : 'Start Class' }}
+                  </button>
+                  <button mat-stroked-button (click)="rescheduleClass()">
+                    <mat-icon>edit</mat-icon>
+                    Reschedule
+                  </button>
+                </div>
+              }
+              @case ('LIVE') {
+                <div class="lc-status-header live">
+                  <span class="lc-live-dot"></span>
+                  <span>Live Now</span>
+                </div>
+                <h3 class="lc-title">{{ lc.title }}</h3>
+                <div class="lc-meta">
+                  @if (lc.actual_start_time) {
+                    <div class="lc-meta-item">
+                      <mat-icon>play_arrow</mat-icon>
+                      <span>Started {{ lc.actual_start_time | date:'HH:mm' }}</span>
+                    </div>
+                  }
+                  <div class="lc-meta-item">
+                    <mat-icon>timer</mat-icon>
+                    <span>{{ lc.duration_min }} minutes scheduled</span>
+                  </div>
+                </div>
+                <div class="lc-live-actions">
+                  <button mat-flat-button color="primary" class="lc-join-btn" (click)="joinLiveClass()">
+                    <mat-icon>videocam</mat-icon>
+                    Join Class
+                  </button>
+                  <button mat-stroked-button class="lc-copy-btn" (click)="copyJoinLink()" [matTooltip]="lc.join_url || ''">
+                    <mat-icon>link</mat-icon>
+                    Copy Join Link
+                  </button>
+                  <button mat-stroked-button color="warn" class="lc-end-btn" (click)="endLiveClass()" [disabled]="isEndingClass()">
+                    <mat-icon>stop</mat-icon>
+                    {{ isEndingClass() ? 'Ending...' : 'End Class' }}
+                  </button>
+                </div>
+              }
+              @case ('ENDED') {
+                <div class="lc-status-header ended">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Ended</span>
+                </div>
+                <h3 class="lc-title">{{ lc.title }}</h3>
+                <div class="lc-meta">
+                  @if (lc.actual_start_time && lc.actual_end_time) {
+                    <div class="lc-meta-item">
+                      <mat-icon>schedule</mat-icon>
+                      <span>{{ lc.actual_start_time | date:'MMM d, HH:mm' }} – {{ lc.actual_end_time | date:'HH:mm' }}</span>
+                    </div>
+                  }
+                  @if (lc.actual_duration_minutes > 0) {
+                    <div class="lc-meta-item">
+                      <mat-icon>timer</mat-icon>
+                      <span>Duration: {{ lc.actual_duration_minutes }} min</span>
+                    </div>
+                  }
+                  @if (lc.class_engagement_score > 0) {
+                    <div class="lc-meta-item">
+                      <mat-icon>analytics</mat-icon>
+                      <span>Engagement: {{ lc.class_engagement_score }}%</span>
+                    </div>
+                  }
+                </div>
+                @if (lc.cloud_recording_url) {
+                  <div class="lc-recording">
+                    <mat-icon>play_circle_filled</mat-icon>
+                    <a [href]="lc.cloud_recording_url" target="_blank" class="lc-recording-link">View Recording</a>
+                  </div>
+                }
+                <button mat-flat-button color="primary" (click)="rescheduleClass()">
+                  <mat-icon>add</mat-icon>
+                  Schedule New Class
+                </button>
+              }
+            }
+          </div>
+        } @else {
+          <div class="empty-state-card schedule-form-card">
+            <mat-icon class="empty-icon">videocam</mat-icon>
+            <h3>Schedule an Online Class</h3>
+            <p>Set a date and time for your live class, or start one immediately.</p>
+            <div class="schedule-form">
+              <mat-form-field appearance="outline" class="sf-title">
+                <mat-label>Class title</mat-label>
+                <input matInput [ngModel]="scheduleTitle()" (ngModelChange)="scheduleTitle.set($event)" placeholder="e.g. Algebra Review" />
+              </mat-form-field>
+              <div class="sf-row">
+                <mat-form-field appearance="outline" class="sf-date">
+                  <mat-label>Date</mat-label>
+                  <input matInput type="date" [ngModel]="scheduleDate()" (ngModelChange)="scheduleDate.set($event)" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="sf-time">
+                  <mat-label>Time</mat-label>
+                  <input matInput type="time" [ngModel]="scheduleTime()" (ngModelChange)="scheduleTime.set($event)" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="sf-duration">
+                  <mat-label>Duration (min)</mat-label>
+                  <input matInput type="number" [ngModel]="scheduleDuration()" (ngModelChange)="scheduleDuration.set($event)" min="15" max="240" />
+                </mat-form-field>
+              </div>
+              <div class="sf-actions">
+                <button mat-flat-button color="primary" (click)="scheduleClass()" [disabled]="isCreatingClass() || !scheduleDate() || !scheduleTime()">
+                  <mat-icon>event</mat-icon>
+                  {{ isCreatingClass() ? 'Scheduling...' : 'Schedule Class' }}
+                </button>
+                <button mat-stroked-button (click)="startNow()" [disabled]="isCreatingClass()">
+                  <mat-icon>play_arrow</mat-icon>
+                  {{ isCreatingClass() ? 'Creating...' : 'Start Now' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        }
       }
 
       @if (activeTab() === 'roster') {

@@ -53,7 +53,7 @@ export class GradingPipelineService {
     this.error.set(null);
     this.http
       .get<{ submissions: RawSubmission[] }>(
-        getApiUrl(`/assignments/${assignmentId}/pipeline/`),
+        getApiUrl(`/lms/assignments/${assignmentId}/pipeline/`),
       )
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({

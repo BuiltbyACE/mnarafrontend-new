@@ -1,7 +1,8 @@
 import { Component, OnInit, signal, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap, catchError } from 'rxjs/operators';
 import { CommonModule, TitleCasePipe, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
@@ -11,6 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ResourceViewerComponent } from '@sms/shared/ui';
 import {
   WorkspacesService,
@@ -19,15 +21,18 @@ import {
   Resource,
   RosterStudent,
   GradebookData,
+  LiveClassRoom,
+  ConflictInfo,
 } from '../services/workspaces.service';
+import { of } from 'rxjs';
 
-type TabId = 'assignments' | 'cats' | 'resources' | 'gradebook' | 'attendance' | 'roster';
+type TabId = 'assignments' | 'cats' | 'resources' | 'gradebook' | 'attendance' | 'roster' | 'live-classes';
 type FilterType = 'ALL' | 'QUIZ' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'PHYSICAL';
 
 @Component({
   selector: 'app-workspace-detail',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, TitleCasePipe, DatePipe, MatTableModule, MatMenuModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, TitleCasePipe, DatePipe, MatTableModule, MatMenuModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTooltipModule],
   templateUrl: './workspace-detail.component.html',
   styleUrls: ['./workspace-detail.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,7 +50,17 @@ export class WorkspaceDetailComponent implements OnInit {
   readonly resources = signal<Resource[]>([]);
   readonly roster = signal<RosterStudent[]>([]);
   readonly gradebook = signal<GradebookData | null>(null);
+  readonly liveClass = signal<LiveClassRoom | null>(null);
+  readonly isStartingClass = signal(false);
+  readonly isEndingClass = signal(false);
+  readonly isCreatingClass = signal(false);
   readonly isTabLoading = signal(false);
+  readonly conflicts = signal<ConflictInfo[]>([]);
+
+  readonly scheduleTitle = signal('Scheduled Live Class');
+  readonly scheduleDate = signal(new Date().toISOString().split('T')[0]);
+  readonly scheduleTime = signal((() => { const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return d.toTimeString().slice(0, 5); })());
+  readonly scheduleDuration = signal(40);
 
   private router = inject(Router);
 
@@ -148,6 +163,16 @@ export class WorkspaceDetailComponent implements OnInit {
     this.workspacesService.getGradebook(workspaceId).subscribe({
       next: (data) => this.gradebook.set(data),
       error: () => this.gradebook.set(null),
+    });
+    this.workspacesService.getLiveClass(workspaceId).subscribe({
+      next: (data) => {
+        this.liveClass.set(data);
+        this.conflicts.set([]);
+      },
+      error: () => {
+        this.liveClass.set(null);
+        this.conflicts.set([]);
+      },
     });
   }
 
@@ -287,6 +312,95 @@ export class WorkspaceDetailComponent implements OnInit {
       this.router.navigate(['/teacher/resources/upload'], {
         queryParams: { courseId: ws.id }
       });
+    }
+  }
+
+  scheduleClass(): void {
+    const ws = this.workspace();
+    if (!ws) return;
+    const dateVal = this.scheduleDate();
+    const timeVal = this.scheduleTime();
+    if (!dateVal || !timeVal) return;
+    const scheduled_at = `${dateVal}T${timeVal}:00`;
+    this.isCreatingClass.set(true);
+    this.workspacesService.createLiveClass(ws.id, {
+      scheduled_at,
+      duration_min: this.scheduleDuration(),
+      title: this.scheduleTitle(),
+    }).subscribe({
+      next: (res) => {
+        this.liveClass.set(res.room);
+        this.conflicts.set(res.conflicts ?? []);
+        this.isCreatingClass.set(false);
+      },
+      error: () => this.isCreatingClass.set(false),
+    });
+  }
+
+  startNow(): void {
+    const ws = this.workspace();
+    if (!ws) return;
+    this.isCreatingClass.set(true);
+    this.workspacesService.createLiveClass(ws.id).subscribe({
+      next: (res) => {
+        this.liveClass.set(res.room);
+        this.conflicts.set(res.conflicts ?? []);
+        this.isCreatingClass.set(false);
+      },
+      error: () => this.isCreatingClass.set(false),
+    });
+  }
+
+  rescheduleClass(): void {
+    this.scheduleDate.set('');
+    this.scheduleTime.set('');
+    this.scheduleDuration.set(40);
+    this.scheduleTitle.set('Scheduled Live Class');
+    this.liveClass.set(null);
+  }
+
+  startLiveClass(): void {
+    const room = this.liveClass();
+    if (!room) return;
+    this.isStartingClass.set(true);
+    this.workspacesService.startLiveClass(room.id).subscribe({
+      next: (res: any) => {
+        this.liveClass.update(r => r ? { ...r, status: 'LIVE', join_url: res.start_url || res.join_url, meeting_id: res.meeting_id, start_url: res.start_url } : null);
+        this.isStartingClass.set(false);
+        if (res.start_url) {
+          window.open(res.start_url, '_blank');
+        }
+      },
+      error: () => {
+        this.isStartingClass.set(false);
+      },
+    });
+  }
+
+  endLiveClass(): void {
+    const room = this.liveClass();
+    if (!room) return;
+    this.isEndingClass.set(true);
+    this.workspacesService.endLiveClass(room.id).subscribe({
+      next: () => {
+        this.liveClass.update(r => r ? { ...r, status: 'ENDED', is_active: false } : null);
+        this.isEndingClass.set(false);
+      },
+      error: () => this.isEndingClass.set(false),
+    });
+  }
+
+  joinLiveClass(): void {
+    const room = this.liveClass();
+    if (room?.start_url) {
+      window.open(room.start_url, '_blank');
+    }
+  }
+
+  copyJoinLink(): void {
+    const room = this.liveClass();
+    if (room?.join_url) {
+      navigator.clipboard.writeText(room.join_url);
     }
   }
 

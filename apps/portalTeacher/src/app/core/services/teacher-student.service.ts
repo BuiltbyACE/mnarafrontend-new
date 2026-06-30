@@ -34,10 +34,16 @@ export class TeacherStudentService {
     let endpoint = '/students/profiles/';
     if (classId) endpoint += `?class=${classId}`;
 
-    this.http.get<StudentProfileData[]>(getApiUrl(endpoint))
+    this.http.get<StudentProfileData[] | { results: StudentProfileData[] }>(getApiUrl(endpoint))
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: (data) => this.profiles.set(data),
+        next: (data) => {
+          if (Array.isArray(data)) {
+            this.profiles.set(data);
+          } else if (data && Array.isArray(data.results)) {
+            this.profiles.set(data.results);
+          }
+        },
         error: () => this.error.set('Failed to load student profiles'),
       });
   }

@@ -75,6 +75,47 @@ export interface WorkspaceHydration {
   roster: { id: number; first_name: string; last_name: string; admission_number: string }[];
 }
 
+export interface LiveClassRoom {
+  id: number;
+  room_id: string;
+  title: string;
+  subject: string;
+  classroom: string;
+  status: 'SCHEDULED' | 'LIVE' | 'ENDED';
+  is_active: boolean;
+  scheduled_at: string | null;
+  duration_min: number;
+  meeting_id: string | null;
+  join_url: string | null;
+  start_url: string | null;
+  cloud_recording_url: string | null;
+  teacher_name: string;
+  actual_start_time: string | null;
+  actual_end_time: string | null;
+  actual_duration_minutes: number;
+  class_engagement_score: number;
+}
+
+export interface LiveClassResponse {
+  room: LiveClassRoom | null;
+  conflicts?: ConflictInfo[];
+}
+
+export interface ConflictInfo {
+  id: number;
+  title: string;
+  subject: string;
+  teacher: string;
+  scheduled_at: string | null;
+  duration_min: number;
+}
+
+export interface ScheduleRequest {
+  scheduled_at?: string;
+  duration_min?: number;
+  title?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class WorkspacesService {
   private http = inject(HttpClient);
@@ -141,5 +182,23 @@ export class WorkspacesService {
 
   getGradebook(workspaceId: string | number): Observable<GradebookData> {
     return this.http.get<GradebookData>(getApiUrl(`/lms/workspaces/${workspaceId}/gradebook/`));
+  }
+
+  getLiveClass(workspaceId: string | number): Observable<LiveClassRoom | null> {
+    return this.http.get<LiveClassResponse>(getApiUrl(`/lms/workspaces/${workspaceId}/live-class/`)).pipe(
+      map(res => res.room)
+    );
+  }
+
+  createLiveClass(workspaceId: string | number, data?: ScheduleRequest): Observable<LiveClassResponse> {
+    return this.http.post<LiveClassResponse>(getApiUrl(`/lms/workspaces/${workspaceId}/live-class/`), data ?? {});
+  }
+
+  startLiveClass(roomId: number): Observable<any> {
+    return this.http.post(getApiUrl(`/lms/teacher/live-classes/${roomId}/start/`), {});
+  }
+
+  endLiveClass(roomId: number): Observable<any> {
+    return this.http.post(getApiUrl(`/lms/teacher/live-classes/${roomId}/end/`), {});
   }
 }

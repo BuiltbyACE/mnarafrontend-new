@@ -5,8 +5,6 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -36,7 +34,7 @@ type AssignmentForm = FormGroup<{
   instructions: FormControl<string>;
   submissionType: FormControl<SubmissionType>;
   maxScore: FormControl<number>;
-  dueDate: FormControl<Date | null>;
+  dueDate: FormControl<string>;
   courseWorkspace: FormControl<number | null>;
   isPublished: FormControl<boolean>;
   allowImmediateReview: FormControl<boolean>;
@@ -68,11 +66,9 @@ interface ApiAssignmentData {
 
 @Component({
   selector: 'app-edit-assignment',
-  providers: [provideNativeDateAdapter()],
   imports: [
     CommonModule, ReactiveFormsModule, RouterLink,
     MatCardModule, MatInputModule, MatFormFieldModule,
-    MatDatepickerModule, MatNativeDateModule,
     MatSelectModule, MatButtonModule, MatIconModule,
     MatSlideToggleModule, MatChipsModule, MatCheckboxModule, QuillModule,
   ],
@@ -141,9 +137,7 @@ interface ApiAssignmentData {
 
                 <mat-form-field appearance="outline" class="half-width">
                   <mat-label>Due Date</mat-label>
-                  <input matInput [matDatepicker]="picker" formControlName="dueDate">
-                  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-                  <mat-datepicker #picker></mat-datepicker>
+                  <input matInput type="date" formControlName="dueDate">
                   @if (form.controls.dueDate.invalid && form.controls.dueDate.touched) {
                     <mat-error>Due date is required</mat-error>
                   }
@@ -348,7 +342,7 @@ export class EditAssignmentComponent implements OnInit {
     instructions: this.fb.control(''),
     submissionType: this.fb.control<SubmissionType>('ONLINE_TEXT', [Validators.required]),
     maxScore: this.fb.control(100, [Validators.required, Validators.min(1)]),
-    dueDate: this.fb.control<Date | null>(null, [Validators.required]),
+    dueDate: this.fb.control<string>('', [Validators.required]),
     courseWorkspace: this.fb.control<number | null>(null, [Validators.required]),
     isPublished: this.fb.control(true),
     allowImmediateReview: this.fb.control(false),
@@ -404,7 +398,7 @@ export class EditAssignmentComponent implements OnInit {
             instructions: data.instructions || '',
             submissionType: data.submission_type,
             maxScore: Number(data.max_score),
-            dueDate: data.due_date ? new Date(data.due_date) : null,
+            dueDate: data.due_date || '',
             courseWorkspace: data.course,
             isPublished: data.is_published,
             allowImmediateReview: data.allow_immediate_review,
@@ -488,7 +482,7 @@ export class EditAssignmentComponent implements OnInit {
       instructions: val.instructions,
       submission_type: val.submissionType,
       max_score: val.maxScore,
-      due_date: val.dueDate.toISOString().split('T')[0],
+      due_date: val.dueDate,
       is_published: val.isPublished,
       allow_immediate_review: val.allowImmediateReview,
       course: val.courseWorkspace,

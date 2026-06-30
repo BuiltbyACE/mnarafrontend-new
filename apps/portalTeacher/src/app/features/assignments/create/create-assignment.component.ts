@@ -4,8 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,11 +18,9 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
 @Component({
   selector: 'app-create-assignment',
   standalone: true,
-  providers: [provideNativeDateAdapter()],
   imports: [
     FormsModule, RouterLink,
     MatCardModule, MatInputModule, MatFormFieldModule,
-    MatDatepickerModule, MatNativeDateModule,
     MatSelectModule, MatButtonModule, MatIconModule,
     MatSlideToggleModule, MatChipsModule, MatCheckboxModule, QuillModule,
   ],
@@ -102,9 +98,7 @@ import type { CreateAssignmentPayload, QuizQuestionPayload } from '../../../shar
 
               <mat-form-field appearance="outline" class="half-width">
                 <mat-label>Due Date</mat-label>
-                <input matInput [matDatepicker]="picker" [(ngModel)]="dueDate" name="dueDate" required #dateModel="ngModel">
-                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-                <mat-datepicker #picker></mat-datepicker>
+                <input matInput type="date" [(ngModel)]="dueDate" name="dueDate" required #dateModel="ngModel">
                 @if (dateModel.invalid && dateModel.touched) {
                   <mat-error>Due date is required</mat-error>
                 }
@@ -323,7 +317,7 @@ export class CreateAssignmentComponent {
   assignmentCategory = 'GENERAL';
   submissionType = signal<'PHYSICAL' | 'ONLINE_TEXT' | 'FILE_UPLOAD' | 'QUIZ'>('ONLINE_TEXT');
   maxScore = 100;
-  dueDate: Date | null = null;
+  dueDate: string = '';
   courseWorkspace: number | null = null;
   isPublished = true;
   allowImmediateReview = false;
@@ -396,7 +390,7 @@ export class CreateAssignmentComponent {
       submission_type: this.submissionType(),
       assignment_category: this.assignmentCategory,
       max_score: this.maxScore,
-      due_date: this.dueDate.toISOString().split('T')[0],
+      due_date: this.dueDate,
       is_published: this.isPublished,
       allow_immediate_review: this.allowImmediateReview,
       course: this.courseWorkspace,
