@@ -53,22 +53,24 @@ import { YearLevel } from '../../../../../shared/models/academics.models';
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="field-group">
-          <label>Embrace Islamic Studies</label>
-          <select [ngModel]="current.embrace_islamic" (ngModelChange)="update('embrace_islamic', $event)">
-            @for (e of embraceChoices(); track e.value) {
-              <option [value]="e.value">{{ e.label }}</option>
-            }
-            @if (embraceChoices().length === 0) {
-              <option value="YES">Yes</option>
-              <option value="NO">No</option>
-            }
-          </select>
+      @if (!isMuslim()) {
+        <div class="form-row">
+          <div class="field-group">
+            <label>Embrace Islamic Studies</label>
+            <select [ngModel]="current.embrace_islamic" (ngModelChange)="update('embrace_islamic', $event)">
+              @for (e of embraceChoices(); track e.value) {
+                <option [value]="e.value">{{ e.label }}</option>
+              }
+              @if (embraceChoices().length === 0) {
+                <option value="YES">Yes</option>
+                <option value="NO">No</option>
+              }
+            </select>
+          </div>
+          <div class="field-group">
+          </div>
         </div>
-        <div class="field-group">
-        </div>
-      </div>
+      }
     </div>
   `,
   styles: [`
@@ -84,14 +86,14 @@ import { YearLevel } from '../../../../../shared/models/academics.models';
   `]
 })
 export class ClassSelectionStep {
-  data = input.required<{ year_level_id: number | null; date_of_admission: string; transport_options: string; lunch_option: boolean; embrace_islamic: string }>();
+  data = input.required<{ year_level_id: number | null; date_of_admission: string; transport_options: string; lunch_option: boolean; embrace_islamic: string; religion: string }>();
   yearLevels = input.required<YearLevel[]>();
   transportChoices = input<{ value: string; label: string }[]>([]);
   embraceChoices = input<{ value: string; label: string }[]>([]);
   dataChange = output<any>();
   validityChange = output<boolean>();
 
-  current = { year_level_id: null as number | null, date_of_admission: '', transport_options: 'NONE', lunch_option: false, embrace_islamic: 'NO' };
+  current = { year_level_id: null as number | null, date_of_admission: '', transport_options: 'NONE', lunch_option: false, embrace_islamic: 'NO', religion: '' };
 
   constructor() {
     effect(() => {
@@ -99,6 +101,11 @@ export class ClassSelectionStep {
       this.validate();
     });
   }
+
+  isMuslim = () => {
+    const rel = (this.current.religion || '').toLowerCase();
+    return rel.includes('islam') || rel.includes('muslim');
+  };
 
   update(field: string, value: any): void {
     (this.current as any)[field] = value;

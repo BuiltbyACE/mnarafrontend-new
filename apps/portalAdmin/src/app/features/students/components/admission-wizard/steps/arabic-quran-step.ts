@@ -9,53 +9,52 @@ import { ArabicQuranData } from '../../../../../shared/models/students.models';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="step-container">
-      <h2>Arabic & Quran</h2>
-      <p class="step-description">Assess the student's Arabic and Quran proficiency</p>
+      <h2>Arabic & Quran Assessment</h2>
+      <p class="step-description">Rate the student's Arabic and Quran proficiency</p>
 
       <div class="form-row">
         <div class="field-group">
-          <label>Arabic Proficiency *</label>
-          <select [ngModel]="data().arabic_proficiency" (ngModelChange)="update('arabic_proficiency', $event)">
-            <option value="NONE">None</option>
-            <option value="BEGINNER">Beginner</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="ADVANCED">Advanced</option>
-            <option value="FLUENT">Fluent</option>
+          <label>Arabic Reading Fluency</label>
+          <select [ngModel]="data().arabic_reading_fluency" (ngModelChange)="update('arabic_reading_fluency', $event)">
+            <option value="GOOD">Good</option>
+            <option value="AVERAGE">Average</option>
+            <option value="POOR">Poor</option>
           </select>
         </div>
         <div class="field-group">
-          <label>Quran Reading Level *</label>
-          <select [ngModel]="data().quran_reading_level" (ngModelChange)="update('quran_reading_level', $event)">
-            <option value="NONE">None</option>
-            <option value="BASIC">Basic</option>
-            <option value="MODERATE">Moderate</option>
-            <option value="FLUENT">Fluent</option>
+          <label>Arabic Writing Fluency</label>
+          <select [ngModel]="data().arabic_writing_fluency" (ngModelChange)="update('arabic_writing_fluency', $event)">
+            <option value="GOOD">Good</option>
+            <option value="AVERAGE">Average</option>
+            <option value="POOR">Poor</option>
           </select>
         </div>
       </div>
 
       <div class="form-row">
         <div class="field-group">
-          <label>Tajweed Level</label>
-          <select [ngModel]="data().tajweed_level" (ngModelChange)="update('tajweed_level', $event)">
-            <option value="NONE">None</option>
-            <option value="BASIC">Basic</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="ADVANCED">Advanced</option>
+          <label>Arabic Speaking Fluency</label>
+          <select [ngModel]="data().arabic_speaking_fluency" (ngModelChange)="update('arabic_speaking_fluency', $event)">
+            <option value="GOOD">Good</option>
+            <option value="AVERAGE">Average</option>
+            <option value="POOR">Poor</option>
           </select>
         </div>
         <div class="field-group">
-          <label>Quran Memorization</label>
-          <input [ngModel]="data().quran_memorization" (ngModelChange)="update('quran_memorization', $event)"
-                 placeholder="Surahs memorized or Juz count">
+          <label>Reading Al-Quran</label>
+          <select [ngModel]="data().reading_al_quran" (ngModelChange)="update('reading_al_quran', $event)">
+            <option value="GOOD">Good</option>
+            <option value="AVERAGE">Average</option>
+            <option value="POOR">Poor</option>
+          </select>
         </div>
       </div>
 
       <div class="form-row">
         <div class="field-group full-width">
-          <label>Comments</label>
-          <textarea [ngModel]="data().comments" (ngModelChange)="update('comments', $event)"
-                    placeholder="Additional notes about Arabic/Quran proficiency" rows="3"></textarea>
+          <label>Memorization of Al-Quran (Juzz list — one per line)</label>
+          <textarea [ngModel]="memorizationText" (ngModelChange)="onMemorizationChange($event)"
+                    placeholder="List the Juzz memorized, one per line&#10;e.g.&#10;Juzz 1&#10;Juzz 2&#10;Juzz 30" rows="4"></textarea>
         </div>
       </div>
     </div>
@@ -77,22 +76,45 @@ export class ArabicQuranStep {
   dataChange = output<any>();
   validityChange = output<boolean>();
 
-  private current: ArabicQuranData = { arabic_proficiency: 'NONE', quran_memorization: '', quran_reading_level: 'NONE', tajweed_level: 'NONE', comments: '' };
+  memorizationText = '';
 
   constructor() {
     effect(() => {
-      this.current = { ...this.data() };
+      const d = this.data();
+      this.memorizationText = Array.isArray(d.memorization_of_al_quran)
+        ? d.memorization_of_al_quran.join('\n')
+        : '';
       this.validate();
     });
   }
 
-  update(field: string, value: any): void {
-    (this.current as any)[field] = value;
-    this.dataChange.emit({ ...this.current });
+  onMemorizationChange(value: string): void {
+    this.memorizationText = value;
+    this.emitData();
     this.validate();
   }
 
+  update(field: string, value: any): void {
+    const payload = { ...this.data(), [field]: value };
+    payload.memorization_of_al_quran = this.memorizationText
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean);
+    this.dataChange.emit(payload);
+    this.validate();
+  }
+
+  private emitData(): void {
+    this.dataChange.emit({
+      ...this.data(),
+      memorization_of_al_quran: this.memorizationText
+        .split('\n')
+        .map(s => s.trim())
+        .filter(Boolean),
+    });
+  }
+
   private validate(): void {
-    this.validityChange.emit(!!this.current.arabic_proficiency && !!this.current.quran_reading_level);
+    this.validityChange.emit(true);
   }
 }

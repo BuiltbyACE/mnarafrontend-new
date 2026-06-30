@@ -8,7 +8,9 @@ export const remoteRoutes: Route[] = [
     path: '',
     component: TeacherLayoutComponent,
     canActivate: [portalGuard('STAFF')],
-    providers: [provideNativeDateAdapter()],
+    providers: [
+      provideNativeDateAdapter(),
+    ],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {

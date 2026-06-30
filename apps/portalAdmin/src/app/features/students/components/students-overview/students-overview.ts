@@ -438,30 +438,20 @@ import { TransferDialogComponent } from '../transfer-dialog/transfer-dialog';
                 @if (popupStudent()?.medical_record) {
                   <div class="info-grid">
                     <div class="info-field">
-                      <span class="if-label">Blood Group</span>
-                      <span class="if-value blood">{{ popupStudent()!.medical_record!.blood_group || '—' }}</span>
+                      <span class="if-label">Physician</span>
+                      <span class="if-value">{{ popupStudent()!.medical_record!.physician_name || '—' }}</span>
                     </div>
                     <div class="info-field">
-                      <span class="if-label">Immunization</span>
-                      <span class="if-value" [class.green-text]="popupStudent()!.medical_record!.immunization_uptodate">
-                        {{ popupStudent()!.medical_record!.immunization_uptodate ? 'Up to date ✓' : 'Not updated' }}
-                      </span>
+                      <span class="if-label">Physician Mobile</span>
+                      <span class="if-value">{{ popupStudent()!.medical_record!.physician_mobile || '—' }}</span>
                     </div>
                     <div class="info-field">
-                      <span class="if-label">Emergency Contact</span>
-                      <span class="if-value">{{ popupStudent()!.medical_record!.emergency_contact || '—' }}</span>
+                      <span class="if-label">Emergency Facility</span>
+                      <span class="if-value">{{ popupStudent()!.medical_record!.emergency_facility || '—' }}</span>
                     </div>
                     <div class="info-field">
-                      <span class="if-label">Doctor</span>
-                      <span class="if-value">{{ popupStudent()!.medical_record!.doctor_name || '—' }}</span>
-                    </div>
-                    <div class="info-field">
-                      <span class="if-label">Doctor Contact</span>
-                      <span class="if-value">{{ popupStudent()!.medical_record!.doctor_contact || '—' }}</span>
-                    </div>
-                    <div class="info-field">
-                      <span class="if-label">Hospital Preference</span>
-                      <span class="if-value">{{ popupStudent()!.medical_record!.hospital_preference || '—' }}</span>
+                      <span class="if-label">Insurance</span>
+                      <span class="if-value">{{ popupStudent()!.medical_record!.has_insurance ? 'Yes' : 'No' }}</span>
                     </div>
                   </div>
                   @if (getActiveConditions(popupStudent()!).length > 0) {
@@ -474,13 +464,11 @@ import { TransferDialogComponent } from '../transfer-dialog/transfer-dialog';
                       </div>
                     </div>
                   }
-                  @if ((popupStudent()!.medical_record!.allergies?.length ?? 0) > 0) {
+                  @if (popupStudent()!.medical_record!.allergies) {
                     <div class="chip-section">
                       <span class="cs-label">Allergies</span>
                       <div class="chip-row">
-                        @for (a of popupStudent()!.medical_record!.allergies; track a) {
-                          <span class="chip chip--amber">{{ a }}</span>
-                        }
+                        <span class="chip chip--amber">{{ popupStudent()!.medical_record!.allergies }}</span>
                       </div>
                     </div>
                   }

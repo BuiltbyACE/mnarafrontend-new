@@ -14,7 +14,7 @@ import {
   Gender, PATHWAY_TO_NATURE,
   RegularSchoolDetails, RegularSchoolInterruptDetails,
   HomeschoolDetails, NoneEducationDetails,
-  ArabicQuranData, SubjectExclusionData,
+  ArabicQuranData, SubjectExclusionData, SubjectSelectionData,
   MedicalRecord, CarerData, FamilyBackground,
   SiblingFormEntry, MedicalConditionKey, CreateStudentProfilePayload,
 } from '../../../../shared/models/students.models';
@@ -27,7 +27,7 @@ import { RegularInterruptStep } from './steps/regular-interrupt-step';
 import { HomeschoolStep } from './steps/homeschool-step';
 import { NoneEducationStep } from './steps/none-education-step';
 import { ArabicQuranStep } from './steps/arabic-quran-step';
-import { SubjectExclusionsStep } from './steps/subject-exclusions-step';
+import { SubjectSelectionStep } from './steps/subject-selection-step';
 import { MedicalStep } from './steps/medical-step';
 import { CarersFamilyStep } from './steps/carers-family-step';
 import { ReviewSubmitStep } from './steps/review-submit-step';
@@ -39,6 +39,7 @@ interface WizardState {
   last_name: string;
   date_of_birth: string;
   email: string;
+  school_id: string;
   gender: string;
   religion: string;
   nationality: string;
@@ -60,34 +61,46 @@ interface WizardState {
   homeschool_details?: HomeschoolDetails;
   none_education_details?: NoneEducationDetails;
   arabic_quran_data?: ArabicQuranData;
-  subject_exclusions?: SubjectExclusionData;
+  subject_selection?: SubjectSelectionData;
   medical_record: MedicalRecord;
   carers: CarerData[];
   family_background?: FamilyBackground;
   siblings: SiblingFormEntry[];
 }
 
+function todayStr(): string {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+
 function emptyState(): WizardState {
   return {
     first_name: '', last_name: '', date_of_birth: '', email: '',
+    school_id: '',
     gender: 'MALE',
-    religion: '', nationality: '', residence: '',
-    year_level_id: 0, date_of_admission: '',
+    religion: '', nationality: 'Kenyan', residence: '',
+    year_level_id: 0, date_of_admission: todayStr(),
     pathway: 'REGULAR_SCHOOL',
     middle_name: '', other_names: '', mother_tongue: '',
     resident: '', home_address: '',
     emergency_contact_email: '', emergency_contact_phone: '',
     transport_options: 'NONE', lunch_option: false, embrace_islamic: 'NO',
     medical_record: {
-      blood_group: '', allergies: [], chronic_conditions: [],
-      emergency_contact: '', doctor_name: '', doctor_contact: '',
-      hospital_preference: '', immunization_uptodate: false,
-      immunization_notes: '', conditions_detail: {} as Record<MedicalConditionKey, boolean>,
-      additional_notes: '',
+      emergency_facility: '', physician_name: '', physician_office: '',
+      physician_mobile: '', physician_email: '',
+      has_insurance: false, insurance_provider: '', insurance_policy_no: '', insurance_mobile: '',
+      imm_mmr: false, imm_tdap: false, imm_varicella: false, imm_polio: false,
+      imm_meningococcal: false, imm_hepatitis_b: false, imm_bcg: false,
+      allergies: '', chronic_illnesses: '', daily_medications: '',
+      physical_limitations: '', visual_hearing_impairments: '',
+      conditions_history: [], conditions_detail: {} as Record<MedicalConditionKey, boolean>,
+      conditions_elaboration: '', wears_dental_braces: false, declaration_signed: false,
     },
     carers: [
       { carer_level: 'PRIMARY', relationship: '', title: '', first_name: '', surname: '',
-        email: '', mobile_1: '', nationality: '', occupation: '', employer: '', address: '' },
+        email: '', mobile_1: '', nationality: 'Kenyan',
+        national_id: '', passport_number: '',
+        occupation: '', employer: '', address: '' },
     ],
     siblings: [],
   };
@@ -96,7 +109,12 @@ function emptyState(): WizardState {
 function extractErrors(err: any): string[] {
   const messages: string[] = [];
   function walk(obj: any, path: string) {
-    if (!obj || typeof obj === 'string') { if (obj) messages.push(obj); return; }
+    if (!obj) return;
+    if (typeof obj === 'string') { messages.push(obj); return; }
+    if (typeof obj === 'object' && obj.toString?.() !== '[object Object]') {
+      messages.push(obj.toString());
+      return;
+    }
     if (Array.isArray(obj)) { obj.forEach(v => walk(v, path)); return; }
     if (typeof obj === 'object') {
       const entries = Object.entries(obj);
@@ -117,7 +135,7 @@ function extractErrors(err: any): string[] {
     MatSnackBarModule, MatProgressSpinnerModule,
     StudentInfoStep, ClassSelectionStep, PathwaySelectionStep,
     RegularSchoolStep, RegularInterruptStep, HomeschoolStep, NoneEducationStep,
-    ArabicQuranStep, SubjectExclusionsStep, MedicalStep,
+    ArabicQuranStep, SubjectSelectionStep, MedicalStep,
     CarersFamilyStep, ReviewSubmitStep, EnrollmentStep,
   ],
   template: `
@@ -151,7 +169,7 @@ function extractErrors(err: any): string[] {
         <mat-step [completed]="step2Valid()" [editable]="true">
           <ng-template matStepLabel>Class</ng-template>
           <app-class-selection-step
-            [data]="{ year_level_id: payload().year_level_id, date_of_admission: payload().date_of_admission, transport_options: payload().transport_options, lunch_option: payload().lunch_option, embrace_islamic: payload().embrace_islamic }"
+            [data]="{ year_level_id: payload().year_level_id, date_of_admission: payload().date_of_admission, transport_options: payload().transport_options, lunch_option: payload().lunch_option, embrace_islamic: payload().embrace_islamic, religion: payload().religion }"
             [yearLevels]="yearLevels()"
             [transportChoices]="choices().transport_options || []"
             [embraceChoices]="choices().embrace_islamic || []"
@@ -227,12 +245,12 @@ function extractErrors(err: any): string[] {
           </mat-step>
         }
 
-        <!-- Step 6: Subject Exclusions -->
+        <!-- Step 6: Subject Selection -->
         <mat-step [completed]="step6Valid()" [editable]="true">
           <ng-template matStepLabel>Subjects</ng-template>
-          <app-subject-exclusions-step
-            [data]="subjectExclusions()"
-            (dataChange)="updateSubjectExclusions($event)"
+          <app-subject-selection-step
+            [data]="subjectSelectionData()"
+            (dataChange)="updateSubjectSelection($event)"
             (validityChange)="step6Valid.set($event)" />
           <div class="step-actions">
             <button mat-button matStepperPrevious>Back</button>
@@ -325,7 +343,7 @@ export class AdmissionWizardComponent {
   step3Valid = signal(false);
   step4Valid = signal(false);
   step5Valid = signal(false);
-  step6Valid = signal(true);
+  step6Valid = signal(false);
   step7Valid = signal(true);
   step8Valid = signal(false);
 
@@ -367,6 +385,7 @@ export class AdmissionWizardComponent {
     return {
       first_name: s.first_name, last_name: s.last_name,
       date_of_birth: s.date_of_birth, email: s.email,
+      school_id: s.school_id,
       gender: s.gender,
       religion: s.religion, nationality: s.nationality, residence: s.residence,
       middle_name: s.middle_name, other_names: s.other_names,
@@ -407,23 +426,24 @@ export class AdmissionWizardComponent {
 
   interruptDetails = computed<RegularSchoolInterruptDetails>(() => {
     const d = (this._state().regular_details || {}) as RegularSchoolInterruptDetails;
-    return { school_name: d.school_name || '', curriculum: d.curriculum || '', transfer_reason: d.transfer_reason || '', previous_reports: d.previous_reports || false, last_attended_class: d.last_attended_class || '', last_attended_year: d.last_attended_year || '', interruption_start: d.interruption_start || '', interruption_end: d.interruption_end || '', interruption_reason: d.interruption_reason || '' };
+    return { school_name: d.school_name || '', curriculum: d.curriculum || '', previous_reports: d.previous_reports || false, last_attended_class: d.last_attended_class || '', last_attended_year: d.last_attended_year || '', interruption_start: d.interruption_start || '', interruption_end: d.interruption_end || '', interruption_reason: d.interruption_reason || '' };
   });
 
   homeschoolDetails = computed<HomeschoolDetails>(() => {
-    return this._state().homeschool_details || { supervisor_name: '', supervisor_qualification: '', supervisor_contact: '', content_covered: '', subjects: [] };
+    return this._state().homeschool_details || { supervisor_name: '', supervisor_qualification: '', supervisor_contact: '', content_covered: [], subjects: [], start_year: undefined, end_year: undefined };
   });
 
   noneDetails = computed<NoneEducationDetails>(() => {
-    return this._state().none_education_details || { reason: '', alternative_arrangement: '' };
+    return this._state().none_education_details || { language_competency: 'ENGLISH' };
   });
 
   arabicData = computed<ArabicQuranData>(() => {
-    return this._state().arabic_quran_data || { arabic_proficiency: 'NONE', quran_memorization: '', quran_reading_level: 'NONE', tajweed_level: 'NONE', comments: '' };
+    return this._state().arabic_quran_data || { arabic_reading_fluency: 'AVERAGE', arabic_writing_fluency: 'AVERAGE', arabic_speaking_fluency: 'AVERAGE', reading_al_quran: 'AVERAGE', memorization_of_al_quran: [] };
   });
 
-  subjectExclusions = computed<SubjectExclusionData>(() => {
-    return this._state().subject_exclusions || { excluded_subjects: [] };
+  subjectSelectionData = computed<SubjectSelectionData & { year_level_id: number }>(() => {
+    const ss = this._state().subject_selection || { compulsory_ids: [], selected_optional_ids: [] };
+    return { ...ss, year_level_id: this._state().year_level_id };
   });
 
   /** Build the object passed to the Review & Submit step for display */
@@ -440,7 +460,15 @@ export class AdmissionWizardComponent {
   // ── State updaters ──
 
   updatePayload(partial: any): void {
-    this._state.update(s => ({ ...s, ...partial }));
+    this._state.update(s => {
+      const updated = { ...s, ...partial };
+      // Auto-set embrace_islamic to YES when religion is Islam/Muslim
+      if (partial.religion !== undefined) {
+        const rel = (partial.religion || '').toLowerCase();
+        updated.embrace_islamic = rel.includes('islam') || rel.includes('muslim') ? 'YES' : 'NO';
+      }
+      return updated;
+    });
   }
 
   updateRegularDetails(details: RegularSchoolDetails): void {
@@ -463,8 +491,8 @@ export class AdmissionWizardComponent {
     this._state.update(s => ({ ...s, arabic_quran_data: data }));
   }
 
-  updateSubjectExclusions(data: SubjectExclusionData): void {
-    this._state.update(s => ({ ...s, subject_exclusions: data }));
+  updateSubjectSelection(data: SubjectSelectionData): void {
+    this._state.update(s => ({ ...s, subject_selection: data }));
   }
 
   updateMedical(data: MedicalRecord): void {
@@ -488,19 +516,18 @@ export class AdmissionWizardComponent {
       class_sought: s.year_level_id,
       gender: s.gender,
       previous_school_nature: PATHWAY_TO_NATURE[s.pathway],
-      medical_record: {
-        ...s.medical_record,
-        allergies: Array.isArray(s.medical_record.allergies)
-          ? s.medical_record.allergies.join(', ')
-          : s.medical_record.allergies,
-      } as any,
-      carers_data: s.carers.map(c => ({
-        ...c,
-        national_id: c.id_type === 'NATIONAL_ID' ? (c.id_number || '') : '',
-        passport_number: c.id_type === 'PASSPORT' ? (c.id_number || '') : '',
-      })),
-      siblings: s.siblings || [],
-      resident: s.resident || undefined,
+      medical_record: s.medical_record as any,
+      carers_data: s.carers
+        .filter(c => c.first_name?.trim() && c.surname?.trim())
+        .map(c => {
+          const mapped: any = { ...c };
+          if (!mapped.national_id) delete mapped.national_id;
+          if (!mapped.passport_number) delete mapped.passport_number;
+          if (!mapped.mobile_2) delete mapped.mobile_2;
+          return mapped;
+        }),
+      sibling_entries: s.siblings || [],
+      resident: s.residence || undefined,
       home_address: s.home_address || undefined,
       emergency_contact_email: s.emergency_contact_email || undefined,
       emergency_contact_phone: s.emergency_contact_phone || undefined,
@@ -515,19 +542,43 @@ export class AdmissionWizardComponent {
       date_of_admission: s.date_of_admission || undefined,
     };
     if (s.family_background) payload.family_background = s.family_background;
-    if (s.arabic_quran_data) payload.arabic_quran_data = s.arabic_quran_data;
-    if (s.subject_exclusions) payload.subject_exclusion_data = s.subject_exclusions;
+    if (s.arabic_quran_data) {
+      payload.arabic_quran_data = s.arabic_quran_data;
+    }
 
     switch (s.pathway) {
       case 'REGULAR_SCHOOL':
         payload.regular_details = s.regular_details as RegularSchoolDetails;
+        if (s.subject_selection) payload.subject_selection_data = s.subject_selection;
         break;
-      case 'REGULAR_SCHOOL_INTERRUPTED':
-        payload.regular_details = s.regular_details as RegularSchoolInterruptDetails;
+      case 'REGULAR_SCHOOL_INTERRUPTED': {
+        const rd = (s.regular_details || {}) as RegularSchoolInterruptDetails;
+        payload.interrupt_details = {
+          school_name: rd.school_name || '',
+          curriculum: rd.curriculum || '',
+          previous_reports: rd.previous_reports || false,
+          last_attended_class: rd.last_attended_class || '',
+          last_attended_year: rd.last_attended_year || '',
+          interruption_start: rd.interruption_start || '',
+          interruption_end: rd.interruption_end || '',
+          interruption_reason: rd.interruption_reason || '',
+        } as RegularSchoolInterruptDetails;
+        if (s.subject_selection) payload.subject_selection_data = s.subject_selection;
         break;
-      case 'HOMESCHOOL':
-        payload.homeschool_details = s.homeschool_details;
+      }
+      case 'HOMESCHOOL': {
+        const hd = s.homeschool_details;
+        if (hd) {
+          payload.homeschool_details = {
+            ...hd,
+            content_covered: Array.isArray(hd.content_covered)
+              ? hd.content_covered
+              : [],
+          };
+        }
+        if (s.subject_selection) payload.subject_selection_data = s.subject_selection;
         break;
+      }
       case 'NONE':
         payload.none_details = s.none_education_details;
         break;
@@ -547,6 +598,7 @@ export class AdmissionWizardComponent {
       last_name: s.last_name,
       date_of_birth: s.date_of_birth,
       email: s.email || undefined,
+      school_id: s.school_id || undefined,
     };
 
     this.studentsService.createStudentProfile(studentPayload).subscribe({
@@ -565,6 +617,10 @@ export class AdmissionWizardComponent {
           },
           error: (err) => {
             this.isSubmitting.set(false);
+            // Cleanup orphaned profile since admission failed
+            this.studentsService.deleteStudentProfile(profile.id).subscribe({
+              error: () => {} // Silently ignore cleanup failures
+            });
             const msg = extractErrors(err).join('; ') || 'Failed to create admission. Please check all fields.';
             this.submitError.set(msg);
           },

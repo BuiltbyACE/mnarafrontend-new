@@ -41,8 +41,10 @@ export interface HomeschoolDetails {
   supervisor_name: string;
   supervisor_qualification: string;
   supervisor_contact: string;
-  content_covered: string;
+  content_covered: string[];
   subjects: HomeschoolSubject[];
+  start_year?: number;
+  end_year?: number;
 }
 
 export interface HomeschoolSubject {
@@ -52,16 +54,16 @@ export interface HomeschoolSubject {
 }
 
 export interface NoneEducationDetails {
-  reason: string;
-  alternative_arrangement: string;
+  language_competency: 'ENGLISH' | 'KISWAHILI' | 'ARABIC' | 'OTHER';
+  other_language?: string;
 }
 
 export interface ArabicQuranData {
-  arabic_proficiency: 'NONE' | 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'FLUENT';
-  quran_memorization: string;
-  quran_reading_level: 'NONE' | 'BASIC' | 'MODERATE' | 'FLUENT';
-  tajweed_level: 'NONE' | 'BASIC' | 'INTERMEDIATE' | 'ADVANCED';
-  comments: string;
+  arabic_reading_fluency: 'GOOD' | 'AVERAGE' | 'POOR';
+  arabic_writing_fluency: 'GOOD' | 'AVERAGE' | 'POOR';
+  arabic_speaking_fluency: 'GOOD' | 'AVERAGE' | 'POOR';
+  reading_al_quran: 'GOOD' | 'AVERAGE' | 'POOR';
+  memorization_of_al_quran: string[];
 }
 
 export type MedicalConditionKey =
@@ -107,21 +109,41 @@ export const CONDITION_LABELS: Record<MedicalConditionKey, string> = {
 export const MEDICAL_CONDITIONS: MedicalConditionKey[] = Object.keys(CONDITION_LABELS) as MedicalConditionKey[];
 
 export interface MedicalRecord {
-  blood_group: string;
-  allergies: string[];
-  chronic_conditions: string[];
-  emergency_contact: string;
-  doctor_name: string;
-  doctor_contact: string;
-  hospital_preference: string;
-  immunization_uptodate: boolean;
-  immunization_notes: string;
+  emergency_facility: string;
+  physician_name: string;
+  physician_office: string;
+  physician_mobile: string;
+  physician_email: string;
+  has_insurance: boolean;
+  insurance_provider: string;
+  insurance_policy_no: string;
+  insurance_mobile: string;
+  imm_mmr: boolean;
+  imm_tdap: boolean;
+  imm_varicella: boolean;
+  imm_polio: boolean;
+  imm_meningococcal: boolean;
+  imm_hepatitis_b: boolean;
+  imm_bcg: boolean;
+  allergies: string;
+  chronic_illnesses: string;
+  daily_medications: string;
+  physical_limitations: string;
+  visual_hearing_impairments: string;
+  conditions_history: string[];
   conditions_detail: Record<MedicalConditionKey, boolean>;
-  additional_notes: string;
+  conditions_elaboration: string;
+  wears_dental_braces: boolean;
+  declaration_signed: boolean;
 }
 
 export interface SubjectExclusionData {
   excluded_subjects: string[];
+}
+
+export interface SubjectSelectionData {
+  compulsory_ids: number[];
+  selected_optional_ids: number[];
 }
 
 export const COMPULSORY_SUBJECTS = ['Arabic', 'Arabic Compulsory Language'];
@@ -135,29 +157,29 @@ export interface CarerData {
   email: string;
   mobile_1: string;
   mobile_2?: string;
-  id_type?: string;
-  id_number?: string;
   nationality: string;
+  national_id: string;
+  passport_number: string;
   occupation: string;
   employer: string;
   address: string;
 }
 
 export interface FamilyBackground {
-  marital_status: 'MARRIED' | 'DIVORCED' | 'WIDOWED' | 'SEPARATED' | 'SINGLE';
-  number_of_siblings: number;
-  student_position: number;
-  languages_spoken_at_home: string[];
-  economic_status: 'LOW' | 'MIDDLE' | 'HIGH';
-  living_with: string;
+  family_type: 'SINGLE_PARENT' | 'DIVORCE' | 'LEGAL_CUSTODIAN' | 'CO_PARENTS';
+  different_home_address: boolean;
+  estate: string;
+  apartment: string;
+  road: string;
+  emergency_contact_phone: string;
+  emergency_contact_relationship: string;
 }
 
 export interface SiblingFormEntry {
   full_name: string;
-  date_of_birth: string;
+  year_of_admission: number;
   class_name: string;
-  school_name: string;
-  notes: string;
+  relationship: string;
 }
 
 export interface AdmissionRecord {
@@ -178,7 +200,7 @@ export interface AdmissionRecord {
   homeschool_details: HomeschoolDetails | null;
   none_education_details: NoneEducationDetails | null;
   arabic_quran_data: ArabicQuranData | null;
-  subject_exclusions: SubjectExclusionData | null;
+  subject_selection_data: SubjectSelectionData | null;
   medical_record: MedicalRecord | null;
   carers: CarerData[];
   family_background: FamilyBackground | null;
@@ -207,11 +229,11 @@ export interface AdmissionCreatePayload {
   homeschool_details?: HomeschoolDetails;
   none_details?: NoneEducationDetails;
   medical_record?: MedicalRecord;
-  subject_exclusion_data?: SubjectExclusionData;
+  subject_selection_data?: SubjectSelectionData;
   arabic_quran_data?: ArabicQuranData;
   carers_data?: CarerData[];
   family_background?: FamilyBackground;
-  siblings?: SiblingFormEntry[];
+  sibling_entries?: SiblingFormEntry[];
 
   resident?: string;
   home_address?: string;
@@ -234,6 +256,7 @@ export interface CreateStudentProfilePayload {
   last_name: string;
   date_of_birth: string;
   email?: string;
+  school_id?: string;
 }
 
 export interface EnrollmentPayload {
@@ -292,6 +315,7 @@ export interface BehaviourCommitmentPayload {
 
 export interface Admission {
   id: number;
+  admission_number: string;
   student_first_name: string;
   student_last_name: string;
   student_school_id: string;
@@ -302,8 +326,8 @@ export interface Admission {
   resident: string;
   religion: string;
   residence?: string;
-  pathway?: PathwayType;
-  commitment_status?: CommitmentStatus;
+  pathway: PathwayType;
+  previous_school_nature: PreviousSchoolNature;
   transport_options: string;
   lunch_option: boolean;
   medical_record?: { status: string; last_updated?: string } | null;
@@ -371,6 +395,19 @@ export interface StudentEnrollment {
   transfer_date: string | null;
   destination_school: string | null;
   transfer_reason: string | null;
+}
+
+export interface CarerLookupResponse {
+  found: boolean;
+  carer?: CarerData;
+  students?: {
+    id: number;
+    school_id: string;
+    first_name: string;
+    last_name: string;
+    year_level: string | null;
+  }[];
+  message?: string;
 }
 
 export interface SiblingMinimal {

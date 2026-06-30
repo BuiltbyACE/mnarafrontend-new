@@ -117,24 +117,20 @@ import { TransferDialogComponent } from '../transfer-dialog/transfer-dialog';
               <div class="medical-section">
                 <div class="info-grid">
                   <div class="info-item">
-                    <span class="label">Blood Group</span>
-                    <span class="value">{{ getMedicalString('blood_group') }}</span>
+                    <span class="label">Physician</span>
+                    <span class="value">{{ getMedicalString('physician_name') || '—' }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="label">Emergency Contact</span>
-                    <span class="value">{{ getMedicalString('emergency_contact') }}</span>
+                    <span class="label">Physician Mobile</span>
+                    <span class="value">{{ getMedicalString('physician_mobile') || '—' }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="label">Doctor Name</span>
-                    <span class="value">{{ getMedicalString('doctor_name') }}</span>
+                    <span class="label">Emergency Facility</span>
+                    <span class="value">{{ getMedicalString('emergency_facility') || '—' }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="label">Doctor Contact</span>
-                    <span class="value">{{ getMedicalString('doctor_contact') }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">Hospital Preference</span>
-                    <span class="value">{{ getMedicalString('hospital_preference') || 'N/A' }}</span>
+                    <span class="label">Insurance</span>
+                    <span class="value">{{ medicalRecord()?.has_insurance ? 'Yes' : 'No' }}</span>
                   </div>
                 </div>
 
@@ -156,21 +152,21 @@ import { TransferDialogComponent } from '../transfer-dialog/transfer-dialog';
                 <div class="checklist-section">
                   <h3>Allergies</h3>
                   <div class="chip-list">
-                    @for (allergy of getMedicalStringArray('allergies'); track allergy) {
-                      <mat-chip class="allergy-chip">{{ allergy }}</mat-chip>
-                    } @empty {
+                    @if (medicalRecord()?.allergies) {
+                      <mat-chip class="allergy-chip">{{ medicalRecord()!.allergies }}</mat-chip>
+                    } @else {
                       <span class="no-data">No allergies recorded</span>
                     }
                   </div>
                 </div>
 
                 <div class="checklist-section">
-                  <h3>Chronic Conditions</h3>
+                  <h3>Chronic Illnesses</h3>
                   <div class="chip-list">
-                    @for (condition of getMedicalStringArray('chronic_conditions'); track condition) {
-                      <mat-chip class="condition-chip">{{ condition }}</mat-chip>
-                    } @empty {
-                      <span class="no-data">No chronic conditions</span>
+                    @if (medicalRecord()?.chronic_illnesses) {
+                      <mat-chip class="condition-chip">{{ medicalRecord()!.chronic_illnesses }}</mat-chip>
+                    } @else {
+                      <span class="no-data">No chronic illnesses</span>
                     }
                   </div>
                 </div>
@@ -179,7 +175,7 @@ import { TransferDialogComponent } from '../transfer-dialog/transfer-dialog';
                   <mat-icon class="status-icon">check_circle</mat-icon>
                   <div>
                     <strong>Immunizations</strong>
-                    <span>{{ medical.immunization_uptodate ? 'Up to date' : 'Not specified' }}</span>
+                    <span>{{ hasAnyImmunization() ? 'Some recorded' : 'Not specified' }}</span>
                   </div>
                 </div>
               </div>
@@ -212,8 +208,11 @@ import { TransferDialogComponent } from '../transfer-dialog/transfer-dialog';
                     @if (carer.mobile_2) {
                       <span><mat-icon>phone</mat-icon> {{ carer.mobile_2 }}</span>
                     }
-                    @if (carer.id_number) {
-                      <span><mat-icon>badge</mat-icon> {{ carer.id_type }}: {{ carer.id_number }}</span>
+                    @if (carer.national_id) {
+                      <span><mat-icon>badge</mat-icon> National ID: {{ carer.national_id }}</span>
+                    }
+                    @if (carer.passport_number) {
+                      <span><mat-icon>badge</mat-icon> Passport: {{ carer.passport_number }}</span>
                     }
                   </div>
                 </div>
@@ -576,6 +575,13 @@ export class StudentDetailComponent implements OnInit {
     return (Object.entries(med.conditions_detail) as [MedicalConditionKey, boolean][])
       .filter(([, v]) => v)
       .map(([key]) => ({ key, label: CONDITION_LABELS[key], active: true }));
+  });
+
+  hasAnyImmunization = computed(() => {
+    const med = this.medicalRecord();
+    if (!med) return false;
+    return med.imm_mmr || med.imm_tdap || med.imm_varicella || med.imm_polio ||
+           med.imm_meningococcal || med.imm_hepatitis_b || med.imm_bcg;
   });
 
   ngOnInit(): void {

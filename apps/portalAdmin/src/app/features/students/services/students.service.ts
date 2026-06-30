@@ -12,6 +12,7 @@ import {
   CreateStudentProfilePayload,
   BehaviourCommitment,
   BehaviourCommitmentPayload,
+  CarerLookupResponse,
   StudentProfile, 
   StudentCategory, 
   StudentHouse,
@@ -185,8 +186,20 @@ export class StudentsService {
     return this.http.post<StudentProfile>(`${this.baseUrl}profiles/`, data);
   }
 
+  /** Delete a student profile (cleanup on admission failure) */
+  deleteStudentProfile(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}profiles/${id}/`);
+  }
+
   createAdmission(data: AdmissionCreatePayload): Observable<AdmissionRecord> {
     return this.http.post<AdmissionRecord>(`${this.baseUrl}admissions/`, data);
+  }
+
+  /** Look up a carer by email (auto-fill when parent already exists) */
+  lookupCarerByEmail(email: string): Observable<CarerLookupResponse> {
+    return this.http.get<CarerLookupResponse>(`${this.baseUrl}carers/lookup-by-email/`, {
+      params: new HttpParams().set('email', email),
+    });
   }
 
   getAdmissionDetail(id: number): Observable<AdmissionRecord> {

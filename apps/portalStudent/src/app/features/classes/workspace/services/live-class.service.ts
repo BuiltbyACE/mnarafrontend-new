@@ -4,17 +4,14 @@ import { finalize, Observable } from 'rxjs';
 import { getApiUrl } from '@sms/core/config';
 
 export interface LiveClassDTO {
-  id: string;
+  id: number;
   title: string;
   subject: string;
   teacher: string;
-  teacher_initials: string;
-  scheduled_at: string;
-  duration_minutes: number;
-  status: 'live' | 'upcoming' | 'past';
-  participant_count: number;
-  max_participants: number;
-  description: string;
+  status?: string;
+  start_time?: string;
+  duration_min?: number;
+  participant_count?: number;
 }
 
 export interface LiveClassesPayload {
@@ -23,14 +20,13 @@ export interface LiveClassesPayload {
   past: LiveClassDTO[];
 }
 
-export interface Participant {
-  id: string;
-  name: string;
-  initials: string;
-  isMuted: boolean;
-  isVideoOn: boolean;
-  isSpeaking: boolean;
-  isTeacher: boolean;
+export interface JoinResponse {
+  join_url: string;
+  meeting_id: string;
+  password: string;
+  room_title: string;
+  teacher: string;
+  subject: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -39,15 +35,6 @@ export class LiveClassService {
 
   readonly payload = signal<LiveClassesPayload | null>(null);
   readonly isLoading = signal(true);
-  readonly participants = signal<Participant[]>([
-    { id: 'p1', name: 'Mr. Kamau', initials: 'MK', isMuted: false, isVideoOn: true, isSpeaking: true, isTeacher: true },
-    { id: 'p2', name: 'You', initials: 'YU', isMuted: false, isVideoOn: true, isSpeaking: false, isTeacher: false },
-    { id: 'p3', name: 'Alice Wanjiku', initials: 'AW', isMuted: true, isVideoOn: true, isSpeaking: false, isTeacher: false },
-    { id: 'p4', name: 'Brian Ochieng', initials: 'BO', isMuted: false, isVideoOn: false, isSpeaking: false, isTeacher: false },
-    { id: 'p5', name: 'Catherine Muthoni', initials: 'CM', isMuted: true, isVideoOn: true, isSpeaking: false, isTeacher: false },
-    { id: 'p6', name: 'Daniel Kiprop', initials: 'DK', isMuted: true, isVideoOn: false, isSpeaking: false, isTeacher: false },
-    { id: 'p7', name: 'Esther Akinyi', initials: 'EA', isMuted: false, isVideoOn: true, isSpeaking: false, isTeacher: false },
-  ]);
 
   fetchClasses(workspaceId?: number): void {
     this.isLoading.set(true);
@@ -63,11 +50,7 @@ export class LiveClassService {
       });
   }
 
-  joinClass(roomId: string): Observable<unknown> {
-    return this.http.post(getApiUrl(`/lms/live-classes/${roomId}/join/`), {});
-  }
-
-  leaveClass(roomId: string): void {
-    this.http.post(getApiUrl(`/lms/live-classes/${roomId}/leave/`), {}).subscribe();
+  joinClass(roomId: number): Observable<JoinResponse> {
+    return this.http.post<JoinResponse>(getApiUrl(`/lms/live-classes/${roomId}/join/`), {});
   }
 }

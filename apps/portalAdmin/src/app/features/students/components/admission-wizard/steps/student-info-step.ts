@@ -32,11 +32,15 @@ import { MatSelectModule } from '@angular/material/select';
 
       <div class="form-row">
         <div class="field-group">
-          <label>Email *</label>
+          <label>Email (optional)</label>
           <input [ngModel]="current.email" (ngModelChange)="update('email', $event)"
-                 type="email" placeholder="e.g. student@example.com" required>
+                 type="email" placeholder="e.g. student@example.com">
         </div>
         <div class="field-group">
+          <label>Admission Number (optional)</label>
+          <input [ngModel]="current.school_id" (ngModelChange)="update('school_id', $event.toUpperCase())"
+                 placeholder="e.g. STU-001 — auto-generated if blank"
+                 (input)="current.school_id = $any($event.target).value.toUpperCase()">
         </div>
       </div>
 
@@ -137,6 +141,7 @@ import { MatSelectModule } from '@angular/material/select';
 export class StudentInfoStep {
   data = input.required<{
     first_name: string; last_name: string; date_of_birth: string; email: string;
+    school_id: string;
     gender: string;
     religion: string; nationality: string; residence: string;
     middle_name: string; other_names: string; mother_tongue: string;
@@ -149,6 +154,7 @@ export class StudentInfoStep {
 
   current = {
     first_name: '', last_name: '', date_of_birth: '', email: '',
+    school_id: '',
     gender: '',
     religion: '', nationality: '', residence: '',
     middle_name: '', other_names: '', mother_tongue: '',
@@ -171,7 +177,7 @@ export class StudentInfoStep {
   }
 
   private validate(): void {
-    const valid = !!this.current.first_name && !!this.current.last_name && !!this.current.date_of_birth && !!this.current.email && !!this.current.gender;
+    const valid = !!this.current.first_name && !!this.current.last_name && !!this.current.date_of_birth && !!this.current.gender;
     this.validityChange.emit(valid);
   }
 }
