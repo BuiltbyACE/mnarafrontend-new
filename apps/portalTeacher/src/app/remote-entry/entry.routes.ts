@@ -77,12 +77,6 @@ export const remoteRoutes: Route[] = [
           import('../features/grading/components/grading-pipeline/grading-pipeline.component').then(m => m.GradingPipelineComponent),
       },
       {
-        path: 'timetable',
-        loadComponent: () =>
-          import('../features/timetable/timetable.component').then(m => m.TimetableComponent),
-      },
-
-      {
         path: 'resources/upload',
         loadComponent: () =>
           import('../features/resources/upload/upload-resource.component').then(m => m.UploadResourceComponent),

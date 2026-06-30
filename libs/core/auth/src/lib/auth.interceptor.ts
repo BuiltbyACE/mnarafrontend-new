@@ -29,14 +29,6 @@ export function authInterceptorFn(
   const authStore = inject(AuthStore);
   const tokenRefresh = inject(TokenRefreshService);
 
-  // Add Ngrok bypass header to ALL requests (prevents CORS issues with ngrok free tier)
-  if (!environment.production) {
-    req = req.clone({
-      setHeaders: {
-        'ngrok-skip-browser-warning': 'true',
-      },
-    });
-  }
 
   // Skip if no token needed
   if (isPublicEndpoint(req.url)) {

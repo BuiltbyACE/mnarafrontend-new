@@ -43,8 +43,9 @@
       "@sms/shared/utils": ["libs/shared/utils/src/index.ts"],
       "@sms/shared/services": ["libs/shared/services/src/index.ts"],
       "@sms/shared/communication": ["libs/shared/communication/src/index.ts"],
-      "@sms/domain/timetable": ["libs/domain/timetable/src/index.ts"],
-      "@sms/frontend/timetable-matrix": ["libs/frontend/timetable-matrix/src/index.ts"]
+      "@sms/domain/scheduling": ["libs/domain/scheduling/src/index.ts"],
+      "@sms/frontend/scheduling-ui": ["libs/frontend/scheduling-ui/src/index.ts"],
+
     }
   },
   "exclude": ["node_modules", "tmp"]

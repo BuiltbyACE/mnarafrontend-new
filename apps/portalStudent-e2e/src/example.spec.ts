@@ -7,7 +7,7 @@ test.describe('Student portal with API mocking', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          data: { portalKey: 'student-portal', permissions: ['timetable.read'], user: { firstName: 'Student', isActive: true } },
+          data: { portalKey: 'student-portal', permissions: [], user: { firstName: 'Student', isActive: true } },
         }),
       });
     });

@@ -115,33 +115,6 @@ describe('authInterceptorFn', () => {
     });
   });
 
-  it('adds ngrok-skip-browser-warning header in dev mode', () => {
-    environment.production = false;
-    tokenStorage.getAccessToken.mockReturnValue(null);
-
-    TestBed.runInInjectionContext(() => {
-      const req = new HttpRequest<unknown>('GET', '/api/v1/data');
-      const next: HttpHandlerFn = (r) => {
-        expect(r.headers.get('ngrok-skip-browser-warning')).toBe('true');
-        return of({} as any);
-      };
-      return authInterceptorFn(req, next).subscribe();
-    });
-  });
-
-  it('does NOT add ngrok header in production mode', () => {
-    environment.production = true;
-    tokenStorage.getAccessToken.mockReturnValue(null);
-
-    TestBed.runInInjectionContext(() => {
-      const req = new HttpRequest<unknown>('GET', '/api/v1/data');
-      const next: HttpHandlerFn = (r) => {
-        expect(r.headers.has('ngrok-skip-browser-warning')).toBe(false);
-        return of({} as any);
-      };
-      return authInterceptorFn(req, next).subscribe();
-    });
-  });
 
   it('triggers token refresh on 401 and retries the request', () => {
     tokenStorage.getAccessToken
