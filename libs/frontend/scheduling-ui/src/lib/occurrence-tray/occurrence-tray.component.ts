@@ -1,12 +1,15 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+import {
+  Component, Input, Output, EventEmitter, ChangeDetectionStrategy,
+  computed, signal, ElementRef, AfterViewInit, OnDestroy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { TeachingRequirement } from '@sms/domain/scheduling';
+import { Draggable } from '@fullcalendar/interaction';
 
 @Component({
   selector: 'sched-occurrence-tray',
   standalone: true,
-  imports: [CommonModule, DragDropModule],
+  imports: [CommonModule],
   template: `
     <div class="occurrence-tray">
       <div class="tray-header">
@@ -14,15 +17,13 @@ import { TeachingRequirement } from '@sms/domain/scheduling';
         <span class="tray-count">{{ incompleteCount() }} remaining</span>
       </div>
 
-      <div class="requirements-list">
+      <div class="requirements-list" #trayList>
         @for (req of sortedRequirements(); track req.id) {
           <div
             class="requirement-card"
             [class.completed]="isCompleted(req)"
             [class.draggable]="!isCompleted(req)"
-            cdkDrag
-            [cdkDragDisabled]="isCompleted(req)"
-            [cdkDragData]="req">
+            [attr.data-requirement-id]="req.id">
             <div class="req-header">
               <span class="req-subject">{{ req.subject_name }}</span>
               <span class="req-level">{{ req.year_level_name }}</span>
@@ -64,8 +65,8 @@ import { TeachingRequirement } from '@sms/domain/scheduling';
     .requirement-card { position: relative; padding: 10px 12px; margin-bottom: 6px; border-radius: var(--tt-radius-icon, 12px); transition: all 0.15s ease; cursor: default; }
     .requirement-card.draggable { background: var(--tt-surface, #ffffff); border: 1px solid var(--tt-border, #e9eef4); cursor: grab; }
     .requirement-card.draggable:hover { border-color: var(--tt-primary-light, #2d4373); box-shadow: 0 2px 8px rgba(26, 42, 108, 0.08); transform: translateY(-1px); }
+    .requirement-card.draggable:active { cursor: grabbing; }
     .requirement-card.completed { background: #f0fdf4; border: 1px solid #bbf7d0; opacity: 0.7; }
-    .requirement-card.cdk-drag-preview { box-shadow: 0 8px 24px rgba(26, 42, 108, 0.15); border-color: var(--tt-primary, #1a2a6c); transform: scale(1.02); }
     .req-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
     .req-subject { font-size: 0.8125rem; font-weight: 600; color: var(--tt-text, #0b1a2e); }
     .req-level { font-size: 0.6875rem; color: var(--tt-text-muted, #5e6f8d); background: var(--tt-surface-subtle, #f1f4f9); padding: 1px 6px; border-radius: 6px; }
@@ -80,10 +81,10 @@ import { TeachingRequirement } from '@sms/domain/scheduling';
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OccurrenceTrayComponent {
+export class OccurrenceTrayComponent implements AfterViewInit, OnDestroy {
   @Input({ required: true }) requirements: TeachingRequirement[] = [];
-  @Output() requirementDragStarted = new EventEmitter<TeachingRequirement>();
-  @Output() requirementDropped = new EventEmitter<CdkDragDrop<TeachingRequirement[]>>();
+
+  private draggable: Draggable | null = null;
 
   readonly incompleteCount = computed(() =>
     this.requirements.filter(r => r.scheduled_count < r.required_periods_per_week).length,
@@ -97,6 +98,41 @@ export class OccurrenceTrayComponent {
       return a.subject_name.localeCompare(b.subject_name);
     }),
   );
+
+  constructor(private el: ElementRef<HTMLElement>) {}
+
+  ngAfterViewInit(): void {
+    this.initDraggable();
+  }
+
+  ngOnDestroy(): void {
+    this.draggable?.destroy();
+  }
+
+  private initDraggable(): void {
+    const el = this.el.nativeElement.querySelector('.requirements-list');
+    if (!el) return;
+
+    this.draggable = new Draggable(el as HTMLElement, {
+      itemSelector: '.requirement-card.draggable',
+      eventData: (eventEl: HTMLElement) => {
+        const idStr = eventEl.getAttribute('data-requirement-id');
+        if (!idStr) return {};
+        const id = Number(idStr);
+        const req = this.requirements.find(r => r.id === id);
+        if (!req) return {};
+        return {
+          title: `${req.subject_name} - ${req.year_level_name}`,
+          extendedProps: {
+            requirementId: req.id,
+            subjectName: req.subject_name,
+            yearLevelName: req.year_level_name,
+            subjectOffering: req.subject_offering,
+          },
+        };
+      },
+    });
+  }
 
   isCompleted(req: TeachingRequirement): boolean {
     return req.scheduled_count >= req.required_periods_per_week;

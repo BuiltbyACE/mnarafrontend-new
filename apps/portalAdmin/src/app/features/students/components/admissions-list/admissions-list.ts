@@ -9,10 +9,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PageEvent, MatPaginatorModule } from '@angular/material/paginator';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { StudentsService } from '../../services/students.service';
 import { Admission } from 'apps/portalAdmin/src/app/shared/models/students.models';
 import { AdmissionWizardComponent } from '../admission-wizard/admission-wizard';
+import { BiometricEnrollDialogComponent } from '../../../../shared/components/biometric-enroll-dialog/biometric-enroll-dialog';
 
 @Component({
   selector: 'app-admissions-list',
@@ -29,7 +31,9 @@ import { AdmissionWizardComponent } from '../admission-wizard/admission-wizard';
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatPaginatorModule,
+    MatDialogModule,
     AdmissionWizardComponent,
+    BiometricEnrollDialogComponent,
   ],
   template: `
     <div class="adm-page">
@@ -252,6 +256,23 @@ import { AdmissionWizardComponent } from '../admission-wizard/admission-wizard';
                       {{ row.status || 'Pending' }}
                     </span>
                   </div>
+                </td>
+              </ng-container>
+
+              <!-- Biometrics -->
+              <ng-container matColumnDef="biometric">
+                <th mat-header-cell *matHeaderCellDef>Biometrics</th>
+                <td mat-cell *matCellDef="let row">
+                  <button class="bio-btn" (click)="openBiometricEnroll(row); $event.stopPropagation()"
+                          matTooltip="Manage biometric enrollment">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                         stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                      <path d="M12 2a6 6 0 00-6 6c0 3.5 2.5 6 6 6s6-2.5 6-6a6 6 0 00-6-6z"/>
+                      <path d="M5 20c0-2.5 2.5-5 7-5s7 2.5 7 5"/>
+                      <circle cx="12" cy="16" r="1"/>
+                      <line x1="12" y1="10" x2="12" y2="13"/>
+                    </svg>
+                  </button>
                 </td>
               </ng-container>
 
@@ -710,6 +731,15 @@ import { AdmissionWizardComponent } from '../admission-wizard/admission-wizard';
       &::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
     }
 
+    .bio-btn {
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0;
+      background: #fff; cursor: pointer; display: inline-flex;
+      align-items: center; justify-content: center;
+      transition: all 0.15s;
+      svg { stroke: #94a3b8; }
+      &:hover { background: #eff6ff; border-color: #93c5fd; svg { stroke: #2563eb; } }
+    }
+
     @media (max-width: 768px) {
       .ov-top { flex-direction: column; align-items: flex-start; }
       .add-adm-btn { width: 100%; justify-content: center; }
@@ -723,6 +753,7 @@ export class AdmissionsListComponent implements OnInit, OnDestroy {
   readonly studentsService = inject(StudentsService);
   private snackBar = inject(MatSnackBar);
   private router   = inject(Router);
+  private dialog   = inject(MatDialog);
   private destroy$ = new Subject<void>();
 
   readonly admissions = this.studentsService.admissions;
@@ -736,7 +767,7 @@ export class AdmissionsListComponent implements OnInit, OnDestroy {
   currentPage   = 0;
   pageSize      = 25;
 
-  readonly displayedColumns = ['student', 'year_level', 'pathway', 'logistics', 'medical', 'commitment', 'applied', 'actions'];
+  readonly displayedColumns = ['student', 'year_level', 'pathway', 'logistics', 'medical', 'commitment', 'applied', 'biometric', 'actions'];
 
   readonly transportCount = computed(() =>
     this.admissions().filter(a => a.transport_options && a.transport_options !== 'NONE').length
@@ -833,5 +864,24 @@ export class AdmissionsListComponent implements OnInit, OnDestroy {
       `Processing enrollment for ${admission.student_first_name} ${admission.student_last_name}`,
       'Close', { duration: 2500 }
     );
+  }
+
+  openBiometricEnroll(admission: Admission): void {
+    const userId = (admission as any).user_id;
+    if (!userId) {
+      this.snackBar.open('Student account not fully created yet', 'Close', { duration: 3000 });
+      return;
+    }
+    this.dialog.open(BiometricEnrollDialogComponent, {
+      width: '480px',
+      maxWidth: '95vw',
+      panelClass: 'bio-enroll-panel',
+      data: {
+        userId,
+        userName: `${admission.student_first_name} ${admission.student_last_name}`,
+        schoolId: admission.student_school_id,
+        role: 'STUDENT',
+      },
+    });
   }
 }

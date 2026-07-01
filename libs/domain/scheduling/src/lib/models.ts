@@ -15,7 +15,7 @@ export interface BellSchedule {
 export interface BellSchedulePeriod {
   id: number;
   bell_schedule: number;
-  day_of_week: number;
+  day_of_week?: number;
   start_time: string;
   end_time: string;
   period_type: PeriodType;
@@ -27,6 +27,7 @@ export interface BellSchedulePeriod {
 
 export interface TimetableVersion {
   id: number;
+  name: string;
   term: number;
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   published_at: string | null;
@@ -35,6 +36,19 @@ export interface TimetableVersion {
   created_at: string;
   updated_at: string;
   entry_count: number;
+}
+
+export interface DateVersionResponse {
+  version: TimetableVersion | null;
+  term: {
+    id: number;
+    name: string;
+    academic_year: string;
+    start_date: string;
+    end_date: string;
+  } | null;
+  is_current: boolean;
+  message: string | null;
 }
 
 export interface TimetableEntry {
@@ -97,4 +111,17 @@ export interface ValidationResult {
   valid: boolean;
   errors: ConflictError[];
   warnings: ConflictError[];
+}
+
+export interface Teacher {
+  id: number;
+  profile_id: number;
+  name: string;
+}
+
+export interface YearLevel {
+  id: number;
+  name: string;
+  order: number;
+  key_stage: string | null;
 }

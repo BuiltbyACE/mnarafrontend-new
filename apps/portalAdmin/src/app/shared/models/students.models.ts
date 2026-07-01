@@ -324,6 +324,7 @@ export interface Admission {
   student_first_name: string;
   student_last_name: string;
   student_school_id: string;
+  user_id?: number;
   class_sought_name: string;
   date_of_admission: string;
   gender: string;

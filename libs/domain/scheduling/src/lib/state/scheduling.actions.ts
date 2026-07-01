@@ -11,7 +11,7 @@ import {
 export const SchedulingActions = createActionGroup({
   source: 'Scheduling',
   events: {
-    'Load Versions': props<{ termId: number }>(),
+    'Load Versions': props<{ termId?: number }>(),
     'Load Versions Success': props<{ versions: TimetableVersion[] }>(),
     'Load Versions Failure': props<{ error: string }>(),
 

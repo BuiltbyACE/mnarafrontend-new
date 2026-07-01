@@ -2,7 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { Observable } from 'rxjs';
-import { getApiUrl } from '@sms/core/config';
+import { getApiUrl, environment } from '@sms/core/config';
+import { TokenStorageService } from '@sms/core/auth';
 
 export interface CampusStats {
   students_on_campus: number;
@@ -31,6 +32,7 @@ export interface LiveEvent {
 @Injectable({ providedIn: 'root' })
 export class LiveCampusService {
   private http = inject(HttpClient);
+  private tokenStorage = inject(TokenStorageService);
 
   readonly campusStats = signal<CampusStats | null>(null);
   readonly statsLoading = signal(false);
@@ -50,7 +52,12 @@ export class LiveCampusService {
 
   connectWebSocket(): Observable<LiveEvent> {
     if (!this.socket$ || this.socket$.closed) {
-      this.socket$ = webSocket<LiveEvent>('wss://your-backend/ws/campus-feed/');
+      const token = this.tokenStorage.getAccessToken();
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const baseUrl = environment.apiBaseUrl.replace(/^https?:\/\//, '').replace(/\/api\/v1\/?$/, '');
+      const query = token ? `?token=${token}` : '';
+      const wsUrl = `${wsProtocol}//${baseUrl}/ws/campus/live/${query}`;
+      this.socket$ = webSocket<LiveEvent>(wsUrl);
     }
     return this.socket$.asObservable();
   }

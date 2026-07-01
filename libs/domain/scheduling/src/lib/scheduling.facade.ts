@@ -41,7 +41,7 @@ export class SchedulingFacade {
     return this.store.select(selectRequirementsForTerm(termId));
   }
 
-  loadVersions(termId: number): void {
+  loadVersions(termId?: number): void {
     this.store.dispatch(SchedulingActions.loadVersions({ termId }));
   }
 

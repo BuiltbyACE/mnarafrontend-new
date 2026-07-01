@@ -1,11 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, withLatestFrom } from 'rxjs/operators';
 import { SchedulingApiService } from '../scheduling-api.service';
 import { SchedulingActions } from './scheduling.actions';
 import { Store } from '@ngrx/store';
-import { selectActiveVersion, selectEntries } from './scheduling.selectors';
+import { selectActiveVersion, selectActiveVersionId, selectEntries } from './scheduling.selectors';
 
 @Injectable()
 export class SchedulingEffects {
@@ -22,6 +22,15 @@ export class SchedulingEffects {
           catchError(() => of(SchedulingActions.loadVersionsFailure({ error: 'Failed to load versions' }))),
         ),
       ),
+    ),
+  );
+
+  autoSelectVersion$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(SchedulingActions.loadVersionsSuccess),
+      withLatestFrom(this.store.select(selectActiveVersionId)),
+      filter(([{ versions }, activeId]) => !activeId && versions.length > 0),
+      map(([{ versions }]) => SchedulingActions.setActiveVersion({ versionId: versions[0].id })),
     ),
   );
 

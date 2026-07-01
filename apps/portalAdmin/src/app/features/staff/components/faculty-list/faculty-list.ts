@@ -1,4 +1,4 @@
-// /**
+﻿// /**
 //  * Faculty List Component
 //  * Staff & HR module - faculty management with data table
 //  */
@@ -505,6 +505,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -519,6 +520,7 @@ import {
 import { StaffService } from '../../services/staff.service';
 import { Faculty } from '../../../../shared/models/staff.models';
 import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge';
+import { BiometricEnrollDialogComponent } from '../../../../shared/components/biometric-enroll-dialog/biometric-enroll-dialog';
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1636,7 +1638,9 @@ export class AddStaffWizardComponent {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatDialogModule,
+    MatTooltipModule,
     StatusBadgeComponent,
+    BiometricEnrollDialogComponent,
   ],
   animations: [
     trigger('detailExpand', [
@@ -1732,6 +1736,23 @@ export class AddStaffWizardComponent {
                 <td mat-cell *matCellDef="let element">
                   <app-status-badge [type]="element.is_active !== false ? 'active' : 'inactive'">
                   </app-status-badge>
+                </td>
+              </ng-container>
+
+              <!-- Biometrics Column -->
+              <ng-container matColumnDef="biometric">
+                <th mat-header-cell *matHeaderCellDef>Biometrics</th>
+                <td mat-cell *matCellDef="let element">
+                  <button class="bio-btn" (click)="openBiometricEnroll(element); $event.stopPropagation()"
+                          matTooltip="Manage biometric enrollment">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                         stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                      <path d="M12 2a6 6 0 00-6 6c0 3.5 2.5 6 6 6s6-2.5 6-6a6 6 0 00-6-6z"/>
+                      <path d="M5 20c0-2.5 2.5-5 7-5s7 2.5 7 5"/>
+                      <circle cx="12" cy="16" r="1"/>
+                      <line x1="12" y1="10" x2="12" y2="13"/>
+                    </svg>
+                  </button>
                 </td>
               </ng-container>
 
@@ -2033,6 +2054,14 @@ export class AddStaffWizardComponent {
       color: #dc2626;
       margin-top: 4px;
     }
+    .bio-btn {
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0;
+      background: #fff; cursor: pointer; display: inline-flex;
+      align-items: center; justify-content: center;
+      transition: all 0.15s;
+      svg { stroke: #94a3b8; }
+      &:hover { background: #eff6ff; border-color: #93c5fd; svg { stroke: #2563eb; } }
+    }
   `],
 })
 export class FacultyListComponent implements OnInit {
@@ -2042,7 +2071,7 @@ export class FacultyListComponent implements OnInit {
   private readonly dialog   = inject(MatDialog);
 
   readonly staff            = this.staffService.staff;
-  readonly displayedColumns = ['staff', 'role', 'qualification', 'status', 'actions'];
+  readonly displayedColumns = ['staff', 'role', 'qualification', 'status', 'biometric', 'actions'];
   expandedElement: Faculty | null = null;
 
   readonly monthlyPayroll = computed(() =>
@@ -2089,6 +2118,20 @@ export class FacultyListComponent implements OnInit {
       currency: 'KES',
       minimumFractionDigits: 0,
     }).format(amount);
+  }
+
+  openBiometricEnroll(faculty: Faculty): void {
+    this.dialog.open(BiometricEnrollDialogComponent, {
+      width: '480px',
+      maxWidth: '95vw',
+      panelClass: 'bio-enroll-panel',
+      data: {
+        userId: faculty.id,
+        userName: faculty.full_name,
+        schoolId: faculty.school_id,
+        role: faculty.role === 'TEACHER' ? 'TEACHER' : 'STAFF',
+      },
+    });
   }
 
   openAddStaffWizard(): void {
