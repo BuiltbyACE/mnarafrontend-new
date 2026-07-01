@@ -483,22 +483,8 @@ export class AdminSidebarComponent {
             { label: 'Student Houses', route: 'students/houses' },
           ],
         },
-        {
-          name: 'timetable', label: 'Timetable', icon: 'calendar_month', route: 'timetable',
-          children: [
-            { label: 'Dashboard',    route: 'timetable/dashboard' },
-            { label: 'Editor',       route: 'timetable/editor' },
-            { label: 'Conflicts',    route: 'timetable/conflicts' },
-            { label: 'Versions',     route: 'timetable/versions' },
-            { label: 'Audit Log',    route: 'timetable/audit' },
-            { label: 'Setup', route: 'timetable/setup', children: [
-              { label: 'Rooms',         route: 'timetable/setup/rooms' },
-              { label: 'Subject Codes', route: 'timetable/setup/subject-codes' },
-              { label: 'Bell Schedules',route: 'timetable/setup/bell-schedules' },
-            ]},
-          ],
-        },
         { name: 'calendar', label: 'School Calendar', icon: 'event_note', route: 'calendar' },
+        { name: 'schedule', label: 'Timetable', icon: 'calendar_month', route: 'schedule' },
       ],
     },
     {

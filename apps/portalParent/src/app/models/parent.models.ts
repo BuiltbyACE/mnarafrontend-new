@@ -50,22 +50,6 @@ export interface DashboardSummary {
   transport_snapshot?: TransportSnapshot;
 }
 
-// ─── Timetable ────────────────────────────────────────────────────
-// Deprecated: Use TimetableEntry from @sms/domain/timetable instead.
-// This type is kept for backward compatibility with the current API
-// response shape from /academics/my-timetable/.
-// TODO: Migrate to canonical TimetableEntry from domain once the
-// backend API is updated to return canonical format (Week 3 target).
-export interface TimetableEntry {
-  day: string;
-  period: number;
-  subject: string;
-  teacher: string;
-  classroom: string;
-  start_time: string;
-  end_time: string;
-}
-
 export interface ReportCardSubjectRow {
   id: number;
   subject_name: string;

@@ -31,11 +31,6 @@ export const remoteRoutes: Route[] = [
           import('../features/exams/exams.routes').then((m) => m.examsRoutes),
       },
       {
-        path: 'timetable',
-        loadChildren: () =>
-          import('../features/timetable/timetable.routes').then((m) => m.timetableRoutes),
-      },
-      {
         path: 'attendance',
         loadChildren: () =>
           import('../features/attendance/attendance.routes').then((m) => m.attendanceRoutes),
@@ -66,6 +61,13 @@ export const remoteRoutes: Route[] = [
         loadComponent: () =>
           import('../features/calendar/calendar.component').then(
             (m) => m.CalendarComponent
+          ),
+      },
+      {
+        path: 'timetable',
+        loadComponent: () =>
+          import('../features/timetable/timetable.component').then(
+            (m) => m.StudentTimetableComponent
           ),
       },
     ],

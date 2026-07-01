@@ -72,7 +72,6 @@ export class StudentDashboardComponent implements OnInit {
   });
 
   readonly quickLinks = [
-    { label: 'View Timetable', icon: 'calendar_month', route: '/student/timetable' },
     { label: 'My Classes', icon: 'school', route: '/student/classes' },
     { label: 'Exam Results', icon: 'quiz', route: '/student/exams' },
     { label: 'Attendance', icon: 'fact_check', route: '/student/attendance' },

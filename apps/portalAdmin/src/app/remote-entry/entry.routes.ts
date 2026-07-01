@@ -65,12 +65,6 @@ import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
         loadChildren: () =>
           import('../features/rbac/rbac.routes').then((m) => m.rbacRoutes),
       },
-      // Timetable Module
-      {
-        path: 'timetable',
-        loadChildren: () =>
-          import('../features/timetable/timetable.routes').then((m) => m.timetableRoutes),
-      },
       // School Calendar
       {
         path: 'calendar',
@@ -82,6 +76,12 @@ import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
         path: 'lms',
         loadChildren: () =>
           import('../features/lms/lms.routes').then((m) => m.lmsRoutes),
+      },
+      // Schedule / Timetable Builder
+      {
+        path: 'schedule',
+        loadChildren: () =>
+          import('../features/scheduling/scheduling.routes').then((m) => m.schedulingRoutes),
       },
       // Communication Module
       {

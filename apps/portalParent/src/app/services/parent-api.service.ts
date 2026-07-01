@@ -5,7 +5,6 @@ import { map } from 'rxjs/operators';
 import { getApiUrl } from '@sms/core/config';
 import {
   DashboardSummary,
-  TimetableEntry,
   TermReportCard,
   StudentInvoice,
   Transaction,
@@ -37,11 +36,6 @@ export class ParentApiService {
     return this.http.get<DashboardSummary>(`${this.baseUrl}/parents/dashboard-summary/`, {
       params: { student_id: studentId },
     });
-  }
-
-  // ─── Timetable ───────────────────────────────────────────────────
-  getMyTimetable(): Observable<TimetableEntry[]> {
-    return this.http.get<TimetableEntry[]>(`${this.baseUrl}/academics/my-timetable/`);
   }
 
   // ─── Exam Results (Report Cards) ───────────────────────────────
