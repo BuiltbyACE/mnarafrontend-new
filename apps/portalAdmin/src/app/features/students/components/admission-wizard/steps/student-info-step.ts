@@ -1,9 +1,11 @@
-import { Component, input, output, effect, inject } from '@angular/core';
+import { Component, input, output, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { StudentsService } from '../../../services/students.service';
 
 @Component({
   selector: 'app-student-info-step',
@@ -114,9 +116,15 @@ import { MatSelectModule } from '@angular/material/select';
 
       <div class="form-row">
         <div class="field-group">
-          <label>Emergency Contact Email</label>
-          <input [ngModel]="current.emergency_contact_email" (ngModelChange)="update('emergency_contact_email', $event)"
-                 type="email" placeholder="e.g. parent@example.com">
+          <label>Emergency Contact Email <span class="lookup-hint">(Auto-fills on match)</span></label>
+          <div class="email-input-wrap">
+            <input type="email" [ngModel]="current.emergency_contact_email"
+                   (ngModelChange)="onEmergencyEmailChange($event)"
+                   placeholder="e.g. parent@example.com">
+            @if (isLookingUp()) {
+              <span class="lookup-spinner">⟳</span>
+            }
+          </div>
         </div>
         <div class="field-group">
           <label>Emergency Contact Phone</label>
@@ -136,6 +144,11 @@ import { MatSelectModule } from '@angular/material/select';
     label { font-size: 13px; font-weight: 500; color: #374151; }
     input, select { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: white; }
     input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+    .lookup-hint { font-weight: 400; color: #3b82f6; font-size: 11px; }
+    .email-input-wrap { display: flex; align-items: center; gap: 6px; }
+    .email-input-wrap input { flex: 1; }
+    .lookup-spinner { color: #3b82f6; font-size: 18px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
   `]
 })
 export class StudentInfoStep {
@@ -151,6 +164,12 @@ export class StudentInfoStep {
   genderChoices = input<{ value: string; label: string }[]>([]);
   dataChange = output<any>();
   validityChange = output<boolean>();
+  carerFound = output<any>();
+
+  private studentsService = inject(StudentsService);
+  isLookingUp = signal(false);
+
+  private emailSubject = new Subject<string>();
 
   current = {
     first_name: '', last_name: '', date_of_birth: '', email: '',
@@ -168,12 +187,37 @@ export class StudentInfoStep {
       this.current = { ...d };
       this.validate();
     });
+
+    this.emailSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      switchMap(email => {
+        if (!email || !email.includes('@')) return of(null);
+        this.isLookingUp.set(true);
+        return this.studentsService.lookupCarerByEmail(email);
+      }),
+    ).subscribe({
+      next: (res) => {
+        this.isLookingUp.set(false);
+        if (res?.found && res.carer) {
+          this.carerFound.emit(res);
+        }
+      },
+      error: () => {
+        this.isLookingUp.set(false);
+      },
+    });
   }
 
   update(field: string, value: any): void {
     (this.current as any)[field] = value;
     this.dataChange.emit({ ...this.current });
     this.validate();
+  }
+
+  onEmergencyEmailChange(value: string): void {
+    this.update('emergency_contact_email', value);
+    this.emailSubject.next(value);
   }
 
   private validate(): void {

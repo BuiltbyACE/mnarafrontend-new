@@ -107,6 +107,7 @@ export class RegularInterruptStep {
 
   dateError = false;
 
+  private hasEmitted = false;
   private current: RegularSchoolInterruptDetails = {
     school_name: '', curriculum: '', transfer_reason: '', previous_reports: false,
     last_attended_class: '', last_attended_year: '',
@@ -116,6 +117,10 @@ export class RegularInterruptStep {
   constructor() {
     effect(() => {
       this.current = { ...this.data() };
+      if (!this.hasEmitted) {
+        this.hasEmitted = true;
+        this.dataChange.emit({ ...this.current });
+      }
       this.validate();
     });
   }

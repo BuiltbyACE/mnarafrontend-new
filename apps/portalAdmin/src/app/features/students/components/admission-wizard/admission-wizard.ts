@@ -16,7 +16,8 @@ import {
   HomeschoolDetails, NoneEducationDetails,
   ArabicQuranData, SubjectExclusionData, SubjectSelectionData,
   MedicalRecord, CarerData, FamilyBackground,
-  SiblingFormEntry, MedicalConditionKey, CreateStudentProfilePayload,
+  SiblingFormEntry, MedicalConditionKey,
+  CarerLookupResponse,
 } from '../../../../shared/models/students.models';
 
 import { StudentInfoStep } from './steps/student-info-step';
@@ -159,7 +160,8 @@ function extractErrors(err: any): string[] {
             [data]="studentInfoData()"
             [genderChoices]="choices().gender || []"
             (dataChange)="updatePayload($event)"
-            (validityChange)="step1Valid.set($event)" />
+            (validityChange)="step1Valid.set($event)"
+            (carerFound)="onCarerFound($event)" />
           <div class="step-actions">
             <button mat-raised-button color="primary" [disabled]="!step1Valid()" matStepperNext>Next</button>
           </div>
@@ -277,7 +279,8 @@ function extractErrors(err: any): string[] {
           <app-carers-family-step
             [data]="{ carers: payload().carers, family_background: payload().family_background || null, siblings: payload().siblings }"
             (dataChange)="updateCarersFamily($event)"
-            (validityChange)="step8Valid.set($event)" />
+            (validityChange)="step8Valid.set($event)"
+            (carerFound)="onCarerFound($event)" />
           <div class="step-actions">
             <button mat-button matStepperPrevious>Back</button>
             <button mat-raised-button color="primary" [disabled]="!step8Valid()" matStepperNext>Next</button>
@@ -459,10 +462,21 @@ export class AdmissionWizardComponent {
 
   // ── State updaters ──
 
+  private _isUnder4(dob: string): boolean {
+    if (!dob) return false;
+    const birth = new Date(dob);
+    const now = new Date();
+    const age = now.getFullYear() - birth.getFullYear();
+    return age < 4;
+  }
+
   updatePayload(partial: any): void {
     this._state.update(s => {
       const updated = { ...s, ...partial };
-      // Auto-set embrace_islamic to YES when religion is Islam/Muslim
+      const dob = updated.date_of_birth;
+      if (this._isUnder4(dob) && updated.pathway !== 'NONE') {
+        updated.pathway = 'NONE';
+      }
       if (partial.religion !== undefined) {
         const rel = (partial.religion || '').toLowerCase();
         updated.embrace_islamic = rel.includes('islam') || rel.includes('muslim') ? 'YES' : 'NO';
@@ -503,16 +517,43 @@ export class AdmissionWizardComponent {
     this._state.update(s => ({ ...s, carers: data.carers, family_background: data.family_background || undefined, siblings: data.siblings }));
   }
 
+  onCarerFound(res: CarerLookupResponse): void {
+    if (!res?.carer) return;
+    const c = res.carer;
+    this._state.update(s => ({
+      ...s,
+      emergency_contact_email: c.email || s.emergency_contact_email,
+      emergency_contact_phone: c.mobile_1 || s.emergency_contact_phone,
+      carers: c.carer_level
+        ? [{
+            carer_level: c.carer_level, relationship: c.relationship || '',
+            title: c.title || '', first_name: c.first_name || '', surname: c.surname || '',
+            email: c.email || '', mobile_1: c.mobile_1 || '',
+            nationality: c.nationality || 'Kenyan',
+            national_id: c.national_id || '', passport_number: c.passport_number || '',
+            occupation: c.occupation || '', employer: c.employer || '', address: c.address || '',
+          }]
+        : s.carers,
+      siblings: res.students?.length
+        ? res.students.map((st: any) => ({
+            full_name: `${st.first_name || ''} ${st.last_name || ''}`.trim(),
+            year_of_admission: 0,
+            class_name: st.year_level || '',
+            relationship: 'SIBLING',
+          }))
+        : s.siblings,
+    }));
+  }
+
   onStepChange(event: any): void {
     this.submitError.set(null);
     this.enrollError.set(null);
   }
 
-  /** Map internal WizardState to backend AdmissionCreatePayload */
-  buildBackendPayload(studentId: number): AdmissionCreatePayload {
+  /** Map internal WizardState to backend AdmissionCreatePayload (without student) */
+  private buildPayloadBase(): AdmissionCreatePayload {
     const s = this._state();
     const payload: AdmissionCreatePayload = {
-      student: studentId,
       class_sought: s.year_level_id,
       gender: s.gender,
       previous_school_nature: PATHWAY_TO_NATURE[s.pathway],
@@ -548,7 +589,10 @@ export class AdmissionWizardComponent {
 
     switch (s.pathway) {
       case 'REGULAR_SCHOOL':
-        payload.regular_details = s.regular_details as RegularSchoolDetails;
+        payload.regular_details = s.regular_details || {
+          school_name: '', curriculum: '', transfer_reason: '',
+          previous_reports: false, last_attended_class: '', last_attended_year: '',
+        } as RegularSchoolDetails;
         if (s.subject_selection) payload.subject_selection_data = s.subject_selection;
         break;
       case 'REGULAR_SCHOOL_INTERRUPTED': {
@@ -568,19 +612,15 @@ export class AdmissionWizardComponent {
       }
       case 'HOMESCHOOL': {
         const hd = s.homeschool_details;
-        if (hd) {
-          payload.homeschool_details = {
-            ...hd,
-            content_covered: Array.isArray(hd.content_covered)
-              ? hd.content_covered
-              : [],
-          };
-        }
+        payload.homeschool_details = hd
+          ? { ...hd, content_covered: Array.isArray(hd.content_covered) ? hd.content_covered : [] }
+          : { supervisor_name: '', supervisor_qualification: '', supervisor_contact: '',
+              content_covered: [], subjects: [], start_year: undefined, end_year: undefined };
         if (s.subject_selection) payload.subject_selection_data = s.subject_selection;
         break;
       }
       case 'NONE':
-        payload.none_details = s.none_education_details;
+        payload.none_details = s.none_education_details || { language_competency: 'ENGLISH' };
         break;
     }
     return payload;
@@ -592,8 +632,9 @@ export class AdmissionWizardComponent {
 
     const s = this._state();
 
-    // Step 1: Create student profile first
-    const studentPayload: CreateStudentProfilePayload = {
+    // Build admission payload with inline student data (atomic creation)
+    const payload = this.buildPayloadBase();
+    payload.student = {
       first_name: s.first_name,
       last_name: s.last_name,
       date_of_birth: s.date_of_birth,
@@ -601,34 +642,19 @@ export class AdmissionWizardComponent {
       school_id: s.school_id || undefined,
     };
 
-    this.studentsService.createStudentProfile(studentPayload).subscribe({
-      next: (profile) => {
-        this.createdStudent.set({ id: profile.id, name: `${profile.first_name} ${profile.last_name}` });
-
-        // Step 2: Create admission with student ID
-        const admissionPayload = this.buildBackendPayload(profile.id);
-        this.studentsService.createAdmission(admissionPayload).subscribe({
-          next: (result) => {
-            this.isSubmitting.set(false);
-            this.step9Completed.set(true);
-            this.snackBar.open(`Admission created: ${result.admission_number}`, 'Close', { duration: 5000 });
-            // Move to enrollment step
-            setTimeout(() => this.stepper.next());
-          },
-          error: (err) => {
-            this.isSubmitting.set(false);
-            // Cleanup orphaned profile since admission failed
-            this.studentsService.deleteStudentProfile(profile.id).subscribe({
-              error: () => {} // Silently ignore cleanup failures
-            });
-            const msg = extractErrors(err).join('; ') || 'Failed to create admission. Please check all fields.';
-            this.submitError.set(msg);
-          },
-        });
+    this.studentsService.createAdmission(payload).subscribe({
+      next: (result) => {
+        this.isSubmitting.set(false);
+        this.step9Completed.set(true);
+        const fullName = `${result.student_first_name || ''} ${result.student_last_name || ''}`.trim();
+        this.createdStudent.set({ id: result.student, name: fullName || 'Student' });
+        this.snackBar.open(`Admission created: ${result.admission_number}`, 'Close', { duration: 5000 });
+        setTimeout(() => this.stepper.next());
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        const msg = extractErrors(err).join('; ') || 'Failed to create student profile.';
+        this.createdStudent.set(null);
+        const msg = extractErrors(err).join('; ') || 'Failed to create admission. Please check all fields.';
         this.submitError.set(msg);
       },
     });

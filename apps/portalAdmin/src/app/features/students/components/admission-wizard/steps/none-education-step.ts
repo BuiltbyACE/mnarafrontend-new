@@ -46,8 +46,16 @@ export class NoneEducationStep {
   dataChange = output<any>();
   validityChange = output<boolean>();
 
+  private hasEmitted = false;
+
   constructor() {
-    effect(() => { this.validate(); });
+    effect(() => {
+      if (!this.hasEmitted) {
+        this.hasEmitted = true;
+        this.dataChange.emit({ ...this.data() });
+      }
+      this.validate();
+    });
   }
 
   update(field: string, value: any): void {

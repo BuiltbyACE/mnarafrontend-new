@@ -77,11 +77,16 @@ export class RegularSchoolStep {
   dataChange = output<any>();
   validityChange = output<boolean>();
 
+  private hasEmitted = false;
   private current: RegularSchoolDetails = { school_name: '', curriculum: '', transfer_reason: '', previous_reports: false, last_attended_class: '', last_attended_year: '' };
 
   constructor() {
     effect(() => {
       this.current = { ...this.data() };
+      if (!this.hasEmitted) {
+        this.hasEmitted = true;
+        this.dataChange.emit({ ...this.current });
+      }
       this.validate();
     });
   }

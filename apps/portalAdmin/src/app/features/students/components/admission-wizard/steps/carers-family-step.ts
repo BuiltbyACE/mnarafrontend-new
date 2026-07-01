@@ -138,7 +138,7 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
           <div class="form-row">
             <div class="field-group">
               <label>Family Type</label>
-              <select [ngModel]="fb.family_type" (ngModelChange)="updateFamily('family_type', $event)">
+              <select [ngModel]="familyBackground.family_type" (ngModelChange)="updateFamily('family_type', $event)">
                 <option value="">Select</option>
                 <option value="SINGLE_PARENT">Single Parent</option>
                 <option value="DIVORCE">Divorce</option>
@@ -151,28 +151,28 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
           <div class="form-row">
             <div class="field-group">
               <label>
-                <input type="checkbox" [ngModel]="fb.different_home_address" (ngModelChange)="updateFamily('different_home_address', $event)">
+                <input type="checkbox" [ngModel]="familyBackground.different_home_address" (ngModelChange)="updateFamily('different_home_address', $event)">
                 Different from Student's Address
               </label>
             </div>
           </div>
 
-          @if (fb.different_home_address) {
+          @if (familyBackground.different_home_address) {
             <div class="address-section">
               <div class="form-row">
                 <div class="field-group">
                   <label>Estate</label>
-                  <input [ngModel]="fb.estate" (ngModelChange)="updateFamily('estate', $event)" placeholder="Estate name">
+                  <input [ngModel]="familyBackground.estate" (ngModelChange)="updateFamily('estate', $event)" placeholder="Estate name">
                 </div>
                 <div class="field-group">
                   <label>Apartment / House No.</label>
-                  <input [ngModel]="fb.apartment" (ngModelChange)="updateFamily('apartment', $event)" placeholder="Apartment or house number">
+                  <input [ngModel]="familyBackground.apartment" (ngModelChange)="updateFamily('apartment', $event)" placeholder="Apartment or house number">
                 </div>
               </div>
               <div class="form-row">
                 <div class="field-group">
                   <label>Road / Street</label>
-                  <input [ngModel]="fb.road" (ngModelChange)="updateFamily('road', $event)" placeholder="Road or street name">
+                  <input [ngModel]="familyBackground.road" (ngModelChange)="updateFamily('road', $event)" placeholder="Road or street name">
                 </div>
               </div>
             </div>
@@ -181,11 +181,11 @@ import { CarerData, FamilyBackground, SiblingFormEntry } from '../../../../../sh
           <div class="form-row">
             <div class="field-group">
               <label>Emergency Contact Phone</label>
-              <input [ngModel]="fb.emergency_contact_phone" (ngModelChange)="updateFamily('emergency_contact_phone', $event)" placeholder="Emergency phone number">
+              <input [ngModel]="familyBackground.emergency_contact_phone" (ngModelChange)="updateFamily('emergency_contact_phone', $event)" placeholder="Emergency phone number">
             </div>
             <div class="field-group">
               <label>Emergency Contact Relationship</label>
-              <input [ngModel]="fb.emergency_contact_relationship" (ngModelChange)="updateFamily('emergency_contact_relationship', $event)" placeholder="e.g. Mother, Father, Guardian">
+              <input [ngModel]="familyBackground.emergency_contact_relationship" (ngModelChange)="updateFamily('emergency_contact_relationship', $event)" placeholder="e.g. Mother, Father, Guardian">
             </div>
           </div>
         </mat-expansion-panel>
@@ -265,6 +265,7 @@ export class CarersFamilyStep {
   data = input.required<{ carers: CarerData[]; family_background: FamilyBackground | null; siblings: SiblingFormEntry[] }>();
   dataChange = output<any>();
   validityChange = output<boolean>();
+  carerFound = output<any>();
 
   private studentsService = inject(StudentsService);
   private snackBar = inject(MatSnackBar);
@@ -273,21 +274,22 @@ export class CarersFamilyStep {
   siblings: SiblingFormEntry[] = [];
   isLookingUp = signal(false);
 
-  private emailSubject = new Subject<string>();
+  familyBackground: FamilyBackground = {
+    family_type: '' as any, different_home_address: false,
+    estate: '', apartment: '', road: '',
+    emergency_contact_phone: '', emergency_contact_relationship: '',
+  };
 
-  get fb(): FamilyBackground {
-    return this.data().family_background || {
-      family_type: '' as any, different_home_address: false,
-      estate: '', apartment: '', road: '',
-      emergency_contact_phone: '', emergency_contact_relationship: '',
-    };
-  }
+  private emailSubject = new Subject<string>();
 
   constructor() {
     effect(() => {
       const d = this.data();
       this.carers = d.carers?.length ? [...d.carers] : [this.emptyCarer('PRIMARY')];
       this.siblings = d.siblings?.length ? [...d.siblings] : [];
+      if (d.family_background) {
+        this.familyBackground = { ...d.family_background };
+      }
       this.validate();
     });
 
@@ -308,6 +310,7 @@ export class CarersFamilyStep {
           if (res.students?.length) {
             this.autoFillSiblings(res.students);
           }
+          this.carerFound.emit(res);
           this.snackBar.open('Carer found! Fields auto-filled.', 'Close', { duration: 3000 });
         }
       },
@@ -370,12 +373,8 @@ export class CarersFamilyStep {
   }
 
   updateFamily(field: string, value: any): void {
-    const fb = { ...this.fb, [field]: value };
-    this.dataChange.emit({
-      carers: this.carers,
-      family_background: fb,
-      siblings: this.siblings,
-    });
+    this.familyBackground = { ...this.familyBackground, [field]: value };
+    this.emitData();
   }
 
   addSibling(): void {
@@ -396,7 +395,7 @@ export class CarersFamilyStep {
   private emitData(): void {
     this.dataChange.emit({
       carers: this.carers,
-      family_background: this.data().family_background,
+      family_background: this.familyBackground,
       siblings: this.siblings,
     });
     this.validate();

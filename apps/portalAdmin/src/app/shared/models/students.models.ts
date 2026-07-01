@@ -185,6 +185,11 @@ export interface SiblingFormEntry {
 export interface AdmissionRecord {
   id: number;
   admission_number: string;
+  student: number;
+  student_first_name: string;
+  student_last_name: string;
+  student_school_id: string;
+  class_sought_name: string;
   first_name: string;
   last_name: string;
   date_of_birth: string;
@@ -220,7 +225,7 @@ export interface AdmissionChoices {
 }
 
 export interface AdmissionCreatePayload {
-  student: number;
+  student?: number | CreateStudentProfilePayload;
   class_sought: number;
   gender: string;
   previous_school_nature: PreviousSchoolNature;

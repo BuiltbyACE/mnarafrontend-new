@@ -105,6 +105,8 @@ export class HomeschoolStep {
   contentCoveredText = '';
   subjects: HomeschoolSubject[] = [];
 
+  private hasEmitted = false;
+
   constructor() {
     effect(() => {
       const d = this.data();
@@ -114,6 +116,10 @@ export class HomeschoolStep {
           ? d.content_covered
           : '';
       this.subjects = d.subjects?.length ? [...d.subjects] : [{ subject_name: '', level_achieved: '', years_studied: 0 }];
+      if (!this.hasEmitted) {
+        this.hasEmitted = true;
+        this.emit();
+      }
       this.validate();
     });
   }
