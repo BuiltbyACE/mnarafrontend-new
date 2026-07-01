@@ -77,6 +77,12 @@ import('../features/dashboard/components/admin-dashboard/admin-dashboard').then(
         loadChildren: () =>
           import('../features/lms/lms.routes').then((m) => m.lmsRoutes),
       },
+      // Schedule / Timetable Builder
+      {
+        path: 'schedule',
+        loadChildren: () =>
+          import('../features/scheduling/scheduling.routes').then((m) => m.schedulingRoutes),
+      },
       // Communication Module
       {
         path: 'communication',

@@ -22,8 +22,12 @@ export const selectActiveVersion = createSelector(
 );
 
 export const selectDraftEntries = createSelector(
+  selectActiveVersion,
   selectEntries,
-  entries => entries.filter(e => e['status'] === 'DRAFT'),
+  (version, entries) => {
+    if (!version || version.status !== 'DRAFT') return [];
+    return entries;
+  },
 );
 
 export const selectPublishedEntries = createSelector(
@@ -41,4 +45,23 @@ export const selectVersionById = (id: number) => createSelector(
 export const selectRequirementsForTerm = (termId: number) => createSelector(
   selectRequirements,
   reqs => reqs.filter(r => r.term === termId),
+);
+
+export const selectFilteredEntries = createSelector(
+  selectEntries,
+  selectSchedulingState,
+  (entries, state) => {
+    const filters = state.filters;
+    if (!filters) return entries;
+    return entries.filter(e => {
+      const matchTeacher = !filters.teacherId || e.teacher_id === filters.teacherId;
+      const matchYearLevel = !filters.yearLevelId || e.year_level === filters.yearLevelId;
+      return matchTeacher && matchYearLevel;
+    });
+  },
+);
+
+export const selectEntriesByDay = (day: number) => createSelector(
+  selectEntries,
+  entries => entries.filter(e => e.day_of_week === day),
 );

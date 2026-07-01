@@ -1,8 +1,14 @@
+export type AcademicTier = 'EYF' | 'KS1' | 'KS2' | 'KS3';
+export type PeriodType = 'TEACHING_BLOCK' | 'BREAK' | 'INSTITUTIONAL_BLOCK' | 'TRANSITION';
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4; // 0=Mon, 4=Fri
+
 export interface BellSchedule {
   id: number;
   key_stage: number;
   name: string;
+  tier?: AcademicTier;
   is_default_for_key_stage: boolean;
+  applies_on_days?: number[];
   periods: BellSchedulePeriod[];
 }
 
@@ -12,9 +18,11 @@ export interface BellSchedulePeriod {
   day_of_week: number;
   start_time: string;
   end_time: string;
-  period_type: 'TEACHING_BLOCK' | 'BREAK' | 'INSTITUTIONAL_BLOCK';
+  period_type: PeriodType;
   label: string;
   is_teaching_block: boolean;
+  sequence?: number;
+  duration_minutes?: number;
 }
 
 export interface TimetableVersion {
@@ -37,9 +45,11 @@ export interface TimetableEntry {
   day_of_week: number;
   year_level: number;
   teacher_id: number;
+  teacher_name?: string;
   subject_offering_id: number;
   classroom_name: string;
   subject_name: string;
+  period_type?: PeriodType;
   published_teacher_id: number | null;
   published_teacher_name: string | null;
   created_at: string;

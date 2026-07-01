@@ -20,6 +20,7 @@ export interface SchedulingState {
   requirements: EntityState<TeachingRequirement>;
   bellSchedules: EntityState<BellSchedule>;
   activeVersionId: number | null;
+  filters: { teacherId?: number; yearLevelId?: number } | null;
   optimistic: {
     pending: Record<string, TimetableEntry>;
     rejected: Record<string, unknown>;
@@ -33,6 +34,7 @@ export const initialSchedulingState: SchedulingState = {
   requirements: requirementsAdapter.getInitialState(),
   bellSchedules: bellSchedulesAdapter.getInitialState(),
   activeVersionId: null,
+  filters: null,
   optimistic: { pending: {}, rejected: {} },
   loading: false,
 };

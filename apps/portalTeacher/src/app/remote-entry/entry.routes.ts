@@ -136,6 +136,11 @@ export const remoteRoutes: Route[] = [
         loadComponent: () =>
           import('../features/calendar/calendar.component').then(m => m.CalendarComponent),
       },
+      {
+        path: 'timetable',
+        loadComponent: () =>
+          import('../features/timetable/timetable.component').then(m => m.TeacherTimetableComponent),
+      },
 
       {
         path: 'settings',

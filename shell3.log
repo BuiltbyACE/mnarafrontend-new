@@ -1,0 +1,103 @@
+
+[2m> [22m[2mnx run[22m shell:serve:development --port=4200
+
+[7m[1m[36m NX [39m[22m[27m [1mStarting module federation dev-server for [1mshell[22m[1m with 6 remotes[22m
+[7m[1m[36m NX [39m[22m[27m [1mBuilding 6 static remotes...[22m
+(node:1728) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[7m[1m[36m NX [39m[22m[27m [1mBuilt 6 static remotes[22m
+[7m[1m[36m NX [39m[22m[27m [1mStarting static remotes proxies...[22m
+[7m[1m[36m NX [39m[22m[27m [1mSkipping proxy for portalAdmin on port 4201 - port already in use (likely served by another process)[22m
+[7m[1m[36m NX [39m[22m[27m [1mStatic remotes proxies: started 5, skipped 1 (already running)[22m
+- Generating browser application bundles (phase: setup)...
+[1m[33m    TypeScript compiler options "target" and "useDefineForClassFields" are set to "ES2022" and "false" respectively by the Angular CLI. To control ECMA version and features use the Browserslist configuration. For more information, see https://angular.dev/tools/cli/build#configuring-browser-compatibility
+    NOTE: You can set the "target" to "ES2022" in the project's tsconfig to remove this warning.[39m[22m
+[33mStarting up http-server, serving [39m[36mC:\HOME LAB\Projects\Mnara School\mnarafrontend-new\tmp\static-remotes[39m
+[33m[39m
+[33mhttp-server version: [39m[36m14.1.1[39m
+[33m[39m
+[33mhttp-server settings: [39m
+[33mCORS: [39m[36mtrue[39m
+[33mCache: [39m[36m-1 seconds[39m
+[33mConnection Timeout: [39m[36m120 seconds[39m
+[33mDirectory Listings: [39m[36mvisible[39m
+[33mAutoIndex: [39m[36mvisible[39m
+[33mServe GZIP Files: [39m[31mfalse[39m
+[33mServe Brotli Files: [39m[31mfalse[39m
+[33mDefault File Extension: [39m[31mnone[39m
+[33m[39m
+[33mAvailable on:[39m
+  http://localhost:[32m4207[39m
+Hit CTRL-C to stop the server
+[7m[1m[36m NX [39m[22m[27m [1mAll remotes started, server ready at http://localhost:4200[22m
+[37m[0m[0m
+[0m[1mInitial chunk files[22m                                                                                     [2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m[0m
+[0m[32mstyles.css, styles.js[37m                                                                                   [2m | [22m[2mstyles[22m       [2m | [22m[36m625.48 kB[37m[2m | [22m[0m
+[0m[32mmain.js[37m                                                                                                 [2m | [22m[2mmain[22m         [2m | [22m[36m383.71 kB[37m[2m | [22m[0m
+[0m[32mvendor.js[37m                                                                                               [2m | [22m[2mvendor[22m       [2m | [22m[36m132.02 kB[37m[2m | [22m[0m
+[0m[0m
+[0m[1m [22m                                                                                                       [2m | [22m[1mInitial total[22m[2m | [22m  [1m1.14 MB[22m[0m
+[0m[0m
+[0m[1mLazy chunk files[22m                                                                                        [2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m[0m
+[0m[32mnode_modules_angular_core_fesm2022_core_mjs.js[37m                                                          [2m | [22m[2m-[22m            [2m | [22m  [36m1.08 MB[37m[2m | [22m[0m
+[0m[32mapps_shell_src_bootstrap_ts.js[37m                                                                          [2m | [22m[2mbootstrap[22m    [2m | [22m[36m315.72 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_rxjs_dist_esm_internal_operators_auditTime_js-node_modules_rxjs_dist_esm-9f2bd5.js[37m [2m | [22m[2m-[22m            [2m | [22m[36m310.93 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_material_fesm2022_select_mjs.js[37m                                            [2m | [22m[2m-[22m            [2m | [22m[36m278.37 kB[37m[2m | [22m[0m
+[0m[32mdefaul[39m[37mt-node_modules_angular_router_fesm2022_router_mjs.js[37m                                              [2m | [22m[2m-[22m            [2m | [22m[36m269.66 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_cdk_fesm2022__a11y-module-chunk_mjs-node_modules_angular_cdk_fes-8118f4.js[37m [2m | [22m[2m-[22m            [2m | [22m[36m249.13 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_common_fesm2022_common_mjs.js[37m                                              [2m | [22m[2m-[22m            [2m | [22m[36m213.54 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_forms_fesm2022_forms_mjs.js[37m                                                [2m | [22m[2m-[22m            [2m | [22m[36m176.40 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_animations_fesm2022_browser_mjs.js[37m                                         [2m | [22m[2m-[22m            [2m | [22m[36m175.14 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_material_fesm2022_button_mjs.js[37m                                            [2m | [22m[2m-[22m            [2m | [22m[36m139.61 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_core_fesm2022__resource-chunk_mjs.js[37m                                       [2m | [22m[2m-[22m            [2m | [22m[36m138.65 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_common_fesm2022_http_mjs.js[37m                                                [2m | [22m[2m-[22m            [2m | [22m[36m107.15 kB[37m[2m | [22m[0m
+[0m[32mnode_modules_rxjs_dist_esm_index_js.js[37m                                                                  [2m | [22m[2m-[22m            [2m | [22m[36m100.19 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_material_fesm2022_slider_mjs.js[37m                                            [2m | [22m[2m-[22m            [2m | [22m [36m90.92 kB[37m[2m | [22m[0m
+[0m[32mdefaul[39m
+[1m[33m
+[0m[33mWarning: [33m[0mC:/HOME LAB/Projects/Mnara School/mnarafrontend-new/apps/shell/src/app/core/auth/pages/credentials-page/credentials-page.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.
+[0m[33mWarning: [33m[0mC:/HOME LAB/Projects/Mnara School/mnarafrontend-new/apps/shell/src/app/core/auth/pages/discover-page/discover-page.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.
+[0m[33mWarning: [33m[0mC:\HOME LAB\Projects\Mnara School\mnarafrontend-new\apps\shell\src\main.ts depends on '@module-federation/enhanced/runtime'. CommonJS or AMD dependencies can cause optimization bailouts.
+For more info see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+[39m[22m
+[37mt-node_modules_angular_cdk_fesm2022__id-generator-chunk_mjs-node_modules_angular_cdk_fe-fd9984.js[37m [2m | [22m[2m-[22m            [2m | [22m [36m68.32 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_material_fesm2022_slide-toggle_mjs.js[37m                                      [2m | [22m[2m-[22m            [2m | [22m [36m67.00 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_ngrx_store_fesm2022_ngrx-store_mjs.js[37m                                              [2m | [22m[2m-[22m            [2m | [22m [36m64.52 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_material_fesm2022__error-options-chunk_mjs-node_modules_angular_-12ab76.js[37m [2m | [22m[2m-[22m            [2m | [22m [36m52.00 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_platform-browser_fesm2022_platform-browser_mjs.js[37m                          [2m | [22m[2m-[22m            [2m | [22m [36m45.89 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_material_fesm2022_icon_mjs.js[37m                                              [2m | [22m[2m-[22m            [2m | [22m [36m45.08 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_material_fesm2022_snack-bar_mjs.js[37m                                         [2m | [22m[2m-[22m            [2m | [22m [36m43.70 kB[37m[2m | [22m[0m
+[0m[32mcommon.js[37m                                                                                               [2m | [22m[2mcommon[22m       [2m | [22m [36m39.72 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_material_fesm2022_card_mjs.js[37m                                              [2m | [22m[2m-[22m            [2m | [22m [36m37.23 kB[37m[2m | [22m[0m
+[0m[32mnode_modules_rxjs_dist_esm_operators_index_js.js[37m                                                        [2m | [22m[2m-[22m            [2m | [22m [36m34.94 kB[37m[2m | [22m[0m
+[0m[32mdefaul[39m[37mt-node_modules_angular_material_fesm2022__ripple-chunk_mjs-node_modules_angular_materia-ad4604.js[37m [2m | [22m[2m-[22m            [2m | [22m [36m32.87 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_cdk_fesm2022__focus-monitor-chunk_mjs.js[37m                                   [2m | [22m[2m-[22m            [2m | [22m [36m28.98 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_platform-browser_fesm2022__dom_renderer-chunk_mjs.js[37m                       [2m | [22m[2m-[22m            [2m | [22m [36m27.70 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_material_fesm2022_progress-spinner_mjs.js[37m                                  [2m | [22m[2m-[22m            [2m | [22m [36m26.94 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_core_fesm2022__untracked-chunk_mjs.js[37m                                      [2m | [22m[2m-[22m            [2m | [22m [36m20.61 kB[37m[2m | [22m[0m
+[0m[32mdefault-node_modules_angular_cdk_fesm2022_bidi_mjs-node_modules_angular_material_fesm2022__an-1ca08c.js[37m [2m | [22m[2m-[22m            [2m | [22m [36m18.75 kB[37m[2m | [22m[0m
+[0m[32mnode_modules_angular_cdk_fesm2022_bidi_mjs-node_modules_angular_cdk_fesm2022_coercion_mjs-_04-fb73ed0.js[37m[2m | [22m[2m-[22m            [2m | [22m [36m12.00 kB[37m[2m | [22m[0m
+[0m[32mnode_modules_angular_cdk_fesm2022_bidi_mjs-node_modules_angular_cdk_fesm2022_coercion_mjs-_04-fb73ed1.js[37m[2m | [22m[2m-[22m            [2m | [22m [36m12.00 kB[37m[2m | [22m[0m
+[0m[32mnode_modules_angular_material_fesm2022__ripple-module-chunk_mjs-_e3b70.js[37m                               [2m | [22m[2m-[22m            [2m | [22m  [36m2.12 kB[37m[2m | [22m[0m
+[0m[32mnode_modules_angular_material_fesm2022__ripple-module-chunk_mjs-_e3b71.js[37m                               [2m | [22m[2m-[22m            [2m | [22m  [36m2.12 kB[37m[2m | [22m[0m
+[0m[32mnode_m[39m[37modules_angular_core_fesm2022__not_found-chunk_mjs.js[37m                                              [2m | [22m[2m-[22m            [2m | [22m  [36m1.96 kB[37m[2m | [22m[0m
+[0m                                                                                                        [2m | [22m[2m-[22m            [2m | [22m  [36m0 bytes[37m[2m | [22m[0m
+[0m                                                                                                        [2m | [22m[2m-[22m            [2m | [22m  [36m0 bytes[37m[2m | [22m[0m
+[0m                                                                                                        [2m | [22m[2m-[22m            [2m | [22m  [36m0 bytes[37m[2m | [22m[0m
+[0m                                                                                                        [2m | [22m[2m-[22m            [2m | [22m  [36m0 bytes[37m[2m | [22m[0m
+[0m                                                                                                        [2m | [22m[2m-[22m            [2m | [22m  [36m0 bytes[37m[2m | [22m[0m
+[0m                                                                                                        [2m | [22m[2m-[22m            [2m | [22m  [36m0 bytes[37m[2m | [22m[0m
+[0m                                                                                                        [2m | [22m[2m-[22m            [2m | [22m  [36m0 bytes[37m[2m | [22m[0m
+[0m                                                                                                        [2m | [22m[2m-[22m            [2m | [22m  [36m0 bytes[37m[2m | [22m[0m
+[0m[0m
+[0mBuild at: [1m[37m2026-06-30T19:58:17.910Z[37m[22m - Hash: [1m[37m84e954123189ea86[37m[22m - Time: [1m[37m5142[37m[22mms[0m[39m
+[37m
+** Angular Live Development Server is listening on localhost:4200, open your browser on http://localhost:4200/ **
+[39m
+[37m
+[92m√[37m Compiled successfully.[39m
+[32m√[39m Browser application bundle generation complete.
+(node:1728) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   BellSchedule,
   BellSchedulePeriod,
@@ -13,21 +14,36 @@ import {
 } from './models';
 import { environment } from '@sms/core/config';
 
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class SchedulingApiService {
   private http = inject(HttpClient);
-  private base = `${environment.apiBaseUrl}/api/v1/scheduling`;
+  private base = `${environment.apiBaseUrl}/scheduling`;
+
+  private extractPaginated<T>(obs: Observable<PaginatedResponse<T>>): Observable<T[]> {
+    return obs.pipe(map(res => res.results));
+  }
 
   getBellSchedules(keyStage?: number): Observable<BellSchedule[]> {
     let params = new HttpParams();
     if (keyStage !== undefined) params = params.set('key_stage', keyStage);
-    return this.http.get<BellSchedule[]>(`${this.base}/bell-schedules/`, { params });
+    return this.extractPaginated(
+      this.http.get<PaginatedResponse<BellSchedule>>(`${this.base}/bell-schedules/`, { params }),
+    );
   }
 
   getVersions(termId?: number): Observable<TimetableVersion[]> {
     let params = new HttpParams();
     if (termId !== undefined) params = params.set('term', termId);
-    return this.http.get<TimetableVersion[]>(`${this.base}/versions/`, { params });
+    return this.extractPaginated(
+      this.http.get<PaginatedResponse<TimetableVersion>>(`${this.base}/versions/`, { params }),
+    );
   }
 
   createVersion(data: { term: number; notes?: string }): Observable<TimetableVersion> {
@@ -53,7 +69,9 @@ export class SchedulingApiService {
     if (params.status) httpParams = httpParams.set('status', params.status);
     if (params.teacher_id !== undefined) httpParams = httpParams.set('teacher_id', params.teacher_id);
     if (params.year_level_id !== undefined) httpParams = httpParams.set('year_level_id', params.year_level_id);
-    return this.http.get<TimetableEntry[]>(`${this.base}/timetable-entries/`, { params: httpParams });
+    return this.extractPaginated(
+      this.http.get<PaginatedResponse<TimetableEntry>>(`${this.base}/timetable-entries/`, { params: httpParams }),
+    );
   }
 
   createEntry(draft: EntryDraft): Observable<TimetableEntry> {
@@ -74,13 +92,18 @@ export class SchedulingApiService {
 
   getRequirements(termId: number, versionId?: number): Observable<TeachingRequirement[]> {
     let params = new HttpParams();
+    params = params.set('term', termId);
     if (versionId !== undefined) params = params.set('version_id', versionId);
-    return this.http.get<TeachingRequirement[]>(`${this.base}/requirements/`, { params });
+    return this.extractPaginated(
+      this.http.get<PaginatedResponse<TeachingRequirement>>(`${this.base}/requirements/`, { params }),
+    );
   }
 
   getAuditLogs(versionId?: number): Observable<TimetableAuditLog[]> {
     let params = new HttpParams();
     if (versionId !== undefined) params = params.set('version', versionId);
-    return this.http.get<TimetableAuditLog[]>(`${this.base}/audit-logs/`, { params });
+    return this.extractPaginated(
+      this.http.get<PaginatedResponse<TimetableAuditLog>>(`${this.base}/audit-logs/`, { params }),
+    );
   }
 }

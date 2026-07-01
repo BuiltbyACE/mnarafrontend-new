@@ -1,0 +1,8 @@
+
+[2m> [22m[2mnx run[22m shell:serve:development --port=4200
+
+[7m[1m[36m NX [39m[22m[27m [1mStarting module federation dev-server for [1mshell[22m[1m with 6 remotes[22m
+[7m[1m[36m NX [39m[22m[27m [1mBuilding 6 static remotes...[22m
+(node:1828) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[7m[1m[36m NX [39m[22m[27m [1mBuilt 6 static remotes[22m

@@ -484,6 +484,7 @@ export class AdminSidebarComponent {
           ],
         },
         { name: 'calendar', label: 'School Calendar', icon: 'event_note', route: 'calendar' },
+        { name: 'schedule', label: 'Timetable', icon: 'calendar_month', route: 'schedule' },
       ],
     },
     {

@@ -40,5 +40,11 @@ export const SchedulingActions = createActionGroup({
     'Publish Version Failure': props<{ error: string }>(),
 
     'Set Active Version': props<{ versionId: number }>(),
+
+    'Clear Rejected': emptyProps(),
+
+    'Set Filters': props<{
+      filters: { teacherId?: number; yearLevelId?: number } | null;
+    }>(),
   },
 });
