@@ -245,3 +245,34 @@ remotes: {
 
 **Important rule:** Portals never import from each other. They only import from `libs/`. The shell is the only app that knows about all portals.
  - 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ npx nx run-many --target=build --projects=portalAdmin,portalTeacher,portalStudent,portalParent,portalTransport,portalFinance --parallel=2
+
+
+ Your daily workflow:
+npm run build:remotes   # once after pulls or dependency changes
+npm start               # serves shell + portalAdmin with hot reload, loads other portals from static builds
+This avoids the OOM because only 2 dev servers (shell + one remote) run simultaneously instead of 7.

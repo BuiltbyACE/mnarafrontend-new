@@ -4,6 +4,9 @@ const config: ModuleFederationConfig = {
   name: 'shell',
   remotes: [],
   shared: (libraryName, defaultConfig) => {
+    if (libraryName === 'maplibre-gl') {
+      return false;
+    }
     if (libraryName.startsWith('@angular/material')) {
       return { ...defaultConfig, singleton: true, strictVersion: false };
     }
